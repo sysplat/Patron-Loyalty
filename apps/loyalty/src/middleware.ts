@@ -28,6 +28,8 @@ const kioskPath = '/kiosk';
 const trackPath = '/track';
 const bookPath = '/book';
 
+const DASHBOARD_HOME = '/overview';
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -88,12 +90,18 @@ export async function middleware(request: NextRequest) {
     }
   };
 
-  // Authenticated users on login/signup only — recovery pages (/forgot-password, /reset-password) stay reachable.
+  // Authenticated users on login/signup → dashboard home
   if (token && signInPaths.includes(path)) {
-    return NextResponse.redirect(new URL('/', request.url));
+    return NextResponse.redirect(new URL(DASHBOARD_HOME, request.url));
   }
 
-  // Allow public paths (Landing page, Terms, etc.)
+  // Marketing landing at /
+  if (path === '/') {
+    if (token) return NextResponse.redirect(new URL(DASHBOARD_HOME, request.url));
+    return NextResponse.next();
+  }
+
+  // Allow public paths (legal, auth recovery, pricing, etc.)
   if (publicPaths.includes(path)) return NextResponse.next();
   if (publicPrefixes.some((prefix) => pathname.startsWith(prefix))) return NextResponse.next();
 

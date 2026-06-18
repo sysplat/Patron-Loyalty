@@ -35,7 +35,7 @@ import { cn } from '@/lib/utils';
 import { formatRoleLabel, formatUserDisplayName } from '@/lib/rbac-ui';
 
 export const LOYALTY_NAV = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/overview', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/patrons', label: 'Patrons', icon: Users },
   { href: '/rewards', label: 'Rewards', icon: Gift },
   { href: '/coupons', label: 'Coupons', icon: Tag },

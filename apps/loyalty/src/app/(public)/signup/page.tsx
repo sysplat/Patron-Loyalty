@@ -65,13 +65,7 @@ export default function LoyaltySignupPage() {
     return (
       <div className="bg-muted/50 flex min-h-screen items-center justify-center px-4">
         <div className="bg-card w-full max-w-md space-y-6 rounded-lg border p-8 text-center shadow-sm">
-          <QlessqBrand
-            href="/login"
-            markSize={52}
-            wordmarkHeight={28}
-            className="mx-auto"
-            priority
-          />
+          <QlessqBrand href="/" markSize={52} wordmarkHeight={28} className="mx-auto" priority />
           <h1 className="text-2xl font-bold">Check your email</h1>
           <p className="text-muted-foreground text-sm">
             We sent a verification link to{' '}
@@ -79,7 +73,7 @@ export default function LoyaltySignupPage() {
             in to start building your loyalty program.
           </p>
           <Link
-            href="/login"
+            href="/"
             className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-10 w-full items-center justify-center rounded-md px-4 py-2 text-sm font-medium shadow transition-colors"
           >
             Go to sign in

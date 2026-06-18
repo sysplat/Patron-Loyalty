@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { flushSync } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { validateLogin } from '@/lib/validation';
 import { useAuthStore } from '@/lib/auth-store';
 import { QlessqBrand } from '@/components/brand';
+import { AuthMarketingPanel } from '@/components/marketing/auth-marketing-panel';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,13 +26,8 @@ export default function LoginPage() {
   >(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   const totpAutoRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   async function handleSubmit(e?: React.FormEvent, selectedOrgId?: string) {
     if (e) e.preventDefault();
@@ -110,7 +106,7 @@ export default function LoginPage() {
           },
           res?.data?.tokens?.refreshToken,
         );
-        router.push('/');
+        router.push('/overview');
       }
     } catch (err: any) {
       setError(err.data?.message ?? err.message ?? 'Invalid credentials');
@@ -164,7 +160,7 @@ export default function LoginPage() {
           },
           res?.data?.tokens?.refreshToken,
         );
-        router.push('/');
+        router.push('/overview');
       } catch (err: any) {
         if (attempt !== loginAttemptRef.current) return;
 
@@ -213,78 +209,10 @@ export default function LoginPage() {
   }
   return (
     <div className="relative flex min-h-screen">
-      {/* Left panel — animated background */}
-      <div className="relative hidden overflow-hidden lg:flex lg:w-1/2">
-        {/* Gradient base */}
-        <div className="from-primary via-primary/80 absolute inset-0 bg-gradient-to-br to-violet-700" />
-
-        {/* Animated floating shapes */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="animate-float-slow absolute -left-20 -top-20 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
-          <div className="animate-float-medium absolute right-10 top-1/3 h-72 w-72 rounded-full bg-white/5 blur-2xl" />
-          <div className="animate-float-fast absolute bottom-10 left-1/4 h-80 w-80 rounded-full bg-violet-400/10 blur-3xl" />
-          <div
-            className="animate-float-medium absolute left-1/3 top-1/4 h-40 w-40 rounded-full bg-white/5 blur-xl"
-            style={{ animationDelay: '2s' }}
-          />
-        </div>
-
-        {/* Grid overlay */}
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)',
-            backgroundSize: '60px 60px',
-          }}
-        />
-
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-between p-12 text-white">
-          <QlessqBrand
-            href="/"
-            markSize={54}
-            wordmarkHeight={32}
-            tone="onDark"
-            className="text-white"
-          />
-
-          <div className="max-w-md space-y-6">
-            <h2 className="text-4xl font-bold leading-tight">
-              Manage queues.
-              <br />
-              Delight customers.
-              <br />
-              <span className="text-white/70">Scale effortlessly.</span>
-            </h2>
-            <p className="text-lg leading-relaxed text-white/60">
-              The all-in-one platform for modern queue management, appointment booking, and customer
-              engagement.
-            </p>
-
-            {/* Feature highlights */}
-            <div className="space-y-3 pt-4">
-              {[
-                { icon: '⚡', text: 'Real-time ticket tracking & notifications' },
-                { icon: '📊', text: 'Live operations dashboard & analytics' },
-                { icon: '📱', text: 'Multi-channel: Kiosk, Online, Walk-in' },
-              ].map((f) => (
-                <div key={f.text} className="flex items-center gap-3 text-white/80">
-                  <span className="text-xl">{f.icon}</span>
-                  <span className="text-sm">{f.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <p className="text-xs text-white/40">
-            © {mounted ? new Date().getFullYear() : '2026'} QlessQ. All rights reserved.
-          </p>
-        </div>
-      </div>
+      <AuthMarketingPanel />
 
       {/* Right panel — login form */}
-      <div className="flex flex-1 flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/50 px-6 py-12">
+      <div className="flex flex-1 flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 px-6 py-12">
         <div className="w-full max-w-md space-y-8">
           {/* Mobile logo */}
           <div className="text-center lg:hidden">
@@ -305,7 +233,7 @@ export default function LoginPage() {
                   ? 'Enter the code from your authenticator app.'
                   : selectionStep
                     ? 'We found multiple organizations for this email. Please choose one to continue.'
-                    : 'Sign in to your QlessQ account'}
+                    : 'Sign in to your Patron Loyalty workspace'}
               </p>
             </div>
 
