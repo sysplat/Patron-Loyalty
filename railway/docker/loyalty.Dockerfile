@@ -16,17 +16,13 @@ ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
 ENV NEXT_PUBLIC_WEB_URL=${NEXT_PUBLIC_WEB_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
-COPY apps/web/package.json apps/web/
-COPY apps/admin/package.json apps/admin/
+COPY package.json pnpm-lock.yaml tsconfig.base.json ./
+COPY railway/docker/pnpm-workspace.loyalty.yaml pnpm-workspace.yaml
 COPY apps/loyalty/package.json apps/loyalty/
-COPY packages/api/package.json packages/api/
-COPY packages/database/package.json packages/database/
-COPY packages/notifications/package.json packages/notifications/
 COPY packages/shared/package.json packages/shared/
 COPY packages/frontend-core/package.json packages/frontend-core/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --filter "@queueplatform/loyalty..."
 
 COPY apps/loyalty apps/loyalty
 COPY packages/shared packages/shared

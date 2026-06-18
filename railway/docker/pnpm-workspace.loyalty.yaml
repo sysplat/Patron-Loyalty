@@ -1,0 +1,5 @@
+# Loyalty app image only — excludes removed apps/web and apps/admin.
+packages:
+  - "apps/loyalty"
+  - "packages/shared"
+  - "packages/frontend-core"
