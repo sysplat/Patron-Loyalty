@@ -47,16 +47,17 @@ Operational checklist after legal document updates. **Not published to tenants.*
 
 ## Related artifacts
 
-| Document                        | Purpose                                                       |
-| ------------------------------- | ------------------------------------------------------------- |
-| `COUNSEL_REVIEW_BRIEF.md`       | Questions and file list for attorney review                   |
-| `SUPPORT_OPERATIONS.md`         | AI-assisted support and production access                     |
-| `SUBPROCESSORS.md`              | Markdown mirror of public `/subprocessors` (sync from `*.ts`) |
-| `DPA_OVERVIEW.md`               | Markdown mirror of public `/dpa` (sync from `*.ts`)           |
-| `GLOBAL_COMPLIANCE_PROGRAM.md`  | SMS/consent and super-admin compliance roadmap (engineering)  |
-| `ADMIN_DASHBOARD_COMPLIANCE.md` | Future admin compliance portal UI/API spec                    |
-| `CONTINUOUS_ASSURANCE.md`       | Recurring security/compliance controls                        |
-| `INCIDENT_RESPONSE_RUNBOOK.md`  | Breach and incident handling                                  |
-| `AUDIT_EVIDENCE_PACK.md`        | Enterprise audit evidence checklist                           |
+| Document                             | Purpose                                                       |
+| ------------------------------------ | ------------------------------------------------------------- |
+| `COUNSEL_REVIEW_BRIEF_LOYALTY.md`    | Questions and file list for Patron Loyalty attorney review    |
+| `PATRON_LOYALTY_LAUNCH_CHECKLIST.md` | Pre-launch deploy, env, and smoke checklist                   |
+| `SUPPORT_OPERATIONS.md`              | AI-assisted support and production access                     |
+| `SUBPROCESSORS.md`                   | Markdown mirror of public `/subprocessors` (sync from `*.ts`) |
+| `DPA_OVERVIEW.md`                    | Markdown mirror of public `/dpa` (sync from `*.ts`)           |
+| `GLOBAL_COMPLIANCE_PROGRAM.md`       | SMS/consent and super-admin compliance roadmap (engineering)  |
+| `ADMIN_DASHBOARD_COMPLIANCE.md`      | Future admin compliance portal UI/API spec                    |
+| `CONTINUOUS_ASSURANCE.md`            | Recurring security/compliance controls                        |
+| `INCIDENT_RESPONSE_RUNBOOK.md`       | Breach and incident handling                                  |
+| `AUDIT_EVIDENCE_PACK.md`             | Enterprise audit evidence checklist                           |
 
-**Last updated:** 2026-06-04
+**Last updated:** 2026-06-17
