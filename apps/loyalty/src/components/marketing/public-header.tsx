@@ -9,18 +9,18 @@ export function PublicHeader({ active }: { active?: 'pricing' }) {
           <div className="flex items-center gap-10">
             <QlessqBrand href="/" markSize={46} wordmarkHeight={28} priority />
             <nav className="hidden items-center gap-8 lg:flex">
-              <a
+              <Link
                 href="/#features"
                 className="text-muted-foreground hover:text-foreground text-sm font-medium transition-all"
               >
                 Features
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/#integration"
                 className="text-muted-foreground hover:text-foreground text-sm font-medium transition-all"
               >
                 QlessQ
-              </a>
+              </Link>
               <Link
                 href="/pricing"
                 className={
