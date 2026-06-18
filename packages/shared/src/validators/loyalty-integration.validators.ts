@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { LOYALTY_EARN_EVENT_TYPES } from '../constants/loyalty';
+import { QLESSQ_QUEUE_INTEGRATION_EVENT_VALUES } from '../constants/loyalty-connector';
 
 const customerRefinement = (
   data: {
@@ -97,4 +98,54 @@ export const loyaltyPortalProfileSchema = z.object({
   birthday: z.string().date().optional().nullable(),
   gender: z.string().max(20).optional().nullable(),
   city: z.string().max(100).optional().nullable(),
+});
+
+export const loyaltyIntegrationQueueEventSchema = z
+  .object({
+    event: z.enum(QLESSQ_QUEUE_INTEGRATION_EVENT_VALUES),
+    sourceId: z.string().min(1).max(100),
+    branchId: z.string().uuid().optional(),
+    serviceId: z.string().uuid().optional().nullable(),
+    customerId: z.string().uuid().optional(),
+    customer: z
+      .object({
+        externalId: z.string().min(1).max(100),
+        name: z.string().min(1).max(200).optional(),
+        email: z.string().email().optional().nullable(),
+        phone: z.string().max(30).optional().nullable(),
+      })
+      .optional(),
+    customerPhone: z.string().max(30).optional().nullable(),
+    customerEmail: z.string().email().optional().nullable(),
+    rating: z.number().int().min(1).max(5).optional(),
+    occurredAt: z.string().datetime().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const needsCustomer = [
+      'ticket.completed',
+      'appointment.completed',
+      'review.submitted',
+      'customer.created',
+    ].includes(data.event);
+    if (!needsCustomer) return;
+    const hasCustomer =
+      data.customerId ||
+      data.customer?.externalId ||
+      data.customerPhone ||
+      data.customerEmail ||
+      data.customer?.email ||
+      data.customer?.phone;
+    if (!hasCustomer) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Provide customerId or customer contact fields',
+        path: ['customer'],
+      });
+    }
+  });
+
+export const patronLoyaltyIntegrationConfigSchema = z.object({
+  lmsOrgId: z.string().uuid().optional(),
+  apiBaseUrl: z.string().url().max(500).optional(),
+  apiKey: z.string().min(16).max(200),
 });

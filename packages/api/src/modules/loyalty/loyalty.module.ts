@@ -24,6 +24,7 @@ import { LoyaltyCampaignAutomationService } from './loyalty-campaign-automation.
 import { LoyaltyPortalService } from './loyalty-portal.service';
 import { LoyaltyWebhookService } from './loyalty-webhook.service';
 import { LoyaltyApiKeyGuard } from './guards/loyalty-api-key.guard';
+import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
 
 @Module({
   imports: [CustomerModule, NotificationModule, WebhookModule, forwardRef(() => BillingModule)],
@@ -48,6 +49,7 @@ import { LoyaltyApiKeyGuard } from './guards/loyalty-api-key.guard';
     LoyaltyPortalService,
     LoyaltyWebhookService,
     LoyaltyApiKeyGuard,
+    LoyaltyQueueEventsService,
   ],
   exports: [
     LoyaltyAccountService,

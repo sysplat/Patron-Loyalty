@@ -5,21 +5,22 @@ Patron Loyalty (this repo) and QlessQ (sibling `../QMS`) are **separate products
 ## When both are licensed
 
 ```text
-┌──────────────────┐   HTTP webhooks / Integration API   ┌─────────────────────┐
-│  QlessQ          │ ───────────────────────────────────► │  Patron Loyalty     │
-│  ticket.completed│   patron id, branch, service, time   │  earn points        │
-│  appointment.*   │                                      │  segments, campaigns│
-│  review.created  │                                      │  churn / no-show    │
-└──────────────────┘                                      └─────────────────────┘
+┌──────────────────┐   POST /loyalty/integrations/v1/queue-events   ┌─────────────────────┐
+│  QlessQ API      │   X-Loyalty-Api-Key + normalized payload      │  Patron Loyalty API │
+│  ticket.completed│ ────────────────────────────────────────────► │  earn points        │
+│  appointment.*   │                                               │  segments, campaigns│
+│  review.created  │                                               │  churn / no-show    │
+└──────────────────┘                                               └─────────────────────┘
 ```
 
 ### QlessQ → LMS (inbound to LMS)
 
-| Mechanism                                 | Use                                                                                                             |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| **Integration API** (`X-Loyalty-Api-Key`) | QlessQ (or a connector worker) calls LMS: `POST /loyalty/integrations/v1/points/earn`, `customers/upsert`, etc. |
-| **Shared database** (transition only)     | Both apps pointed at same Postgres + RLS — simplest during migration; prefer API/events long term.              |
-| **Tenant linking**                        | Map `qlessqOrgId` ↔ `lmsOrgId` in admin or env when org buys bundle.                                            |
+| Mechanism                                        | Use                                                                                                |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| **`POST /loyalty/integrations/v1/queue-events`** | Primary path when QlessQ and LMS deploy separately. QlessQ HTTP forwarder sends normalized events. |
+| **Integration API** (`X-Loyalty-Api-Key`)        | POS/e-commerce: `points/earn`, `customers/upsert`, coupons, wallet.                                |
+| **In-process listener**                          | Same monorepo + shared Postgres: `loyalty.listener.ts` handles events locally (no HTTP).           |
+| **Tenant linking**                               | QlessQ org stores `integrations` row `type: patron_loyalty` with LMS API URL + key.                |
 
 ### LMS → external systems (outbound)
 
@@ -28,60 +29,118 @@ Patron Loyalty (this repo) and QlessQ (sibling `../QMS`) are **separate products
 | **`LOYALTY_WEBHOOK_EVENTS`** | Tenant-configured webhooks: points earned, tier upgraded, no-show, etc. |
 | **Integration API**          | POS/e-commerce calls LMS directly (no QlessQ required).                 |
 
-## Event payload (recommended contract)
+## Tenant linking (bundle)
 
-QlessQ should send normalized events; LMS idempotency key = `sourceType` + `sourceId`:
+On **QlessQ**, staff with CRM permissions configure the forwarder:
+
+```http
+GET  /api/v1/loyalty/connector
+POST /api/v1/loyalty/connector
+POST /api/v1/loyalty/connector/disconnect
+```
+
+Body for `POST /loyalty/connector`:
 
 ```json
 {
-  "event": "loyalty.visit.completed",
-  "orgId": "…",
-  "customerId": "…",
-  "sourceType": "ticket",
+  "lmsOrgId": "optional-lms-org-uuid",
+  "apiBaseUrl": "https://pl-api-production.example.com/api/v1",
+  "apiKey": "loyalty_live_..."
+}
+```
+
+Stored as `integrations.type = patron_loyalty`. When linked:
+
+- QlessQ **skips** in-process `LoyaltyListener` for that org.
+- `LoyaltyConnectorListener` **forwards** events to LMS `queue-events`.
+
+On **LMS**, generate the API key under **Integrations** (`/integrations` in the staff app). The key scopes all Integration API calls (including `queue-events`) to the LMS org.
+
+### Customer identity across deploys
+
+QlessQ sends `customer.externalId` = QlessQ `Customer.id`. LMS upserts patrons by `externalId` in customer metadata so IDs can differ per database.
+
+## Queue event payload
+
+```json
+{
+  "event": "ticket.completed",
   "sourceId": "ticket-uuid",
-  "branchId": "…",
-  "serviceId": "…",
+  "branchId": "branch-uuid",
+  "serviceId": "service-uuid",
+  "customer": {
+    "externalId": "qlessq-customer-uuid",
+    "name": "Jane Patron",
+    "email": "jane@example.com",
+    "phone": "+15551234567"
+  },
   "occurredAt": "2026-06-17T20:00:00.000Z"
 }
 ```
 
-Map to Integration API earn call or internal `earnFromEvent` handler.
+| `event`                 | LMS action                                |
+| ----------------------- | ----------------------------------------- |
+| `ticket.completed`      | Earn visit points, increment challenges   |
+| `ticket.no_show`        | Churn risk + win-back trigger             |
+| `appointment.completed` | Earn appointment points                   |
+| `appointment.no_show`   | Churn risk + win-back trigger             |
+| `review.submitted`      | Review bonus points                       |
+| `customer.created`      | Ensure loyalty account + welcome campaign |
+
+Idempotency: earn ledger uses `sourceType` + `sourceId` from the queue event (`ticket`, `appointment`, `review`).
 
 ## Loyalty-only tenants
 
-No QlessQ connection required. Patron data from:
+No QlessQ connection required. Patron data from staff UI, patron portal, Integration API, or imports.
 
-- Staff entry in `apps/loyalty`
-- Patron portal self-serve profile
-- `POST /loyalty/integrations/v1/*` (POS, e-commerce)
-- CSV/import (future)
+## Environment
 
-## Environment (LMS)
+### LMS (this repo)
 
 ```bash
-# Optional: QlessQ API base when LMS calls back (future connector UI)
-QLESSQ_INTEGRATION_URL=https://api.qlessq.example
+# Optional: future LMS → QlessQ callbacks
+QLESSQ_INTEGRATION_URL=https://qms-api.example.com/api/v1
 QLESSQ_INTEGRATION_API_KEY=
 ```
 
-## Environment (QlessQ)
+### QlessQ (sibling `../QMS`)
 
 ```bash
-# When QlessQ forwards events to a separate LMS deploy
-LOYALTY_INTEGRATION_URL=https://api.loyalty.example
-LOYALTY_INTEGRATION_API_KEY=
+LOYALTY_INTEGRATION_URL=https://pl-api.example.com/api/v1
+LOYALTY_INTEGRATION_API_KEY=   # optional global fallback; prefer per-org connector config
+LOYALTY_URL=https://loyalty.example.com
 ```
 
-## Code locations (this repo)
+## Code locations (this repo — LMS)
 
-- API: `packages/api/src/modules/loyalty/`
-- Integration controller: `loyalty-integration.controller.ts`
-- Webhook emitter: `loyalty-webhook.service.ts`
-- Constants: `packages/shared/src/constants/loyalty.ts` (`LOYALTY_WEBHOOK_EVENTS`, earn event types)
+| Piece                   | Path                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------- |
+| Queue event ingestion   | `loyalty-integration.controller.ts` → `POST queue-events`                       |
+| Event handlers          | `loyalty-queue-events.service.ts`                                               |
+| In-process listener     | `loyalty.listener.ts` (local mode)                                              |
+| Integration earn/upsert | `loyalty-integration.service.ts`                                                |
+| Webhook emitter         | `loyalty-webhook.service.ts`                                                    |
+| Shared contract         | `packages/shared` → `loyalty-connector.ts`, `loyalty-integration.validators.ts` |
 
 ## Code locations (QlessQ sibling)
 
-- Event emitters: `ticket-transition.service.ts`, `appointment-lifecycle.service.ts`
-- Listener (same-DB monolith mode): `packages/api/src/modules/loyalty/loyalty.listener.ts`
+| Piece                      | Path                                                                                    |
+| -------------------------- | --------------------------------------------------------------------------------------- |
+| Event emitters             | `ticket-transition.service.ts`, `appointment-lifecycle.service.ts`, `review.service.ts` |
+| HTTP forwarder             | `loyalty-connector.service.ts`, `loyalty-connector.listener.ts`                         |
+| Tenant link CRUD           | `loyalty-connector-link.service.ts`, `loyalty.controller.ts` (`/loyalty/connector`)     |
+| Local listener (shared DB) | `loyalty.listener.ts` — skipped when remote link active                                 |
 
-When QlessQ and LMS deploy separately, replace in-process listener with an HTTP forwarder to LMS Integration API.
+## Local dev (both products)
+
+```bash
+# Terminal 1 — QlessQ
+cd ../QMS && pnpm dev:api
+
+# Terminal 2 — LMS
+pnpm start
+
+# Point QlessQ org connector at http://localhost:4000/api/v1 with LMS integration API key
+```
+
+Shared Postgres during transition: leave connector **disconnected**; in-process listener handles events.

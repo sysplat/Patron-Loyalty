@@ -21,6 +21,8 @@ import {
   LoyaltyIntegrationValidateCouponDto,
   LoyaltyIntegrationWalletAdjustDto,
 } from './dto/loyalty-integration.dto';
+import { LoyaltyIntegrationQueueEventDto } from './dto/loyalty-connector.dto';
+import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
 
 @ApiTags('Loyalty Integrations')
 @Public()
@@ -28,7 +30,10 @@ import {
 @ApiHeader({ name: 'X-Loyalty-Api-Key', required: true })
 @Controller('loyalty/integrations/v1')
 export class LoyaltyIntegrationController {
-  constructor(private readonly integration: LoyaltyIntegrationService) {}
+  constructor(
+    private readonly integration: LoyaltyIntegrationService,
+    private readonly queueEvents: LoyaltyQueueEventsService,
+  ) {}
 
   @Get('customers/lookup')
   @ApiOperation({ summary: 'Look up patron by customerId, email, phone, or external ID' })
@@ -82,5 +87,14 @@ export class LoyaltyIntegrationController {
   @ApiOperation({ summary: 'Credit or debit patron wallet balance' })
   adjustWallet(@LoyaltyOrgId() orgId: string, @Body() body: LoyaltyIntegrationWalletAdjustDto) {
     return this.integration.adjustWallet(orgId, body);
+  }
+
+  @Post('queue-events')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Ingest normalized QlessQ queue events (ticket/appointment/review/customer)',
+  })
+  ingestQueueEvent(@LoyaltyOrgId() orgId: string, @Body() body: LoyaltyIntegrationQueueEventDto) {
+    return this.queueEvents.processRemoteEvent(orgId, body);
   }
 }

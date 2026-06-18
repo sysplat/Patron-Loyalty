@@ -10,6 +10,7 @@ export * from './constants/legal';
 export * from './constants/roles';
 export * from './constants/customer-crm';
 export * from './constants/loyalty';
+export * from './constants/loyalty-connector';
 export * from './constants/sms-credits';
 export * from './constants/sms-credit-packs';
 export * from './constants/industries';
