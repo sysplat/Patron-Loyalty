@@ -50,7 +50,11 @@ import {
   ValidateLoyaltyCouponDto,
 } from './dto/loyalty.dto';
 import { LoyaltyAddonCheckoutDto } from './dto/loyalty-activation.dto';
-import { LoyaltyPortalProfileDto, LoyaltyPortalRedeemDto } from './dto/loyalty-integration.dto';
+import {
+  LoyaltyPortalProfileDto,
+  LoyaltyPortalRedeemDto,
+  LoyaltyPortalLegalConsentDto,
+} from './dto/loyalty-integration.dto';
 
 @ApiTags('Loyalty')
 @ApiBearerAuth()
@@ -463,6 +467,17 @@ export class LoyaltyController {
     @Body() body: LoyaltyPortalProfileDto,
   ) {
     return this.portal.updateProfile(referralCode, body);
+  }
+
+  @Public()
+  @Post('public/portal/:referralCode/consent')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Record patron portal legal consent (server-side audit)' })
+  recordPublicLegalConsent(
+    @Param('referralCode') referralCode: string,
+    @Body() body: LoyaltyPortalLegalConsentDto,
+  ) {
+    return this.portal.recordPatronLegalConsent(referralCode, body);
   }
 
   @Public()

@@ -100,6 +100,11 @@ export const loyaltyPortalProfileSchema = z.object({
   city: z.string().max(100).optional().nullable(),
 });
 
+export const loyaltyPortalLegalConsentSchema = z.object({
+  termsVersion: z.string().max(30),
+  privacyVersion: z.string().max(30),
+});
+
 export const loyaltyIntegrationQueueEventSchema = z
   .object({
     event: z.enum(QLESSQ_QUEUE_INTEGRATION_EVENT_VALUES),

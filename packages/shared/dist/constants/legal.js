@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LOYALTY_LEGAL_DOCUMENTS = exports.LEGAL_DOCUMENTS = exports.LEGAL_DOCUMENT_TYPES = exports.CURRENT_LOYALTY_PATRON_TERMS_VERSION = exports.CURRENT_LOYALTY_PATRON_PRIVACY_VERSION = exports.CURRENT_LOYALTY_PRIVACY_VERSION = exports.CURRENT_LOYALTY_TERMS_VERSION = exports.CURRENT_PATRON_TERMS_VERSION = exports.CURRENT_PATRON_PRIVACY_VERSION = exports.CURRENT_PRIVACY_VERSION = exports.CURRENT_TERMS_VERSION = exports.LEGAL_CONTACT_EMAIL = exports.LEGAL_ENTITY_NAME = void 0;
+exports.LOYALTY_LEGAL_DOCUMENTS = exports.LEGAL_DOCUMENTS = exports.LEGAL_DOCUMENT_TYPES = exports.CURRENT_LOYALTY_PATRON_LEGAL_CONSENT_VERSION = exports.CURRENT_LOYALTY_PATRON_TERMS_VERSION = exports.CURRENT_LOYALTY_PATRON_PRIVACY_VERSION = exports.CURRENT_LOYALTY_PRIVACY_VERSION = exports.CURRENT_LOYALTY_TERMS_VERSION = exports.CURRENT_PATRON_TERMS_VERSION = exports.CURRENT_PATRON_PRIVACY_VERSION = exports.CURRENT_PRIVACY_VERSION = exports.CURRENT_TERMS_VERSION = exports.LEGAL_CONTACT_EMAIL = exports.LEGAL_ENTITY_NAME = void 0;
 const brand_1 = require("./brand");
 /** Legal entity and document versions — bump versions when text changes materially. */
 exports.LEGAL_ENTITY_NAME = brand_1.PRODUCT_NAME;
@@ -21,6 +21,8 @@ exports.CURRENT_LOYALTY_PRIVACY_VERSION = '2026-06-17';
 exports.CURRENT_LOYALTY_PATRON_PRIVACY_VERSION = '2026-06-17';
 /** ISO date — Patron Loyalty end-user (patron portal) terms. */
 exports.CURRENT_LOYALTY_PATRON_TERMS_VERSION = '2026-06-17';
+/** Combined patron portal legal bundle — bump when patron Terms or Privacy change materially. */
+exports.CURRENT_LOYALTY_PATRON_LEGAL_CONSENT_VERSION = `${exports.CURRENT_LOYALTY_PATRON_TERMS_VERSION}/${exports.CURRENT_LOYALTY_PATRON_PRIVACY_VERSION}`;
 exports.LEGAL_DOCUMENT_TYPES = {
     TERMS_OF_SERVICE: 'terms_of_service',
     PRIVACY_POLICY: 'privacy_policy',
@@ -105,6 +107,20 @@ exports.LOYALTY_LEGAL_DOCUMENTS = {
         title: 'Loyalty Program Terms',
         path: '/patron-terms',
         version: exports.CURRENT_LOYALTY_PATRON_TERMS_VERSION,
+        lastUpdated: 'June 17, 2026',
+    },
+    loyaltyDpaOverview: {
+        type: exports.LEGAL_DOCUMENT_TYPES.DPA_OVERVIEW,
+        title: 'Data Processing Addendum Overview',
+        path: '/dpa',
+        version: exports.CURRENT_LOYALTY_PRIVACY_VERSION,
+        lastUpdated: 'June 17, 2026',
+    },
+    loyaltySubprocessors: {
+        type: exports.LEGAL_DOCUMENT_TYPES.SUBPROCESSORS,
+        title: 'Subprocessor Register',
+        path: '/subprocessors',
+        version: exports.CURRENT_LOYALTY_PRIVACY_VERSION,
         lastUpdated: 'June 17, 2026',
     },
 };

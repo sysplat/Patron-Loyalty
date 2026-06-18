@@ -7,6 +7,7 @@ export * from './constants/plans';
 export * from './constants/brand';
 export * from './constants/organization-logo';
 export * from './constants/legal';
+export * from './constants/prohibited-businesses';
 export * from './constants/roles';
 export * from './constants/customer-crm';
 export * from './constants/loyalty';

@@ -6,10 +6,15 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { PatronLegalModal } from '@/components/legal/patron-legal-modal';
-import { hasStoredPatronConsent, storePatronConsent } from '@/lib/patron-legal-consent';
+import {
+  hasStoredPatronConsent,
+  recordPatronLegalConsentOnServer,
+  storePatronConsent,
+} from '@/lib/patron-legal-consent';
 
 interface PortalData {
   found: boolean;
+  legalConsentGranted?: boolean;
   patronName?: string;
   orgName?: string;
   pointsCurrencyName?: string;
@@ -87,18 +92,16 @@ export default function PatronPortalPage() {
   const [acceptLegal, setAcceptLegal] = useState(false);
   const [legalModal, setLegalModal] = useState<'terms' | 'privacy' | null>(null);
 
-  useEffect(() => {
-    if (code && hasStoredPatronConsent(code)) {
-      setAcceptLegal(true);
-    }
-  }, [code]);
-
-  const ensurePatronConsent = () => {
+  const ensurePatronConsent = async (): Promise<boolean> => {
     if (!acceptLegal) {
       toast.error('Please accept the Loyalty Program Terms and Privacy Notice first');
       return false;
     }
-    storePatronConsent(code);
+    const recorded = await recordPatronLegalConsentOnServer(code);
+    if (!recorded) {
+      toast.error('Could not save your consent. Please try again.');
+      return false;
+    }
     return true;
   };
 
@@ -107,6 +110,17 @@ export default function PatronPortalPage() {
     queryFn: () => fetchPortal(code),
     enabled: !!code,
   });
+
+  useEffect(() => {
+    if (data?.legalConsentGranted) {
+      setAcceptLegal(true);
+      storePatronConsent(code);
+      return;
+    }
+    if (code && hasStoredPatronConsent(code)) {
+      setAcceptLegal(true);
+    }
+  }, [data?.legalConsentGranted, code]);
 
   const redeem = useMutation({
     mutationFn: (rewardId: string) => portalPost(code, '/redeem', { rewardId }),
@@ -120,26 +134,30 @@ export default function PatronPortalPage() {
   const saveProfile = useMutation({
     mutationFn: () => portalPatch(code, '/profile', { birthday: birthday || null }),
     onSuccess: () => {
-      storePatronConsent(code);
       toast.success('Profile updated');
       qc.invalidateQueries({ queryKey: ['patron-portal', code] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const handleSaveProfile = () => {
-    if (!ensurePatronConsent()) return;
+  const handleSaveProfile = async () => {
+    if (!(await ensurePatronConsent())) return;
     saveProfile.mutate();
   };
 
-  const handleRedeem = (rewardId: string) => {
-    if (!ensurePatronConsent()) return;
+  const handleRedeem = async (rewardId: string) => {
+    if (!(await ensurePatronConsent())) return;
     redeem.mutate(rewardId);
   };
 
-  const handleAcceptLegal = (checked: boolean) => {
+  const handleAcceptLegal = async (checked: boolean) => {
     setAcceptLegal(checked);
-    if (checked) storePatronConsent(code);
+    if (!checked) return;
+    const recorded = await recordPatronLegalConsentOnServer(code);
+    if (!recorded) {
+      setAcceptLegal(false);
+      toast.error('Could not save your consent. Please try again.');
+    }
   };
 
   if (isLoading) {

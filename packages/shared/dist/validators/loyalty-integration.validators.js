@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loyaltyPortalProfileSchema = exports.loyaltyPortalRedeemSchema = exports.loyaltyIntegrationWalletAdjustSchema = exports.loyaltyIntegrationCouponRedeemSchema = exports.loyaltyIntegrationValidateCouponSchema = exports.loyaltyIntegrationRedeemSchema = exports.loyaltyIntegrationEarnSchema = exports.loyaltyIntegrationUpsertCustomerSchema = void 0;
+exports.patronLoyaltyIntegrationConfigSchema = exports.loyaltyIntegrationQueueEventSchema = exports.loyaltyPortalLegalConsentSchema = exports.loyaltyPortalProfileSchema = exports.loyaltyPortalRedeemSchema = exports.loyaltyIntegrationWalletAdjustSchema = exports.loyaltyIntegrationCouponRedeemSchema = exports.loyaltyIntegrationValidateCouponSchema = exports.loyaltyIntegrationRedeemSchema = exports.loyaltyIntegrationEarnSchema = exports.loyaltyIntegrationUpsertCustomerSchema = void 0;
 const zod_1 = require("zod");
 const loyalty_1 = require("../constants/loyalty");
+const loyalty_connector_1 = require("../constants/loyalty-connector");
 const customerRefinement = (data, ctx) => {
     if (!data.customerId && !data.email && !data.phone && !data.externalId) {
         ctx.addIssue({
@@ -83,5 +84,57 @@ exports.loyaltyPortalProfileSchema = zod_1.z.object({
     birthday: zod_1.z.string().date().optional().nullable(),
     gender: zod_1.z.string().max(20).optional().nullable(),
     city: zod_1.z.string().max(100).optional().nullable(),
+});
+exports.loyaltyPortalLegalConsentSchema = zod_1.z.object({
+    termsVersion: zod_1.z.string().max(30),
+    privacyVersion: zod_1.z.string().max(30),
+});
+exports.loyaltyIntegrationQueueEventSchema = zod_1.z
+    .object({
+    event: zod_1.z.enum(loyalty_connector_1.QLESSQ_QUEUE_INTEGRATION_EVENT_VALUES),
+    sourceId: zod_1.z.string().min(1).max(100),
+    branchId: zod_1.z.string().uuid().optional(),
+    serviceId: zod_1.z.string().uuid().optional().nullable(),
+    customerId: zod_1.z.string().uuid().optional(),
+    customer: zod_1.z
+        .object({
+        externalId: zod_1.z.string().min(1).max(100),
+        name: zod_1.z.string().min(1).max(200).optional(),
+        email: zod_1.z.string().email().optional().nullable(),
+        phone: zod_1.z.string().max(30).optional().nullable(),
+    })
+        .optional(),
+    customerPhone: zod_1.z.string().max(30).optional().nullable(),
+    customerEmail: zod_1.z.string().email().optional().nullable(),
+    rating: zod_1.z.number().int().min(1).max(5).optional(),
+    occurredAt: zod_1.z.string().datetime().optional(),
+})
+    .superRefine((data, ctx) => {
+    const needsCustomer = [
+        'ticket.completed',
+        'appointment.completed',
+        'review.submitted',
+        'customer.created',
+    ].includes(data.event);
+    if (!needsCustomer)
+        return;
+    const hasCustomer = data.customerId ||
+        data.customer?.externalId ||
+        data.customerPhone ||
+        data.customerEmail ||
+        data.customer?.email ||
+        data.customer?.phone;
+    if (!hasCustomer) {
+        ctx.addIssue({
+            code: zod_1.z.ZodIssueCode.custom,
+            message: 'Provide customerId or customer contact fields',
+            path: ['customer'],
+        });
+    }
+});
+exports.patronLoyaltyIntegrationConfigSchema = zod_1.z.object({
+    lmsOrgId: zod_1.z.string().uuid().optional(),
+    apiBaseUrl: zod_1.z.string().url().max(500).optional(),
+    apiKey: zod_1.z.string().min(16).max(200),
 });
 //# sourceMappingURL=loyalty-integration.validators.js.map

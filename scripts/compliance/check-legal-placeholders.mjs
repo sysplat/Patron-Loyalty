@@ -5,16 +5,13 @@ const repoRoot = process.cwd();
 
 const legalFiles = [
   'packages/shared/src/constants/legal.ts',
-  'apps/web/src/content/legal/privacy-policy.ts',
-  'apps/web/src/content/legal/terms-of-service.ts',
-  'apps/web/src/content/legal/patron-privacy.ts',
-  'apps/web/src/content/legal/patron-terms.ts',
-  'apps/web/src/content/legal/dpa-overview.ts',
-  'apps/web/src/content/legal/subprocessors.ts',
+  'packages/shared/src/constants/prohibited-businesses.ts',
   'apps/loyalty/src/content/legal/loyalty-terms.ts',
   'apps/loyalty/src/content/legal/loyalty-privacy.ts',
   'apps/loyalty/src/content/legal/loyalty-patron-terms.ts',
   'apps/loyalty/src/content/legal/loyalty-patron-privacy.ts',
+  'apps/loyalty/src/content/legal/loyalty-dpa-overview.ts',
+  'apps/loyalty/src/content/legal/loyalty-subprocessors.ts',
 ];
 
 const blockedPatterns = [

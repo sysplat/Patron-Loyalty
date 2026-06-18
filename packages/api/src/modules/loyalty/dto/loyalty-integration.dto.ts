@@ -8,6 +8,7 @@ import {
   loyaltyIntegrationWalletAdjustSchema,
   loyaltyPortalProfileSchema,
   loyaltyPortalRedeemSchema,
+  loyaltyPortalLegalConsentSchema,
 } from '@queueplatform/shared';
 
 export class LoyaltyIntegrationUpsertCustomerDto extends createZodDto(
@@ -26,3 +27,4 @@ export class LoyaltyIntegrationWalletAdjustDto extends createZodDto(
 ) {}
 export class LoyaltyPortalRedeemDto extends createZodDto(loyaltyPortalRedeemSchema) {}
 export class LoyaltyPortalProfileDto extends createZodDto(loyaltyPortalProfileSchema) {}
+export class LoyaltyPortalLegalConsentDto extends createZodDto(loyaltyPortalLegalConsentSchema) {}

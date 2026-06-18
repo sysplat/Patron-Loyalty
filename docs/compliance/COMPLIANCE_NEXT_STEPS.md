@@ -2,30 +2,34 @@
 
 Operational checklist after legal document updates. **Not published to tenants.**
 
-## Source of truth for published legal pages
+## Source of truth for published legal pages (Patron Loyalty)
 
-| Public page       | Authoritative source                             | Version constant                             |
-| ----------------- | ------------------------------------------------ | -------------------------------------------- |
-| `/terms`          | `apps/web/src/content/legal/terms-of-service.ts` | `CURRENT_TERMS_VERSION`                      |
-| `/privacy`        | `apps/web/src/content/legal/privacy-policy.ts`   | `CURRENT_PRIVACY_VERSION`                    |
-| `/patron-privacy` | `apps/web/src/content/legal/patron-privacy.ts`   | `CURRENT_PATRON_PRIVACY_VERSION`             |
-| `/patron-terms`   | `apps/web/src/content/legal/patron-terms.ts`     | `CURRENT_PATRON_TERMS_VERSION`               |
-| `/dpa`            | `apps/web/src/content/legal/dpa-overview.ts`     | (same bump cadence as privacy when material) |
-| `/subprocessors`  | `apps/web/src/content/legal/subprocessors.ts`    | (same bump cadence as privacy when material) |
+| Public page       | Authoritative source                                       | Version constant                         |
+| ----------------- | ---------------------------------------------------------- | ---------------------------------------- |
+| `/terms`          | `apps/loyalty/src/content/legal/loyalty-terms.ts`          | `CURRENT_LOYALTY_TERMS_VERSION`          |
+| `/privacy`        | `apps/loyalty/src/content/legal/loyalty-privacy.ts`        | `CURRENT_LOYALTY_PRIVACY_VERSION`        |
+| `/patron-privacy` | `apps/loyalty/src/content/legal/loyalty-patron-privacy.ts` | `CURRENT_LOYALTY_PATRON_PRIVACY_VERSION` |
+| `/patron-terms`   | `apps/loyalty/src/content/legal/loyalty-patron-terms.ts`   | `CURRENT_LOYALTY_PATRON_TERMS_VERSION`   |
+| `/dpa`            | `apps/loyalty/src/content/legal/loyalty-dpa-overview.ts`   | `CURRENT_LOYALTY_PRIVACY_VERSION`        |
+| `/subprocessors`  | `apps/loyalty/src/content/legal/loyalty-subprocessors.ts`  | `CURRENT_LOYALTY_PRIVACY_VERSION`        |
 
-**Markdown mirrors** (`docs/compliance/DPA_OVERVIEW.md`, `SUBPROCESSORS.md`) are counsel-friendly copies. After editing the `*.ts` files, sync the markdown mirrors and bump versions in `packages/shared/src/constants/legal.ts`.
+**Prohibited businesses:** `packages/shared/src/constants/prohibited-businesses.ts` — must stay aligned with QlessQ queue Terms.
+
+**Counsel brief:** `docs/compliance/COUNSEL_REVIEW_BRIEF_LOYALTY.md`
+
+**Patron portal consent:** `POST /loyalty/public/portal/:code/consent` → `consent_ledger_entries` (`channel: legal`, `purpose: patron_portal`).
 
 ## Immediate (operator)
 
-1. **Counsel review** — Use `COUNSEL_REVIEW_BRIEF.md` when engaging qualified legal counsel to review `/terms`, `/privacy`, `/patron-privacy`, `/patron-terms`, `/dpa`, and `/subprocessors` before relying on them in customer contracts. Apply counsel redlines in `apps/web/src/content/legal/*.ts` and bump legal versions.
+1. **Counsel review** — Use `COUNSEL_REVIEW_BRIEF_LOYALTY.md` before public Patron Loyalty launch. Apply redlines in `apps/loyalty/src/content/legal/*.ts` and bump `CURRENT_LOYALTY_*` versions.
 2. **Deploy published legal pages** — Ensure production serves the latest `CURRENT_*_VERSION` dates from `packages/shared/src/constants/legal.ts`.
 3. **AI tooling hygiene** — **Privacy Mode enabled** on AI copilot accounts when processing Customer Data (confirmed 2026-06-04). Re-verify when adding new tools or team members; follow `SUPPORT_OPERATIONS.md`.
 4. **No sale policy** — Do not sell, rent, or trade personal information. CRM or analytics tools are for **internal analysis and relationship management only**; update `/subprocessors` with the vendor name when a CRM is adopted.
 
 ## When adopting a new vendor
 
-1. Add the vendor to `apps/web/src/content/legal/subprocessors.ts`, then sync `docs/compliance/SUBPROCESSORS.md`.
-2. Bump `CURRENT_PRIVACY_VERSION` (and page `lastUpdated`) when the change is material.
+1. Add the vendor to `apps/loyalty/src/content/legal/loyalty-subprocessors.ts`, then sync `docs/compliance/SUBPROCESSORS.md`.
+2. Bump `CURRENT_LOYALTY_PRIVACY_VERSION` (and page `lastUpdated`) when the change is material.
 3. Notify organization account owners by email or in-app notice **before** the vendor processes Customer Data, except when security or law requires sooner.
 4. Ensure a DPA or equivalent confidentiality terms exist with the vendor.
 

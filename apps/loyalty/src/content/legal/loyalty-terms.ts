@@ -1,4 +1,5 @@
 import type { LegalDocumentContent } from './types';
+import { PROHIBITED_BUSINESS_CATEGORIES_CLAUSE } from '@queueplatform/shared';
 
 export const loyaltyTermsContent: LegalDocumentContent = {
   intro:
@@ -27,7 +28,7 @@ export const loyaltyTermsContent: LegalDocumentContent = {
     {
       id: 'acceptable-use',
       title: '5. Acceptable Use',
-      body: 'You agree not to use the Loyalty Service for unlawful, harassing, or fraudulent purposes; to send unsolicited spam; to scrape or reverse engineer the Service except as permitted by law; or to process personal data without a lawful basis. High-risk categories prohibited for QlessQ queue services are also prohibited for Patron Loyalty unless we expressly approve otherwise in writing.',
+      body: `You agree not to use the Loyalty Service for unlawful, harassing, or fraudulent purposes; to send unsolicited spam; to scrape or reverse engineer the Service except as permitted by law; or to process personal data without a lawful basis. You are responsible for obtaining and documenting any required patron consent before sending marketing messages or collecting optional profile fields. ${PROHIBITED_BUSINESS_CATEGORIES_CLAUSE}`,
     },
     {
       id: 'fees',

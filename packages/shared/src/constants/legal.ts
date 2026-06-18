@@ -30,6 +30,9 @@ export const CURRENT_LOYALTY_PATRON_PRIVACY_VERSION = '2026-06-17';
 /** ISO date — Patron Loyalty end-user (patron portal) terms. */
 export const CURRENT_LOYALTY_PATRON_TERMS_VERSION = '2026-06-17';
 
+/** Combined patron portal legal bundle — bump when patron Terms or Privacy change materially. */
+export const CURRENT_LOYALTY_PATRON_LEGAL_CONSENT_VERSION = `${CURRENT_LOYALTY_PATRON_TERMS_VERSION}/${CURRENT_LOYALTY_PATRON_PRIVACY_VERSION}`;
+
 export const LEGAL_DOCUMENT_TYPES = {
   TERMS_OF_SERVICE: 'terms_of_service',
   PRIVACY_POLICY: 'privacy_policy',
@@ -118,6 +121,20 @@ export const LOYALTY_LEGAL_DOCUMENTS = {
     title: 'Loyalty Program Terms',
     path: '/patron-terms',
     version: CURRENT_LOYALTY_PATRON_TERMS_VERSION,
+    lastUpdated: 'June 17, 2026',
+  },
+  loyaltyDpaOverview: {
+    type: LEGAL_DOCUMENT_TYPES.DPA_OVERVIEW,
+    title: 'Data Processing Addendum Overview',
+    path: '/dpa',
+    version: CURRENT_LOYALTY_PRIVACY_VERSION,
+    lastUpdated: 'June 17, 2026',
+  },
+  loyaltySubprocessors: {
+    type: LEGAL_DOCUMENT_TYPES.SUBPROCESSORS,
+    title: 'Subprocessor Register',
+    path: '/subprocessors',
+    version: CURRENT_LOYALTY_PRIVACY_VERSION,
     lastUpdated: 'June 17, 2026',
   },
 } as const;

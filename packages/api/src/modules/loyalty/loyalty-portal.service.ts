@@ -1,8 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PatronCrmFeatureService } from '../../common/features/patron-crm-feature.service';
 import { LoyaltyAccountService } from './loyalty-account.service';
 import { LoyaltyCatalogService } from './loyalty-catalog.service';
+import { RequestContextService } from '../../common/request-context/request-context.service';
+import {
+  CURRENT_LOYALTY_PATRON_LEGAL_CONSENT_VERSION,
+  CURRENT_LOYALTY_PATRON_PRIVACY_VERSION,
+  CURRENT_LOYALTY_PATRON_TERMS_VERSION,
+} from '@queueplatform/shared';
 
 @Injectable()
 export class LoyaltyPortalService {
@@ -11,6 +17,7 @@ export class LoyaltyPortalService {
     private readonly patronCrmFeature: PatronCrmFeatureService,
     private readonly accounts: LoyaltyAccountService,
     private readonly catalog: LoyaltyCatalogService,
+    private readonly requestContext: RequestContextService,
   ) {}
 
   private async resolveAccountByCode(referralCode: string) {
@@ -66,6 +73,8 @@ export class LoyaltyPortalService {
     const enabled = await this.patronCrmFeature.isEnabled(account.orgId);
     if (!enabled) return { found: false as const };
 
+    const legalConsentGranted = await this.hasPatronLegalConsent(account.orgId, account.customerId);
+
     const [rewards, ledger] = await this.prisma.withTenant(account.orgId, async (tx) => {
       const rewardRows = await tx.loyaltyReward.findMany({
         where: { orgId: account.orgId, active: true },
@@ -96,6 +105,7 @@ export class LoyaltyPortalService {
 
     return {
       found: true as const,
+      legalConsentGranted,
       patronName: account.customer.name,
       birthday: account.customer.birthday,
       orgName: account.organization.name,
@@ -132,6 +142,8 @@ export class LoyaltyPortalService {
     const account = await this.resolveAccountByCode(referralCode);
     if (!account) throw new NotFoundException('Loyalty account not found');
 
+    await this.requirePatronLegalConsent(account.orgId, account.customerId);
+
     const redemption = await this.catalog.redeemReward(account.orgId, account.customerId, rewardId);
     return { success: true, redemption };
   }
@@ -142,6 +154,8 @@ export class LoyaltyPortalService {
   ) {
     const account = await this.resolveAccountByCode(referralCode);
     if (!account) throw new NotFoundException('Loyalty account not found');
+
+    await this.requirePatronLegalConsent(account.orgId, account.customerId);
 
     await this.prisma.withTenant(account.orgId, (tx) =>
       tx.customer.update({
@@ -154,5 +168,71 @@ export class LoyaltyPortalService {
       }),
     );
     return { success: true };
+  }
+
+  async recordPatronLegalConsent(
+    referralCode: string,
+    input: { termsVersion: string; privacyVersion: string },
+  ) {
+    if (
+      input.termsVersion !== CURRENT_LOYALTY_PATRON_TERMS_VERSION ||
+      input.privacyVersion !== CURRENT_LOYALTY_PATRON_PRIVACY_VERSION
+    ) {
+      throw new ForbiddenException(
+        'Patron legal documents have been updated. Please review and accept again.',
+      );
+    }
+
+    const account = await this.resolveAccountByCode(referralCode);
+    if (!account) throw new NotFoundException('Loyalty account not found');
+
+    const alreadyGranted = await this.hasPatronLegalConsent(account.orgId, account.customerId);
+    if (alreadyGranted) {
+      return { success: true as const, legalConsentGranted: true };
+    }
+
+    const ctx = this.requestContext.getContext();
+    await this.prisma.withTenant(account.orgId, (tx) =>
+      tx.consentLedgerEntry.create({
+        data: {
+          orgId: account.orgId,
+          customerId: account.customerId,
+          channel: 'legal',
+          purpose: 'patron_portal',
+          action: 'GRANTED',
+          source: 'patron_portal',
+          legalVersion: CURRENT_LOYALTY_PATRON_LEGAL_CONSENT_VERSION,
+          ipAddress: ctx?.ip ?? null,
+          userAgent: ctx?.userAgent ?? null,
+        },
+      }),
+    );
+
+    return { success: true as const, legalConsentGranted: true };
+  }
+
+  private async hasPatronLegalConsent(orgId: string, customerId: string): Promise<boolean> {
+    const entry = await this.prisma.withTenant(orgId, (tx) =>
+      tx.consentLedgerEntry.findFirst({
+        where: {
+          customerId,
+          channel: 'legal',
+          purpose: 'patron_portal',
+          action: 'GRANTED',
+          legalVersion: CURRENT_LOYALTY_PATRON_LEGAL_CONSENT_VERSION,
+        },
+        select: { id: true },
+      }),
+    );
+    return entry != null;
+  }
+
+  private async requirePatronLegalConsent(orgId: string, customerId: string): Promise<void> {
+    const granted = await this.hasPatronLegalConsent(orgId, customerId);
+    if (!granted) {
+      throw new ForbiddenException(
+        'Accept the Loyalty Program Terms and Privacy Notice before continuing.',
+      );
+    }
   }
 }
