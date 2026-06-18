@@ -1,0 +1,70 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+concurrency:
+    group: ci-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    check:
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
+
+        env:
+            # Placeholders so Next.js and Turborepo tasks can compile in CI without real secrets.
+            NEXT_PUBLIC_API_URL: http://127.0.0.1:4000/api/v1
+            NEXT_PUBLIC_CENTRIFUGO_URL: ws://127.0.0.1:8000/connection/websocket
+            NEXT_PUBLIC_CENTRIFUGO_WS_URL: ws://127.0.0.1:8000/connection/websocket
+
+        steps:
+            - uses: actions/checkout@v4
+
+            # Version comes from package.json "packageManager" (pnpm@9.x) — don't set version
+            # here or pnpm/action-setup fails with "Multiple versions of pnpm specified".
+            - uses: pnpm/action-setup@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "pnpm"
+
+            - run: pnpm install --frozen-lockfile
+
+            - name: Security dependency audit (high+)
+              run: pnpm audit --prod --audit-level=high
+
+            # Fresh clones have no generated client; API typecheck imports Prisma types from it.
+            - run: pnpm --filter @queueplatform/database exec prisma generate
+
+            - run: pnpm turbo run lint typecheck
+
+            - name: Public safeguard assertions
+              run: pnpm security:check:public-safeguards
+
+            - name: Auth remediation guard assertions
+              run: pnpm security:check:auth-remediation
+
+            - name: Display session guard assertions
+              run: pnpm security:check:display-session
+
+            - name: Tenant isolation guard assertions
+              run: pnpm security:check:tenant-isolation
+
+            - name: API unit tests
+              run: pnpm --filter @queueplatform/api test
+
+            - name: Shared unit tests
+              run: pnpm --filter @queueplatform/shared test
+
+            - name: Docker build context (Next.js Dockerfiles)
+              run: pnpm check:docker-build-context
+
+            - name: Frontend production builds
+              run: pnpm --filter @queueplatform/web build && pnpm --filter @queueplatform/admin build
+
+            - name: Bundle budget assertions
+              run: pnpm check:bundle-budgets

@@ -1,0 +1,75 @@
+services:
+  # ─── PostgreSQL ─────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: qp-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: queueplatform
+      POSTGRES_PASSWORD: queueplatform
+      POSTGRES_DB: queueplatform
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U queueplatform" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis ──────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: qp-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Centrifugo (WebSocket Hub) ─────────────────
+  centrifugo:
+    image: centrifugo/centrifugo:v6
+    container_name: qp-centrifugo
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      CENTRIFUGO_TOKEN_HMAC_SECRET_KEY: local-token-secret
+      CENTRIFUGO_API_KEY: local-api-key
+      CENTRIFUGO_ADMIN_PASSWORD: local-admin
+      CENTRIFUGO_ADMIN_SECRET: local-admin-secret
+    volumes:
+      - ./centrifugo.json:/centrifugo/config.json
+    command: centrifugo -c /centrifugo/config.json
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ─── Mailpit (Dev inbox — modern UI; avoids Mailhog Angular UI breaking on Chrome CSP)
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: qp-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP (same defaults as Mailhog)
+      - "8025:8025" # Web UI
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

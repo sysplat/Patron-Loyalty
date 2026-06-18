@@ -1,0 +1,24 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "railway/docker/notifications.Dockerfile",
+    "watchPatterns": [
+      "package.json",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml",
+      "tsconfig.base.json",
+      "railway/docker/notifications.Dockerfile",
+      ".dockerignore",
+      "packages/notifications/**",
+      "packages/shared/**",
+      "packages/database/**"
+    ]
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "startCommand": "node packages/notifications/dist/index.js",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
+  }
+}

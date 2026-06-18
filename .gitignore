@@ -1,0 +1,58 @@
+# QueuePlatform — Multi-Tenant SaaS Queue & Service Management
+
+## Dependencies
+node_modules/
+
+## Build outputs
+dist/
+!packages/shared/dist/
+.next/
+.turbo/
+out/
+
+## Environment
+.env
+.env.local
+.env.production
+.env.*.local
+
+## OS
+.DS_Store
+Thumbs.db
+
+## IDE
+.vscode/
+.idea/
+.venv/
+
+## Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+## Test coverage
+coverage/
+
+## Playwright e2e artifacts
+apps/e2e/playwright-report/
+apps/e2e/test-results/
+apps/e2e/agent-page-error.html
+
+## Load test artifacts
+scripts/load/artifacts/
+
+## Misc
+*.tsbuildinfo
+*.swp
+*.swo
+tmp/
+
+## Docker volumes
+docker/data/
+
+## AI & Tool Cache
+.gemini/
+.genkit/
+
+## Deployment config
+.railway/

@@ -1,0 +1,156 @@
+"use strict";
+// ─── System Roles ────────────────────────────────
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DEFAULT_ROLE_PERMISSIONS = exports.SYSTEM_ROLE_DESCRIPTIONS = exports.ACTIONS = exports.RESOURCES = exports.SYSTEM_ROLES = void 0;
+exports.SYSTEM_ROLES = {
+    OWNER: 'owner',
+    ADMIN: 'admin',
+    MANAGER: 'manager',
+    STAFF: 'staff',
+    VIEWER: 'viewer',
+};
+// ─── Permission Resources ────────────────────────
+exports.RESOURCES = {
+    ORGANIZATION: 'organization',
+    BRANCH: 'branch',
+    SERVICE: 'service',
+    QUEUE: 'queue',
+    TICKET: 'ticket',
+    APPOINTMENT: 'appointment',
+    DESK: 'desk',
+    ANNOUNCEMENT: 'announcement',
+    USER: 'user',
+    ROLE: 'role',
+    REPORT: 'report',
+    BILLING: 'billing',
+    DISPLAY: 'display',
+    NOTIFICATION: 'notification',
+    SETTINGS: 'settings',
+    REVIEW: 'review',
+    CUSTOMER: 'customer',
+    STATION_PROFILE: 'station_profile',
+};
+// ─── Permission Actions ──────────────────────────
+exports.ACTIONS = {
+    CREATE: 'create',
+    READ: 'read',
+    UPDATE: 'update',
+    DELETE: 'delete',
+    MANAGE: 'manage',
+};
+// ─── Default Role Permissions ────────────────────
+// Backend RBAC source of truth: org-scoped rows require an org-wide role assignment (branchId null).
+// Branch-scoped rows require a branch context or an explicit “list without branch” allowance in the API guard.
+// Owner: full control including billing, org profile, and destructive operations.
+// Admin: org operations without billing, organization profile edits (owner only), sensitive deletes, or owner assignment.
+// Manager / staff / viewer: branch-tied visibility and operations only where listed.
+exports.SYSTEM_ROLE_DESCRIPTIONS = {
+    [exports.SYSTEM_ROLES.OWNER]: 'Full platform access across all branches, billing, organization identity, password governance, and destructive administration.',
+    [exports.SYSTEM_ROLES.ADMIN]: 'Organization-wide operations and staffing without billing access, editing organization profile (owner only), owner assignment, or destructive deletes on sensitive entities.',
+    [exports.SYSTEM_ROLES.MANAGER]: 'Branch-scoped daily operations, scheduling, team visibility, and reporting for explicitly assigned branches only.',
+    [exports.SYSTEM_ROLES.STAFF]: 'Frontline queue and appointment execution for the assigned branch.',
+    [exports.SYSTEM_ROLES.VIEWER]: 'Read-only visibility across assigned branches (queues, tickets, appointments, services, reports, etc.) — no create, update, or delete.',
+};
+exports.DEFAULT_ROLE_PERMISSIONS = {
+    [exports.SYSTEM_ROLES.OWNER]: [
+        { resource: exports.RESOURCES.ORGANIZATION, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.BRANCH, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.SERVICE, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.QUEUE, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.TICKET, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.APPOINTMENT, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.DESK, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.ANNOUNCEMENT, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.USER, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.ROLE, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.REPORT, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.BILLING, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.DISPLAY, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.NOTIFICATION, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.SETTINGS, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.REVIEW, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.CUSTOMER, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.STATION_PROFILE, action: exports.ACTIONS.MANAGE, scope: 'org' },
+    ],
+    [exports.SYSTEM_ROLES.ADMIN]: [
+        { resource: exports.RESOURCES.ORGANIZATION, action: exports.ACTIONS.READ, scope: 'org' },
+        /** Lets admins PATCH org for visit journeys; profile fields remain owner-only in OrganizationService. */
+        { resource: exports.RESOURCES.ORGANIZATION, action: exports.ACTIONS.UPDATE, scope: 'org' },
+        { resource: exports.RESOURCES.BRANCH, action: exports.ACTIONS.READ, scope: 'org' },
+        { resource: exports.RESOURCES.BRANCH, action: exports.ACTIONS.CREATE, scope: 'org' },
+        { resource: exports.RESOURCES.BRANCH, action: exports.ACTIONS.UPDATE, scope: 'org' },
+        { resource: exports.RESOURCES.SERVICE, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.QUEUE, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.TICKET, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.APPOINTMENT, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.DESK, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.ANNOUNCEMENT, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.USER, action: exports.ACTIONS.READ, scope: 'org' },
+        { resource: exports.RESOURCES.USER, action: exports.ACTIONS.CREATE, scope: 'org' },
+        { resource: exports.RESOURCES.USER, action: exports.ACTIONS.UPDATE, scope: 'org' },
+        { resource: exports.RESOURCES.ROLE, action: exports.ACTIONS.READ, scope: 'org' },
+        { resource: exports.RESOURCES.ROLE, action: exports.ACTIONS.CREATE, scope: 'org' },
+        { resource: exports.RESOURCES.ROLE, action: exports.ACTIONS.UPDATE, scope: 'org' },
+        { resource: exports.RESOURCES.REPORT, action: exports.ACTIONS.READ, scope: 'org' },
+        { resource: exports.RESOURCES.DISPLAY, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.NOTIFICATION, action: exports.ACTIONS.MANAGE, scope: 'org' },
+        { resource: exports.RESOURCES.SETTINGS, action: exports.ACTIONS.READ, scope: 'org' },
+        { resource: exports.RESOURCES.SETTINGS, action: exports.ACTIONS.UPDATE, scope: 'org' },
+        { resource: exports.RESOURCES.REVIEW, action: exports.ACTIONS.READ, scope: 'org' },
+        { resource: exports.RESOURCES.REVIEW, action: exports.ACTIONS.UPDATE, scope: 'org' },
+        { resource: exports.RESOURCES.CUSTOMER, action: exports.ACTIONS.READ, scope: 'org' },
+        { resource: exports.RESOURCES.CUSTOMER, action: exports.ACTIONS.UPDATE, scope: 'org' },
+        { resource: exports.RESOURCES.STATION_PROFILE, action: exports.ACTIONS.MANAGE, scope: 'org' },
+    ],
+    [exports.SYSTEM_ROLES.MANAGER]: [
+        { resource: exports.RESOURCES.BRANCH, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.BRANCH, action: exports.ACTIONS.UPDATE, scope: 'branch' },
+        { resource: exports.RESOURCES.SERVICE, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.QUEUE, action: exports.ACTIONS.MANAGE, scope: 'branch' },
+        { resource: exports.RESOURCES.TICKET, action: exports.ACTIONS.MANAGE, scope: 'branch' },
+        { resource: exports.RESOURCES.APPOINTMENT, action: exports.ACTIONS.MANAGE, scope: 'branch' },
+        { resource: exports.RESOURCES.DESK, action: exports.ACTIONS.MANAGE, scope: 'branch' },
+        { resource: exports.RESOURCES.ANNOUNCEMENT, action: exports.ACTIONS.MANAGE, scope: 'branch' },
+        { resource: exports.RESOURCES.USER, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.USER, action: exports.ACTIONS.UPDATE, scope: 'branch' },
+        { resource: exports.RESOURCES.REPORT, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.DISPLAY, action: exports.ACTIONS.MANAGE, scope: 'branch' },
+        { resource: exports.RESOURCES.REVIEW, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.REVIEW, action: exports.ACTIONS.UPDATE, scope: 'branch' },
+        { resource: exports.RESOURCES.CUSTOMER, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.CUSTOMER, action: exports.ACTIONS.UPDATE, scope: 'branch' },
+        { resource: exports.RESOURCES.STATION_PROFILE, action: exports.ACTIONS.MANAGE, scope: 'branch' },
+    ],
+    [exports.SYSTEM_ROLES.STAFF]: [
+        { resource: exports.RESOURCES.BRANCH, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.SERVICE, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.QUEUE, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.QUEUE, action: exports.ACTIONS.UPDATE, scope: 'branch' },
+        { resource: exports.RESOURCES.TICKET, action: exports.ACTIONS.CREATE, scope: 'branch' },
+        { resource: exports.RESOURCES.TICKET, action: exports.ACTIONS.UPDATE, scope: 'branch' },
+        { resource: exports.RESOURCES.TICKET, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.APPOINTMENT, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.APPOINTMENT, action: exports.ACTIONS.UPDATE, scope: 'branch' },
+        { resource: exports.RESOURCES.DESK, action: exports.ACTIONS.READ, scope: 'branch' },
+        /** Assigned staff open/close their desk on the serve page (scoped to assigned desks in DeskService). */
+        { resource: exports.RESOURCES.DESK, action: exports.ACTIONS.UPDATE, scope: 'branch' },
+        { resource: exports.RESOURCES.DISPLAY, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.CUSTOMER, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.STATION_PROFILE, action: exports.ACTIONS.READ, scope: 'branch' },
+    ],
+    [exports.SYSTEM_ROLES.VIEWER]: [
+        { resource: exports.RESOURCES.BRANCH, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.SERVICE, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.QUEUE, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.TICKET, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.APPOINTMENT, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.DESK, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.ANNOUNCEMENT, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.REPORT, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.REVIEW, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.DISPLAY, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.CUSTOMER, action: exports.ACTIONS.READ, scope: 'branch' },
+        { resource: exports.RESOURCES.STATION_PROFILE, action: exports.ACTIONS.READ, scope: 'branch' },
+    ],
+};
+//# sourceMappingURL=roles.js.map

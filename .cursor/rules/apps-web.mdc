@@ -1,0 +1,15 @@
+---
+description: Guidelines for working on the Next.js Tenant/Customer UI (apps/web)
+globs: apps/web/**/*
+---
+
+# Next.js Tenant Web App (apps/web)
+
+This is the customer-facing and tenant UI application.
+Stack: Next.js 15 (App Router), React 19, Tailwind CSS, Radix UI (shadcn/ui), React Query.
+
+## Guidelines
+- **Component Creation:** Use functional components with Tailwind CSS. Place reusable UI components in `src/components/ui/`.
+- **State Management:** Use React Query for remote data fetching. 
+- **Architecture Boundary:** NEVER import from `apps/admin` or `packages/api/src/modules/platform-admin`.
+- **Routing:** Follow App Router conventions (`app/page.tsx`, `app/layout.tsx`). Keep server components where possible; use `"use client"` only when hooks or interactivity are needed.

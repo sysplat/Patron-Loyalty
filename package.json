@@ -1,0 +1,74 @@
+{
+  "name": "patron-loyalty",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Patron Loyalty (LMS) — CRM, points, tiers, campaigns. Optional integration with QlessQ queue.",
+  "scripts": {
+    "start": "pnpm dev:full",
+    "setup:env-local": "bash scripts/ensure-env-local.sh",
+    "dev": "dotenv -e .env -- pnpm exec turbo dev",
+    "dev:local": "bash scripts/ensure-env-local.sh && dotenv -e .env.local -- bash -c 'bash scripts/assert-local-db.sh && pnpm exec turbo dev'",
+    "dev:full": "dotenv -e .env -- bash -c 'export NODE_ENV=development && pnpm db:migrate:deploy:railway && concurrently -n \"CENTRI,TURBO\" -c \"cyan,magenta\" \"pnpm centrifugo:local\" \"pnpm dev\"'",
+    "dev:full:local": "bash scripts/ensure-env-local.sh && dotenv -e .env.local -- bash -c 'bash scripts/assert-local-db.sh && concurrently -n \"CENTRI,TURBO\" -c \"cyan,magenta\" \"pnpm centrifugo:local\" \"pnpm dev:local\"'",
+    "dev:api": "pnpm --filter @queueplatform/api dev",
+    "dev:loyalty": "pnpm --filter @queueplatform/loyalty dev",
+    "dev:notifications": "dotenv -e .env -- pnpm --filter @queueplatform/notifications dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "validate": "pnpm lint && pnpm typecheck && pnpm check:legal-placeholders",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "prepare": "husky || true",
+    "test": "turbo test",
+    "typecheck": "turbo typecheck",
+    "check:legal-placeholders": "node scripts/compliance/check-legal-placeholders.mjs",
+    "db:generate": "turbo db:generate",
+    "db:migrate": "turbo db:migrate",
+    "db:migrate:deploy": "pnpm --filter @queueplatform/database db:migrate:deploy",
+    "db:migrate:deploy:railway": "bash scripts/with-railway-db.sh bash -c 'cd packages/database && sh scripts/migrate-deploy.sh'",
+    "db:migrate:local": "bash scripts/ensure-env-local.sh && dotenv -e .env.local -e .env -- bash -c 'bash scripts/assert-local-db.sh && pnpm --filter @queueplatform/database db:migrate'",
+    "db:seed": "turbo db:seed",
+    "docker:up": "docker compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f docker/docker-compose.yml down",
+    "centrifugo:local": "./bin/centrifugo -c centrifugo.local.json",
+    "setup:local-brew": "bash scripts/setup-local-brew.sh",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "clean": "turbo clean && rm -rf node_modules"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,md}": "prettier --write"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "dotenv-cli": "^11.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "prettier": "^3.4.0",
+    "prettier-plugin-tailwindcss": "^0.6.0",
+    "turbo": "^2.9.14"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "protobufjs": "^7.5.5",
+      "multer": "^2.1.1",
+      "tar": "^7.5.8",
+      "nodemailer": "^8.0.4",
+      "lodash": "^4.18.0",
+      "glob": "^10.5.0",
+      "picomatch": "^4.0.4",
+      "fast-uri": "^3.1.2",
+      "tmp": "^0.2.6",
+      "esbuild": "^0.25.0",
+      "file-type": "^21.3.2",
+      "js-yaml": "^4.1.1",
+      "postcss": "8.5.10",
+      "qs": "^6.15.2",
+      "uuid": "^11.1.1"
+    }
+  }
+}

@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, feat/**]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9.15.0'
+  GO_VERSION: '1.22'
+
+jobs:
+  lint-and-build:
+    name: Lint & Build (TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Build all packages
+        run: pnpm build
+
+  test-api:
+    name: Test API
+    runs-on: ubuntu-latest
+    needs: lint-and-build
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: queueplatform
+          POSTGRES_PASSWORD: queueplatform
+          POSTGRES_DB: queueplatform_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://queueplatform:queueplatform@localhost:5432/queueplatform_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci-test-secret-key-32-chars-min!!
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-key-32ch!
+      STRIPE_SECRET_KEY: sk_test_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_placeholder
+      NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
+      CENTRIFUGO_API_URL: http://localhost:8000/api
+      CENTRIFUGO_API_KEY: ci-key
+      CENTRIFUGO_SECRET: ci-secret
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Run migrations
+        run: pnpm db:push
+
+      - name: Run API tests
+        run: pnpm --filter @queueplatform/api test
+
+  build-go:
+    name: Build Ticket Engine (Go)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build
+        working-directory: apps/ticket-engine
+        run: |
+          go mod tidy
+          CGO_ENABLED=0 go build -o ticket-engine ./cmd/server
+
+      - name: Run Go tests
+        working-directory: apps/ticket-engine
+        run: go test ./...
+
+  docker:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [lint-and-build, build-go]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build API image
+        uses: docker/build-push-action@v5
+        with:
+          context: packages/api
+          push: false
+          tags: queueplatform/api:${{ github.sha }}
+
+      - name: Build Ticket Engine image
+        run: docker build -t queueplatform/ticket-engine:${{ github.sha }} apps/ticket-engine

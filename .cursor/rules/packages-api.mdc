@@ -1,0 +1,16 @@
+---
+description: Guidelines for working on the NestJS API (packages/api)
+globs: packages/api/**/*
+---
+
+# NestJS Backend API (packages/api)
+
+This is the core domain API for the Queue Management System.
+Stack: NestJS, TypeScript, BullMQ, Redis, Prisma Client.
+
+## Guidelines
+- **Architecture:** Follow NestJS modular architecture (`Controller` -> `Service` -> `Module`). Keep domain logic decoupled.
+- **Dependency Injection:** Use standard NestJS constructor injection for services.
+- **Decorators:** Use standard OpenAPI decorators (e.g., `@ApiProperty()`) on DTOs and `@UseGuards()` for endpoint security.
+- **Error Handling:** Let the `GlobalExceptionFilter` handle standard Prisma errors. Throw standard `HttpException` (e.g., `BadRequestException`, `NotFoundException`) for business logic validation.
+- **Real-time:** Use the Centrifugo service to broadcast queue events; avoid long-polling HTTP endpoints.

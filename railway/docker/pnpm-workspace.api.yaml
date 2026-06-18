@@ -1,0 +1,3 @@
+# API image only — excludes apps/web and apps/admin so Next.js SWC binaries are not installed.
+packages:
+  - "packages/*"

@@ -1,0 +1,14 @@
+---
+description: Guidelines for working on the Prisma Database layer (packages/database)
+globs: packages/database/**/*
+---
+
+# Prisma Database Schema (packages/database)
+
+This package contains the single source of truth for the PostgreSQL database schema.
+
+## Guidelines
+- **Schema Changes:** Make changes directly in `prisma/schema.prisma`. Use `@@map` to map snake_case table and column names to camelCase Prisma models and fields.
+- **Migrations:** After modifying the schema, always run `pnpm --filter @queueplatform/database db:migrate:dev` locally to generate migration files. NEVER manually edit generated migration SQL unless strictly necessary for custom operations.
+- **Client Generation:** Run `pnpm db:generate` after schema changes to update the Prisma Client types.
+- **Documentation:** Use triple-slash comments (`///`) above fields to document column purpose, so it appears in IDE tooltips across the monorepo.

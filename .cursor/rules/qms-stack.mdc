@@ -1,0 +1,47 @@
+---
+description: QlessQ monorepo stack, commands, and integration conventions
+alwaysApply: true
+---
+
+# QlessQ (QMS)
+
+Multi-tenant queue SaaS: NestJS API, Next.js web/admin, Prisma/PostgreSQL, Redis/BullMQ, Centrifugo, Stripe, Twilio/SendGrid.
+
+## Commands (repo root)
+
+- `pnpm install` — dependencies
+- `pnpm start` — full dev stack (Railway DB migrate + Centrifugo + turbo dev)
+- `pnpm dev:full:local` — local Postgres/Redis (`.env.local`)
+- `pnpm dev:notifications` — SMS/email worker (required for outbound notifications)
+- `pnpm validate` — lint, typecheck, architecture + security checks (run before PRs)
+- `pnpm format:check` — Prettier check (separate from validate)
+- `pnpm typecheck` / `pnpm test` / `pnpm lint`
+
+## Architecture boundaries
+
+- Tenant UI → `apps/web`; platform operator UI → `apps/admin` only.
+- Platform API → `packages/api/src/modules/platform-admin/`.
+- Shared realtime → `packages/frontend-core`.
+- Do not add platform-admin routes or API calls to `apps/web` (CI: `check:architecture:web-admin-boundary`).
+
+## Conventions
+
+- Small, focused diffs; match patterns in the touched package.
+- Never commit `.env` or secrets; use `.env.example` for new variables.
+- Prisma changes: `packages/database` — migrate, then `pnpm db:generate`.
+- SMS: platform `TWILIO_*` in env; notifications worker must be running locally.
+- Billing: Stripe webhooks and plan limits live under `packages/api/src/modules/billing/`.
+- Health: `GET /api/v1/health` (readiness), `GET /api/v1/health/live` (liveness).
+
+## MCP (`.cursor/mcp.json`)
+
+- **prisma** — schema/migrations
+- **stripe** — billing (`STRIPE_SECRET_KEY`)
+- **railway** — deploy/env
+- **playwright** — `apps/e2e`
+
+Twilio/SendGrid: use **twilio-developer-kit** plugin (see `.cursor/PLUGINS.md`), not MCP.
+
+## Pre-commit
+
+Husky runs lint-staged (Prettier on staged TS/TSX/JSON/MD). Full gate: `pnpm validate` (+ `pnpm format:check` when needed).

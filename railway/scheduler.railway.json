@@ -1,0 +1,25 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "railway/docker/api.Dockerfile",
+    "watchPatterns": [
+      "package.json",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml",
+      "tsconfig.base.json",
+      "railway/docker/api.Dockerfile",
+      ".dockerignore",
+      "packages/api/**",
+      "packages/shared/**",
+      "packages/database/**",
+      "railway/scheduler.railway.json"
+    ]
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "startCommand": "node packages/api/dist/worker.js",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
+  }
+}

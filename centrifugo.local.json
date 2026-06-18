@@ -1,0 +1,73 @@
+{
+  "token_hmac_secret_key": "centrifugo-secret-key",
+  "api_key": "centrifugo-api-key",
+  "admin": true,
+  "admin_password": "local-dev-admin",
+  "admin_secret": "centrifugo-admin-secret",
+  "allowed_origins": ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
+  "engine": "redis",
+  "redis_address": "redis://localhost:6379",
+  "namespaces": [
+    {
+      "name": "queue",
+      "presence": true,
+      "history_size": 50,
+      "history_ttl": "300s",
+      "history_recover": true,
+      "join_leave": false,
+      "force_push_join_leave": false,
+      "allow_publish_for_subscriber": false,
+      "allow_subscribe_for_client": false
+    },
+    {
+      "name": "display",
+      "presence": true,
+      "history_size": 100,
+      "history_ttl": "600s",
+      "history_recover": true,
+      "join_leave": false,
+      "force_push_join_leave": false,
+      "allow_publish_for_subscriber": false,
+      "allow_subscribe_for_client": false
+    },
+    {
+      "name": "notifications",
+      "presence": false,
+      "history_size": 20,
+      "history_ttl": "120s",
+      "history_recover": true,
+      "allow_subscribe_for_client": false
+    },
+    {
+      "name": "org",
+      "presence": true,
+      "history_size": 50,
+      "history_ttl": "300s",
+      "history_recover": true,
+      "allow_subscribe_for_client": false
+    }
+  ],
+  "health": true,
+  "log_level": "info",
+  "proxy_http_url": "http://localhost:4000/api/v1/realtime/webhook",
+  "proxies": [
+    {
+      "path": "display:",
+      "subscribe": true,
+      "connect": true,
+      "disconnect": true
+    },
+    {
+      "path": "queue:",
+      "subscribe": true
+    },
+    {
+      "path": "org:",
+      "subscribe": true
+    },
+    {
+      "path": "notifications:",
+      "subscribe": true
+    }
+  ]
+}

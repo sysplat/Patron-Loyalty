@@ -1,0 +1,25 @@
+{
+  "name": "@queueplatform/frontend-core",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "centrifuge": "^5.2.2",
+    "next": "^15.0.0",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "centrifuge": "^5.2.2",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "typescript": "^5.6.3"
+  }
+}

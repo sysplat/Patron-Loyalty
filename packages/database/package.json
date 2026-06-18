@@ -1,0 +1,37 @@
+{
+  "name": "@queueplatform/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "prisma generate && tsc",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "sh scripts/migrate-deploy.sh",
+    "db:migrate:recover-flow-failed": "prisma migrate resolve --rolled-back 20260516113000_add_flow_templates_and_ready_policies",
+    "db:backup": "bash ../../scripts/backup-db.sh",
+    "db:seed": "tsx prisma/seed.ts",
+    "setup:phone-demo": "tsx scripts/setup-multistep-phone-demo.ts",
+    "setup:multistep-waiting-load": "tsx scripts/seed-multistep-waiting-load.ts",
+    "setup:single-waiting-load": "tsx scripts/seed-single-waiting-load.ts",
+    "setup:single-desk-kiosk": "tsx scripts/setup-single-desk-kiosk.ts",
+    "setup:app-db-user": "bash scripts/setup-app-db-user.sh",
+    "audit:serve-surface": "tsx scripts/audit-serve-surface-separation.ts",
+    "audit:serve-surface:repair-profiles": "tsx scripts/audit-serve-surface-separation.ts --repair-profiles",
+    "db:studio": "prisma studio",
+    "db:create-test-users": "tsx scripts/create-test-users.ts",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@queueplatform/shared": "workspace:*",
+    "@prisma/client": "^6.2.0",
+    "prisma": "^6.2.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

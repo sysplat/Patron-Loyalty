@@ -1,0 +1,27 @@
+---
+description: Patron Loyalty (LMS) is a separately sellable product from QlessQ; optional QMS integration; own legal/PII scope.
+globs:
+  - apps/loyalty/**
+  - packages/api/src/modules/customer/**
+  - packages/api/src/modules/loyalty/**
+  - apps/web/src/app/(dashboard)/dashboard/customers/**
+---
+
+# Patron Loyalty (LMS) — separate product
+
+Read `docs/architecture/patron-loyalty.md` before adding loyalty or CRM features.
+
+## Product boundary
+
+- **LMS is a separate product** — sellable as `productSku: loyalty`, bundled with QMS (`bundle`), or added to QMS via `patronCrmEnabled`. It has its own plan, signup (`apps/loyalty`), and staff app (port 3003).
+- **QlessQ connection is optional** — when both are on the same org, loyalty consumes queue events and shared `Customer` identity. Loyalty-only orgs use Integration API, imports, or manual entry—no queue UI.
+- **Separate legal & PII** — LMS may collect richer patron data (birthday, gender, location, marketing). Use LMS-specific Terms/Privacy for loyalty signup and patron portal—not QMS kiosk legal copy. Do not widen kiosk data collection to match LMS.
+
+## Implementation rules
+
+1. **Kiosk and public booking stay thin** — name, phone, email, SMS/consent only. Do not add birthday, address, tier, points, or campaign fields to kiosk check-in or booking steps unless the user explicitly asks.
+2. **Loyalty-specific data** lives in `apps/loyalty` and `packages/api/src/modules/loyalty/` (or `customer/` for CRM-only). New columns/tables for points, tiers, rewards, campaigns belong there—not on `Ticket` or kiosk DTOs.
+3. **Identity bridge** — `Customer` links queue activity to loyalty when both products are licensed; earn rules trigger on ticket/appointment events or integration API—not at kiosk submit.
+4. **Feature gate** — respect `hasLoyaltyProduct(productSku, patronCrmEnabled)` / `PatronCrmFeatureService`; platform toggle in `apps/admin` only.
+5. **Do not embed full LMS in `apps/web`** — new loyalty UI targets `apps/loyalty`; interim Patrons UI may remain under `/dashboard/customers` until migrated.
+6. **Queue → loyalty coupling** — emit domain events from ticket/appointment modules; handle in `loyalty.listener`. No loyalty business logic inside kiosk or serve flows.

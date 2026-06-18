@@ -1,0 +1,67 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [".env", "**/.env.*local"],
+  "globalEnv": [
+    "NODE_ENV",
+    "PORT",
+    "APP_URL",
+    "LOYALTY_URL",
+    "API_URL",
+    "DATABASE_URL",
+    "APP_DATABASE_URL",
+    "REDIS_URL",
+    "REDIS_HOST",
+    "REDIS_PORT",
+    "JWT_SECRET",
+    "JWT_REFRESH_SECRET",
+    "JWT_ACCESS_TTL",
+    "JWT_REFRESH_TTL",
+    "CENTRIFUGO_API_URL",
+    "CENTRIFUGO_API_KEY",
+    "CENTRIFUGO_SECRET",
+    "NEXT_PUBLIC_API_URL",
+    "NEXT_PUBLIC_CENTRIFUGO_WS_URL",
+    "NEXT_PUBLIC_LOYALTY_URL",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "QLESSQ_INTEGRATION_URL",
+    "QLESSQ_INTEGRATION_API_KEY"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["^db:generate"]
+    },
+    "lint": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "db:generate": {
+      "cache": false
+    },
+    "db:push": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false
+    },
+    "db:seed": {
+      "cache": false
+    },
+    "clean": {
+      "cache": false
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    }
+  }
+}

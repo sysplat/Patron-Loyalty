@@ -1,0 +1,3 @@
+# Notifications worker image only — excludes Next.js apps.
+packages:
+  - "packages/*"

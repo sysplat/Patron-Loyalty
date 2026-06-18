@@ -1,0 +1,15 @@
+---
+description: Guidelines for working on the Next.js Platform Admin UI (apps/admin)
+globs: apps/admin/**/*
+---
+
+# Next.js Platform Admin App (apps/admin)
+
+This is the platform-operator administrative dashboard.
+Stack: Next.js 15 (App Router), React 19, Tailwind CSS, Radix UI.
+
+## Guidelines
+- **Audience:** This is strictly for platform operators and support staff, not tenants or customers.
+- **Component Creation:** Use functional components with Tailwind CSS. Place reusable UI components in `src/components/ui/`.
+- **Architecture Boundary:** NEVER import from `apps/web`. The admin app communicates with `packages/api/src/modules/platform-admin/` routes.
+- **Security:** Ensure all administrative actions trigger appropriate audit logs via backend endpoints.

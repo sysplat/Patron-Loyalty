@@ -1,0 +1,12 @@
+# Default owners for review requests (update GitHub handles as needed)
+* @parsasamandi
+
+/apps/web/ @parsasamandi
+/apps/admin/ @parsasamandi
+/apps/e2e/ @parsasamandi
+/packages/api/ @parsasamandi
+/packages/database/ @parsasamandi
+/packages/notifications/ @parsasamandi
+/packages/shared/ @parsasamandi
+/railway/ @parsasamandi
+/.github/ @parsasamandi
