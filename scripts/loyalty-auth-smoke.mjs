@@ -5,7 +5,37 @@
  * Usage:
  *   LOYALTY_URL=https://pl-loyalty-production.up.railway.app node scripts/loyalty-auth-smoke.mjs
  *   LOYALTY_SMOKE_EMAIL=... LOYALTY_SMOKE_PASSWORD=... node scripts/loyalty-auth-smoke.mjs
+ *   pnpm audit:loyalty-auth-smoke   # loads .env / .env.local when present
  */
+import { readFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+function loadEnvFile(filePath) {
+  if (!existsSync(filePath)) return;
+  const text = readFileSync(filePath, 'utf8');
+  for (const line of text.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq <= 0) continue;
+    const key = trimmed.slice(0, eq).trim();
+    if (process.env[key] !== undefined) continue;
+    let value = trimmed.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    process.env[key] = value;
+  }
+}
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+loadEnvFile(path.join(root, '.env'));
+loadEnvFile(path.join(root, '.env.local'));
+
 const base = (process.env.LOYALTY_URL ?? 'https://pl-loyalty-production.up.railway.app').replace(
   /\/$/,
   '',

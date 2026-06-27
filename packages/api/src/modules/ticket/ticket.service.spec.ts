@@ -5,6 +5,8 @@ import { TicketStaffGuardService } from './ticket-staff-guard.service';
 
 import { mockRequestContext } from '../../test/mock-request-context';
 
+const branchFindFirstMock = vi.hoisted(() => vi.fn().mockResolvedValue({ timezone: 'UTC' }));
+
 const mockPrisma = {
   ticket: {
     findUnique: vi.fn(),
@@ -38,7 +40,7 @@ const mockPrisma = {
     update: vi.fn(),
     create: vi.fn(),
   },
-  branch: { findUnique: vi.fn(), findFirst: vi.fn(), findMany: vi.fn() },
+  branch: { findUnique: vi.fn(), findFirst: branchFindFirstMock, findMany: vi.fn() },
   branchDateOverride: { findUnique: vi.fn() },
   workingHours: { findUnique: vi.fn() },
   organization: {
@@ -110,6 +112,18 @@ const ticketLockDefaults = {
   calledAt: null as Date | null,
 };
 
+/** Branch lookups used by stats-cache timezone resolution inside withTenant tx mocks. */
+function branchTxStub() {
+  return {
+    findFirst: vi.fn().mockResolvedValue({ timezone: 'UTC' }),
+    findUnique: vi.fn().mockResolvedValue({
+      timezone: 'UTC',
+      orgId: 'org-1',
+      defaultJourneyMode: 'single_ticket',
+    }),
+  };
+}
+
 /** Matches `transitionTicketCore` FOR UPDATE row shape (queue/branch must align with queue mock). */
 function mockTicketLock(status: string, overrides: Partial<typeof ticketLockDefaults> = {}) {
   mockPrisma.$queryRaw.mockResolvedValueOnce([{ status, ...ticketLockDefaults, ...overrides }]);
@@ -147,7 +161,7 @@ describe('TicketService', () => {
       defaultJourneyMode: 'single_ticket',
       timezone: 'UTC',
     });
-    mockPrisma.branch.findFirst.mockResolvedValue({ timezone: 'UTC' });
+    branchFindFirstMock.mockResolvedValue({ timezone: 'UTC' });
     mockPrisma.branchDateOverride.findUnique.mockResolvedValue(null);
     mockPrisma.workingHours.findUnique.mockResolvedValue({
       openTime: '00:00',
@@ -852,7 +866,7 @@ describe('TicketService', () => {
         : String(queryArg);
       expect(renderedSql).toContain('booked_at >=');
       expect(mockPrisma.ticket.update).not.toHaveBeenCalled();
-      expect(mockPrisma.branch.findFirst).toHaveBeenCalledWith(
+      expect(branchFindFirstMock).toHaveBeenCalledWith(
         expect.objectContaining({ where: { id: 'branch-1', orgId: 'org-1' } }),
       );
     });
@@ -865,7 +879,7 @@ describe('TicketService', () => {
         timezone: 'UTC',
         visitJourneysEnabled: false,
       });
-      mockPrisma.branch.findFirst.mockResolvedValue({ timezone: 'America/Los_Angeles' });
+      branchFindFirstMock.mockResolvedValue({ timezone: 'America/Los_Angeles' });
       mockPrisma.$queryRaw.mockResolvedValue([]);
       mockPrisma.ticket.count.mockResolvedValue(0);
 
@@ -2432,6 +2446,7 @@ describe('TicketService', () => {
           findUnique: vi.fn().mockResolvedValue({ orgId: 'org-1', journeyModeOverride: null }),
         },
         branch: {
+          ...branchTxStub(),
           findUnique: vi.fn().mockResolvedValue({
             orgId: 'org-1',
             defaultJourneyMode: 'visit_multi_step',
@@ -2543,13 +2558,12 @@ describe('TicketService', () => {
           findUnique: vi.fn().mockResolvedValue({ orgId: 'org-1', journeyModeOverride: null }),
         },
         branch: {
-          findUnique: vi
-            .fn()
-            .mockResolvedValue({
-              orgId: 'org-1',
-              defaultJourneyMode: 'visit_multi_step',
-              timezone: 'UTC',
-            }),
+          ...branchTxStub(),
+          findUnique: vi.fn().mockResolvedValue({
+            orgId: 'org-1',
+            defaultJourneyMode: 'visit_multi_step',
+            timezone: 'UTC',
+          }),
         },
         branchDateOverride: {
           findUnique: vi.fn().mockResolvedValue(null),
