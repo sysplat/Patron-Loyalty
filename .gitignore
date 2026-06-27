@@ -56,3 +56,9 @@ docker/data/
 
 ## Deployment config
 .railway/
+.railway-config-pull-*/
+
+## Local scratch / backups (never commit)
+scratch/
+backups/
+*.dump

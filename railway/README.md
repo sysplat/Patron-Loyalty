@@ -7,10 +7,11 @@ This folder contains Railway configuration files for each deployable service in 
 | File                          | Service                    | Runtime                                                                       |
 | ----------------------------- | -------------------------- | ----------------------------------------------------------------------------- |
 | `api.railway.json`            | NestJS REST API            | Docker ([`docker/api.Dockerfile`](docker/api.Dockerfile))                     |
-| `web.railway.json`            | Next.js Web App            | Docker ([`docker/web.Dockerfile`](docker/web.Dockerfile))                     |
 | `loyalty.railway.json`        | Loyalty staff app          | Docker ([`docker/loyalty.Dockerfile`](docker/loyalty.Dockerfile))             |
+| `../railway.json` (repo root) | Loyalty (primary deploy)   | Docker ([`docker/loyalty.Dockerfile`](docker/loyalty.Dockerfile))             |
+| `scheduler.railway.json`      | BullMQ scheduler worker    | Docker ([`docker/api.Dockerfile`](docker/api.Dockerfile))                     |
 | `notifications.railway.json`  | BullMQ Notification Worker | Docker ([`docker/notifications.Dockerfile`](docker/notifications.Dockerfile)) |
-| `../railway.json` (repo root) | Admin Next app             | Docker ([`docker/admin.Dockerfile`](docker/admin.Dockerfile))                 |
+| `centrifugo.railway.json`     | Centrifugo realtime        | Docker ([`apps/centrifugo/Dockerfile`](../apps/centrifugo/Dockerfile))        |
 
 ## Troubleshooting: API healthcheck / crash loop
 
@@ -49,10 +50,11 @@ In the Railway dashboard, add each service from the same GitHub repository and s
 | Service              | Config File Path                     |
 | -------------------- | ------------------------------------ |
 | API                  | `railway/api.railway.json`           |
-| Web                  | `railway/web.railway.json`           |
 | Loyalty              | `railway/loyalty.railway.json`       |
-| Admin                | `railway.json` (repository root)     |
+| Loyalty (root)       | `railway.json` (repository root)     |
+| Scheduler worker     | `railway/scheduler.railway.json`     |
 | Notifications Worker | `railway/notifications.railway.json` |
+| Centrifugo           | `railway/centrifugo.railway.json`    |
 
 ### 4. Add required infrastructure
 
@@ -81,20 +83,7 @@ Optional ticketing SMS tuning on the API (default 3; max 3 “almost ready” SM
 TICKET_ALMOST_READY_POSITION=3
 ```
 
-**Web service** (set before build; Next inlines `NEXT_PUBLIC_*` at compile time):
-
-Use the API host with `/api/v1` (recommended), or the host only — the web app appends `/api/v1` when missing.
-
-```
-NEXT_PUBLIC_API_URL=<your API Railway URL>/api/v1
-NEXT_PUBLIC_CENTRIFUGO_WS_URL=wss://<centrifugo-public-host>/connection/websocket
-NEXT_PUBLIC_CENTRIFUGO_URL=wss://<centrifugo-public-host>/connection/websocket
-NEXT_PUBLIC_ADMIN_URL=https://<your-admin-host>
-NEXT_PUBLIC_LOYALTY_URL=https://<your-loyalty-host>
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<optional>
-```
-
-**Loyalty service** (same build-time rule for `NEXT_PUBLIC_*`):
+**Loyalty service** (set before build; Next inlines `NEXT_PUBLIC_*` at compile time):
 
 ```
 NEXT_PUBLIC_API_URL=<your API Railway URL>/api/v1
@@ -102,17 +91,7 @@ NEXT_PUBLIC_CENTRIFUGO_WS_URL=wss://<centrifugo-public-host>/connection/websocke
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<optional>
 ```
 
-Add the loyalty public host to **qms-api** `APP_ALLOWED_ORIGINS` (comma-separated with web + admin).
-
-**Admin service** (same build-time rule for `NEXT_PUBLIC_*`):
-
-```
-NEXT_PUBLIC_API_URL=<your API Railway URL>/api/v1
-NEXT_PUBLIC_CENTRIFUGO_WS_URL=wss://<centrifugo-public-host>/connection/websocket
-NEXT_PUBLIC_WEB_URL=https://<your-web-host>
-NEXT_PUBLIC_LOYALTY_URL=https://<your-loyalty-host>
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<optional>
-```
+Add the loyalty public host to **pl-api** `APP_ALLOWED_ORIGINS`.
 
 **Notifications worker:**
 
@@ -200,7 +179,7 @@ The container listens on **`PORT`** (Railway injects it).
 3. Ensure **HTTPS** terminates at Railway so the UI can connect with **`wss://`**:
    - `NEXT_PUBLIC_CENTRIFUGO_WS_URL=wss://<host>/connection/websocket`
    - `NEXT_PUBLIC_CENTRIFUGO_URL` often matches `NEXT_PUBLIC_CENTRIFUGO_WS_URL` for this codebase.
-4. Redeploy `qms-web` after changing either variable (Next.js bakes them in at build time).
+4. Redeploy **pl-loyalty** after changing either variable (Next.js bakes them in at build time).
 
 **Operational checks**
 
@@ -230,13 +209,13 @@ Local dev uses `centrifugo.local.json` (v5 CLI) with `proxy_http_url`. Railway C
 
 ## Build times (Docker on Railway)
 
-API, web, notifications, and admin build with **Dockerfiles** under [`railway/docker/`](docker/) (repository root as build context). **API** and **notifications** use slim workspace manifests (`pnpm-workspace.api.yaml` / `pnpm-workspace.notifications.yaml`) and `pnpm install --filter "…"` so Next.js (`@next/swc-*`) is never installed in those images — avoids Railway builder **no space left on device** errors.
+API, loyalty, notifications, and scheduler build with **Dockerfiles** under [`railway/docker/`](docker/) (repository root as build context). **API**, **notifications**, and **scheduler** use slim workspace manifests (`pnpm-workspace.api.yaml` / `pnpm-workspace.notifications.yaml`) and `pnpm install --filter "…"` so Next.js (`@next/swc-*`) is never installed in those images — avoids Railway builder **no space left on device** errors.
 
 **BuildKit cache mounts:** Railway’s builder validates cache mount `id` values and expects a **service-scoped prefix** (see [Railway Dockerfiles](https://docs.railway.app/builds/dockerfiles)). A single shared `id=qms-pnpm` across services is rejected (`cacheKey prefix` / `dockerfile invalid`). This repo therefore **does not** use `RUN --mount=type=cache,...` in those Dockerfiles so deploys succeed in any project. For a private fork you can add per-service mounts with `id=s/<your-service-uuid>-/pnpm/store` if you want layer caching.
 
 Cold builds are still dominated by compile work (Nest, Next, Prisma) and snapshot size; **watchPatterns** in each `*.railway.json` limit redeploys, and [`.dockerignore`](../.dockerignore) trims the Docker build context.
 
-**Next.js standalone (`qms-web`, `qms-admin`):** keep **`deploy.startCommand`** as `node apps/<app>/server.js`. If it is omitted, Railway may run `pnpm … start` / `next start`, which fails in the slim standalone image (`next: not found`).
+**Next.js standalone (`pl-loyalty`):** keep **`deploy.startCommand`** as `node apps/loyalty/server.js`. If it is omitted, Railway may run `pnpm … start` / `next start`, which fails in the slim standalone image (`next: not found`).
 
 ## Operations (logs and delivery)
 
@@ -245,7 +224,7 @@ Cold builds are still dominated by compile work (Nest, Next, Prisma) and snapsho
 | Builds / crashes | Railway → service → **Deployments** and **Logs**                                                                                                                                                                                                                                                                                                                                                                                                               |
 | Email / SMS jobs | BullMQ queue `notifications` — worker logs (`Email delivery configuration` on startup = `sendgrid-https` vs `smtp`; on failure look for `Provider returned failure` with SendGrid JSON). [SendGrid Activity](https://app.sendgrid.com/email_activity) for suppressions/bounces; **from** address must match a [verified sender](https://app.sendgrid.com/settings/sender_auth) (trial accounts often only allow mail to addresses you’ve explicitly verified). |
 | SMS delivery     | Twilio Console → Monitor → Logs & Messaging                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Realtime bugs    | Wrong or missing Centrifugo public URL on `qms-web`; Centrifugo service sleeping → redeploy/wake                                                                                                                                                                                                                                                                                                                                                               |
+| Realtime bugs    | Wrong or missing Centrifugo public URL on **pl-loyalty**; Centrifugo service sleeping → redeploy/wake                                                                                                                                                                                                                                                                                                                                                          |
 
 Do **not** commit API tokens or SendGrid/Twilio secrets; keep them in Railway variables only so they never enter git history.
 
