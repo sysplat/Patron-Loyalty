@@ -62,3 +62,4 @@ docker/data/
 scratch/
 backups/
 *.dump
+.git-op-result.txt
