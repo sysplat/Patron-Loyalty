@@ -4,6 +4,7 @@ import { PatronCrmFeatureService } from '../../common/features/patron-crm-featur
 import { LoyaltyAccountService } from './loyalty-account.service';
 import { LoyaltyCatalogService } from './loyalty-catalog.service';
 import { RequestContextService } from '../../common/request-context/request-context.service';
+import { LoyaltyGamificationService } from './loyalty-gamification.service';
 import {
   CURRENT_LOYALTY_PATRON_LEGAL_CONSENT_VERSION,
   CURRENT_LOYALTY_PATRON_PRIVACY_VERSION,
@@ -19,6 +20,7 @@ export class LoyaltyPortalService {
     private readonly accounts: LoyaltyAccountService,
     private readonly catalog: LoyaltyCatalogService,
     private readonly requestContext: RequestContextService,
+    private readonly gamification: LoyaltyGamificationService,
   ) {}
 
   private async resolveAccountByCode(referralCode: string) {
@@ -65,6 +67,7 @@ export class LoyaltyPortalService {
               },
             },
           },
+          wallet: { select: { id: true, balanceCents: true, currency: true } },
         },
       }),
     );
@@ -76,33 +79,55 @@ export class LoyaltyPortalService {
 
     const legalConsentGranted = await this.hasPatronLegalConsent(account.orgId, account.customerId);
 
-    const [rewards, ledger] = await this.prisma.withTenant(account.orgId, async (tx) => {
-      const rewardRows = await tx.loyaltyReward.findMany({
-        where: { orgId: account.orgId, active: true },
-        orderBy: { pointsCost: 'asc' },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          pointsCost: true,
-          type: true,
-          stock: true,
-        },
-      });
-      const ledgerRows = await tx.loyaltyPointLedger.findMany({
-        where: { accountId: account.id },
-        orderBy: { createdAt: 'desc' },
-        take: 15,
-        select: {
-          id: true,
-          type: true,
-          points: true,
-          description: true,
-          createdAt: true,
-        },
-      });
-      return [rewardRows, ledgerRows] as const;
-    });
+    const [rewards, ledger, walletTransactions] = await this.prisma.withTenant(
+      account.orgId,
+      async (tx) => {
+        const rewardRows = await tx.loyaltyReward.findMany({
+          where: { orgId: account.orgId, active: true },
+          orderBy: { pointsCost: 'asc' },
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            pointsCost: true,
+            type: true,
+            stock: true,
+          },
+        });
+        const ledgerRows = await tx.loyaltyPointLedger.findMany({
+          where: { accountId: account.id },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+          select: {
+            id: true,
+            type: true,
+            points: true,
+            description: true,
+            createdAt: true,
+          },
+        });
+        const walletTxRows = account.wallet
+          ? await tx.loyaltyWalletTransaction.findMany({
+              where: { walletId: account.wallet.id },
+              orderBy: { createdAt: 'desc' },
+              take: 20,
+              select: {
+                id: true,
+                type: true,
+                amountCents: true,
+                balanceAfter: true,
+                description: true,
+                createdAt: true,
+              },
+            })
+          : [];
+        return [rewardRows, ledgerRows, walletTxRows] as const;
+      },
+    );
+
+    const gameStatus = await this.gamification.getPatronGameStatus(account.orgId, account.id);
+    const nextBestOffer =
+      rewards.find((r) => r.pointsCost <= account.pointsBalance) ?? rewards[0] ?? null;
 
     return {
       found: true as const,
@@ -141,7 +166,49 @@ export class LoyaltyPortalService {
         filled: account.totalVisits % LOYALTY_STAMP_CARD_TARGET,
         totalVisits: account.totalVisits,
       },
+      wallet: account.wallet
+        ? {
+            balanceCents: account.wallet.balanceCents,
+            currency: account.wallet.currency,
+            transactions: walletTransactions,
+          }
+        : null,
+      gameStatus,
+      nextBestOffer,
     };
+  }
+
+  async getPublicBranches(orgSlug: string) {
+    const org = await this.prisma.withBypassRls((tx) =>
+      tx.organization.findFirst({
+        where: { slug: orgSlug },
+        select: { id: true, name: true, patronCrmEnabled: true },
+      }),
+    );
+    if (!org || !org.patronCrmEnabled) return { found: false as const };
+
+    const branches = await this.prisma.withTenant(org.id, (tx) =>
+      tx.branch.findMany({
+        where: { orgId: org.id, status: 'active' },
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          phone: true,
+          lat: true,
+          lng: true,
+        },
+        orderBy: { name: 'asc' },
+      }),
+    );
+    return { found: true as const, orgName: org.name, branches };
+  }
+
+  async playPatronGame(referralCode: string, gameType: 'spin_wheel' | 'scratch_card') {
+    const account = await this.resolveAccountByCode(referralCode);
+    if (!account) throw new NotFoundException('Loyalty account not found');
+    await this.requirePatronLegalConsent(account.orgId, account.customerId);
+    return this.gamification.playPatronGame(account.orgId, account.id, gameType);
   }
 
   async redeemReward(referralCode: string, rewardId: string) {

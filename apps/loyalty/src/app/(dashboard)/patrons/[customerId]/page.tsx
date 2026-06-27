@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RESOURCES, ACTIONS } from '@queueplatform/shared';
 import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { api } from '@/lib/api';
+import { loyaltyGet } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
 import { hasPermission } from '@/lib/rbac-ui';
 import {
@@ -190,6 +191,34 @@ export default function CustomerProfilePage() {
 
           <div className="bg-card space-y-4 rounded-xl border p-5">
             <h2 className="font-semibold">Consent</h2>
+            {canEdit && (
+              <button
+                type="button"
+                className="border-input hover:bg-muted w-full rounded-md border px-3 py-2 text-sm"
+                onClick={async () => {
+                  try {
+                    const payload = await loyaltyGet<Record<string, unknown>>(
+                      `/loyalty/accounts/${customerId}/dsar-export`,
+                      token!,
+                    );
+                    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+                      type: 'application/json',
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const anchor = document.createElement('a');
+                    anchor.href = url;
+                    anchor.download = `patron-dsar-${customerId}.json`;
+                    anchor.click();
+                    URL.revokeObjectURL(url);
+                    toast.success('DSAR export downloaded');
+                  } catch {
+                    toast.error('DSAR export failed');
+                  }
+                }}
+              >
+                Download DSAR export (JSON)
+              </button>
+            )}
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-muted-foreground flex items-center gap-2">

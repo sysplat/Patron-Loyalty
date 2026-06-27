@@ -8,6 +8,9 @@ import {
   LOYALTY_REWARD_TYPES,
   LOYALTY_WALLET_TX_TYPES,
   CRM_TASK_STATUSES,
+  CRM_SUPPORT_TICKET_PRIORITIES,
+  CRM_SUPPORT_TICKET_STATUSES,
+  CRM_SALES_STAGES,
 } from '../constants/loyalty';
 
 const optionalDate = z.string().datetime().optional().nullable();
@@ -15,6 +18,8 @@ const optionalDate = z.string().datetime().optional().nullable();
 export const updateLoyaltyProgramSchema = z.object({
   enabled: z.boolean().optional(),
   pointsCurrencyName: z.string().min(1).max(50).optional(),
+  displayCurrencyCode: z.string().length(3).optional(),
+  defaultLocale: z.string().min(2).max(10).optional(),
   defaultEarnPoints: z.number().int().min(0).max(100000).optional(),
   referralBonusPoints: z.number().int().min(0).max(100000).optional(),
   referredBonusPoints: z.number().int().min(0).max(100000).optional(),
@@ -166,6 +171,81 @@ export const updateLoyaltyEarnRuleSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   points: z.number().int().min(0).max(100000).optional(),
   active: z.boolean().optional(),
+  conditions: z.record(z.unknown()).optional(),
+});
+
+export const createCrmSupportTicketSchema = z.object({
+  customerId: z.string().uuid(),
+  subject: z.string().min(1).max(200),
+  description: z.string().max(5000).optional().nullable(),
+  priority: z
+    .enum([
+      CRM_SUPPORT_TICKET_PRIORITIES.LOW,
+      CRM_SUPPORT_TICKET_PRIORITIES.NORMAL,
+      CRM_SUPPORT_TICKET_PRIORITIES.HIGH,
+      CRM_SUPPORT_TICKET_PRIORITIES.URGENT,
+    ])
+    .optional(),
+  assigneeId: z.string().uuid().optional().nullable(),
+});
+
+export const updateCrmSupportTicketSchema = z.object({
+  subject: z.string().min(1).max(200).optional(),
+  description: z.string().max(5000).optional().nullable(),
+  priority: z
+    .enum([
+      CRM_SUPPORT_TICKET_PRIORITIES.LOW,
+      CRM_SUPPORT_TICKET_PRIORITIES.NORMAL,
+      CRM_SUPPORT_TICKET_PRIORITIES.HIGH,
+      CRM_SUPPORT_TICKET_PRIORITIES.URGENT,
+    ])
+    .optional(),
+  status: z
+    .enum([
+      CRM_SUPPORT_TICKET_STATUSES.OPEN,
+      CRM_SUPPORT_TICKET_STATUSES.PENDING,
+      CRM_SUPPORT_TICKET_STATUSES.RESOLVED,
+      CRM_SUPPORT_TICKET_STATUSES.CLOSED,
+    ])
+    .optional(),
+  assigneeId: z.string().uuid().optional().nullable(),
+});
+
+export const createCrmSalesOpportunitySchema = z.object({
+  customerId: z.string().uuid(),
+  title: z.string().min(1).max(200),
+  stage: z
+    .enum([
+      CRM_SALES_STAGES.LEAD,
+      CRM_SALES_STAGES.QUALIFIED,
+      CRM_SALES_STAGES.PROPOSAL,
+      CRM_SALES_STAGES.NEGOTIATION,
+      CRM_SALES_STAGES.WON,
+      CRM_SALES_STAGES.LOST,
+    ])
+    .optional(),
+  valueCents: z.number().int().min(0).optional(),
+  expectedCloseDate: optionalDate,
+  notes: z.string().max(5000).optional().nullable(),
+  assigneeId: z.string().uuid().optional().nullable(),
+});
+
+export const updateCrmSalesOpportunitySchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  stage: z
+    .enum([
+      CRM_SALES_STAGES.LEAD,
+      CRM_SALES_STAGES.QUALIFIED,
+      CRM_SALES_STAGES.PROPOSAL,
+      CRM_SALES_STAGES.NEGOTIATION,
+      CRM_SALES_STAGES.WON,
+      CRM_SALES_STAGES.LOST,
+    ])
+    .optional(),
+  valueCents: z.number().int().min(0).optional(),
+  expectedCloseDate: optionalDate,
+  notes: z.string().max(5000).optional().nullable(),
+  assigneeId: z.string().uuid().optional().nullable(),
 });
 
 export const createLoyaltyBadgeSchema = z.object({

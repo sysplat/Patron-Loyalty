@@ -2,6 +2,8 @@ import { z } from 'zod';
 export declare const updateLoyaltyProgramSchema: z.ZodObject<{
     enabled: z.ZodOptional<z.ZodBoolean>;
     pointsCurrencyName: z.ZodOptional<z.ZodString>;
+    displayCurrencyCode: z.ZodOptional<z.ZodString>;
+    defaultLocale: z.ZodOptional<z.ZodString>;
     defaultEarnPoints: z.ZodOptional<z.ZodNumber>;
     referralBonusPoints: z.ZodOptional<z.ZodNumber>;
     referredBonusPoints: z.ZodOptional<z.ZodNumber>;
@@ -9,6 +11,8 @@ export declare const updateLoyaltyProgramSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     enabled?: boolean | undefined;
     pointsCurrencyName?: string | undefined;
+    displayCurrencyCode?: string | undefined;
+    defaultLocale?: string | undefined;
     defaultEarnPoints?: number | undefined;
     referralBonusPoints?: number | undefined;
     referredBonusPoints?: number | undefined;
@@ -16,6 +20,8 @@ export declare const updateLoyaltyProgramSchema: z.ZodObject<{
 }, {
     enabled?: boolean | undefined;
     pointsCurrencyName?: string | undefined;
+    displayCurrencyCode?: string | undefined;
+    defaultLocale?: string | undefined;
     defaultEarnPoints?: number | undefined;
     referralBonusPoints?: number | undefined;
     referredBonusPoints?: number | undefined;
@@ -291,14 +297,102 @@ export declare const updateLoyaltyEarnRuleSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
     points: z.ZodOptional<z.ZodNumber>;
     active: z.ZodOptional<z.ZodBoolean>;
+    conditions: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
 }, "strip", z.ZodTypeAny, {
     active?: boolean | undefined;
     name?: string | undefined;
     points?: number | undefined;
+    conditions?: Record<string, unknown> | undefined;
 }, {
     active?: boolean | undefined;
     name?: string | undefined;
     points?: number | undefined;
+    conditions?: Record<string, unknown> | undefined;
+}>;
+export declare const createCrmSupportTicketSchema: z.ZodObject<{
+    customerId: z.ZodString;
+    subject: z.ZodString;
+    description: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    priority: z.ZodOptional<z.ZodEnum<["low", "normal", "high", "urgent"]>>;
+    assigneeId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+}, "strip", z.ZodTypeAny, {
+    customerId: string;
+    subject: string;
+    priority?: "normal" | "low" | "high" | "urgent" | undefined;
+    description?: string | null | undefined;
+    assigneeId?: string | null | undefined;
+}, {
+    customerId: string;
+    subject: string;
+    priority?: "normal" | "low" | "high" | "urgent" | undefined;
+    description?: string | null | undefined;
+    assigneeId?: string | null | undefined;
+}>;
+export declare const updateCrmSupportTicketSchema: z.ZodObject<{
+    subject: z.ZodOptional<z.ZodString>;
+    description: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    priority: z.ZodOptional<z.ZodEnum<["low", "normal", "high", "urgent"]>>;
+    status: z.ZodOptional<z.ZodEnum<["open", "pending", "resolved", "closed"]>>;
+    assigneeId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+}, "strip", z.ZodTypeAny, {
+    priority?: "normal" | "low" | "high" | "urgent" | undefined;
+    status?: "open" | "closed" | "pending" | "resolved" | undefined;
+    description?: string | null | undefined;
+    subject?: string | undefined;
+    assigneeId?: string | null | undefined;
+}, {
+    priority?: "normal" | "low" | "high" | "urgent" | undefined;
+    status?: "open" | "closed" | "pending" | "resolved" | undefined;
+    description?: string | null | undefined;
+    subject?: string | undefined;
+    assigneeId?: string | null | undefined;
+}>;
+export declare const createCrmSalesOpportunitySchema: z.ZodObject<{
+    customerId: z.ZodString;
+    title: z.ZodString;
+    stage: z.ZodOptional<z.ZodEnum<["lead", "qualified", "proposal", "negotiation", "won", "lost"]>>;
+    valueCents: z.ZodOptional<z.ZodNumber>;
+    expectedCloseDate: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    notes: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    assigneeId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+}, "strip", z.ZodTypeAny, {
+    customerId: string;
+    title: string;
+    notes?: string | null | undefined;
+    assigneeId?: string | null | undefined;
+    stage?: "lead" | "qualified" | "proposal" | "negotiation" | "won" | "lost" | undefined;
+    valueCents?: number | undefined;
+    expectedCloseDate?: string | null | undefined;
+}, {
+    customerId: string;
+    title: string;
+    notes?: string | null | undefined;
+    assigneeId?: string | null | undefined;
+    stage?: "lead" | "qualified" | "proposal" | "negotiation" | "won" | "lost" | undefined;
+    valueCents?: number | undefined;
+    expectedCloseDate?: string | null | undefined;
+}>;
+export declare const updateCrmSalesOpportunitySchema: z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
+    stage: z.ZodOptional<z.ZodEnum<["lead", "qualified", "proposal", "negotiation", "won", "lost"]>>;
+    valueCents: z.ZodOptional<z.ZodNumber>;
+    expectedCloseDate: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    notes: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    assigneeId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+}, "strip", z.ZodTypeAny, {
+    notes?: string | null | undefined;
+    title?: string | undefined;
+    assigneeId?: string | null | undefined;
+    stage?: "lead" | "qualified" | "proposal" | "negotiation" | "won" | "lost" | undefined;
+    valueCents?: number | undefined;
+    expectedCloseDate?: string | null | undefined;
+}, {
+    notes?: string | null | undefined;
+    title?: string | undefined;
+    assigneeId?: string | null | undefined;
+    stage?: "lead" | "qualified" | "proposal" | "negotiation" | "won" | "lost" | undefined;
+    valueCents?: number | undefined;
+    expectedCloseDate?: string | null | undefined;
 }>;
 export declare const createLoyaltyBadgeSchema: z.ZodObject<{
     name: z.ZodString;
@@ -364,14 +458,14 @@ export declare const createCrmTaskSchema: z.ZodObject<{
     customerId: string;
     title: string;
     description?: string | null | undefined;
-    dueAt?: string | null | undefined;
     assigneeId?: string | null | undefined;
+    dueAt?: string | null | undefined;
 }, {
     customerId: string;
     title: string;
     description?: string | null | undefined;
-    dueAt?: string | null | undefined;
     assigneeId?: string | null | undefined;
+    dueAt?: string | null | undefined;
 }>;
 export declare const updateCrmTaskSchema: z.ZodObject<{
     title: z.ZodOptional<z.ZodString>;
@@ -383,14 +477,14 @@ export declare const updateCrmTaskSchema: z.ZodObject<{
     status?: "open" | "cancelled" | "in_progress" | "done" | undefined;
     description?: string | null | undefined;
     title?: string | undefined;
-    dueAt?: string | null | undefined;
     assigneeId?: string | null | undefined;
+    dueAt?: string | null | undefined;
 }, {
     status?: "open" | "cancelled" | "in_progress" | "done" | undefined;
     description?: string | null | undefined;
     title?: string | undefined;
-    dueAt?: string | null | undefined;
     assigneeId?: string | null | undefined;
+    dueAt?: string | null | undefined;
 }>;
 export declare const updateLoyaltyProfileSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;

@@ -27,6 +27,8 @@ interface SendInput {
   body: string;
   /** Optional URL Twilio will POST delivery status updates to. */
   statusCallbackUrl?: string;
+  /** Override sender (e.g. whatsapp:+14155238886). */
+  from?: string;
 }
 
 interface KavenegarResponse {
@@ -127,6 +129,23 @@ export class SmsProvider {
     }
   }
 
+  /** Twilio WhatsApp — requires TWILIO_WHATSAPP_NUMBER (whatsapp:+…). */
+  async sendWhatsApp(data: SendInput): Promise<SendResult> {
+    const whatsappSender = process.env.TWILIO_WHATSAPP_NUMBER?.trim();
+    if (!whatsappSender) {
+      return { success: false, error: 'TWILIO_WHATSAPP_NUMBER is not configured' };
+    }
+    const recipient = normalizeSmsRecipient(data.to);
+    if (!recipient) {
+      return { success: false, error: 'WhatsApp recipient must be a valid E.164 phone number' };
+    }
+    const from = whatsappSender.startsWith('whatsapp:')
+      ? whatsappSender
+      : `whatsapp:${whatsappSender}`;
+    const to = data.to.startsWith('whatsapp:') ? data.to : `whatsapp:${recipient}`;
+    return this.sendTwilio({ ...data, to, from });
+  }
+
   private async sendKavenegar(data: SendInput): Promise<SendResult> {
     const baseUrl = this.apiUrl || 'https://api.kavenegar.com/v1';
     const url = `${baseUrl}/${this.legacyApiKey}/sms/send.json`;
@@ -175,7 +194,7 @@ export class SmsProvider {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          From: this.sender,
+          From: data.from ?? this.sender,
           To: data.to,
           Body: data.body,
           ...(data.statusCallbackUrl ? { StatusCallback: data.statusCallbackUrl } : {}),

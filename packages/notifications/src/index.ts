@@ -127,6 +127,9 @@ const worker = new Worker(
         case 'sms':
           result = await smsProvider.send({ to, body: finalBody ?? '' });
           break;
+        case 'whatsapp':
+          result = await smsProvider.sendWhatsApp({ to, body: finalBody ?? '' });
+          break;
         case 'push':
           // Push notifications are not yet implemented — log and mark as delivered
           logger.warn(

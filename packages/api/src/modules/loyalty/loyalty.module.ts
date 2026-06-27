@@ -15,6 +15,7 @@ import { LoyaltyCampaignDispatchService } from './loyalty-campaign-dispatch.serv
 import { LoyaltyDashboardService } from './loyalty-dashboard.service';
 import { LoyaltyGamificationService } from './loyalty-gamification.service';
 import { LoyaltyCrmTaskService } from './loyalty-crm-task.service';
+import { LoyaltyCrmExtendedService } from './loyalty-crm-extended.service';
 import { LoyaltyListener } from './loyalty.listener';
 import { LoyaltyActivationService } from './loyalty-activation.service';
 import { LoyaltyApiKeyService } from './loyalty-api-key.service';
@@ -40,6 +41,7 @@ import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
     LoyaltyDashboardService,
     LoyaltyGamificationService,
     LoyaltyCrmTaskService,
+    LoyaltyCrmExtendedService,
     LoyaltyListener,
     LoyaltyActivationService,
     LoyaltyApiKeyService,

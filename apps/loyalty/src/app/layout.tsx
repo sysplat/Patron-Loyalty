@@ -9,6 +9,12 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'QlessQ Loyalty',
   description: 'Patron CRM and loyalty management',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'Patron Loyalty',
+    statusBarStyle: 'black-translucent',
+  },
 };
 
 const themeFlashScript = buildDashboardThemeFlashScript({

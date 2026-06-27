@@ -136,7 +136,12 @@ export class LoyaltyQueueEventsService {
     try {
       const customerId = await this.resolveCustomerIdFromEvent(event);
       if (!customerId) return { skipped: true, reason: 'no_customer' };
-      await this.accounts.handleAppointmentCompleted(event.orgId, event.appointmentId, customerId);
+      await this.accounts.handleAppointmentCompleted(
+        event.orgId,
+        event.appointmentId,
+        customerId,
+        event.branchId,
+      );
       await this.gamification.incrementChallengeProgress(event.orgId, customerId, 'VISITS');
       return { ok: true };
     } catch (err) {

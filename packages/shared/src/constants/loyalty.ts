@@ -124,6 +124,45 @@ export const CRM_TASK_STATUSES = {
   CANCELLED: 'cancelled',
 } as const;
 
+export const CRM_SUPPORT_TICKET_PRIORITIES = {
+  LOW: 'low',
+  NORMAL: 'normal',
+  HIGH: 'high',
+  URGENT: 'urgent',
+} as const;
+
+export const CRM_SUPPORT_TICKET_STATUSES = {
+  OPEN: 'open',
+  PENDING: 'pending',
+  RESOLVED: 'resolved',
+  CLOSED: 'closed',
+} as const;
+
+export const CRM_SALES_STAGES = {
+  LEAD: 'lead',
+  QUALIFIED: 'qualified',
+  PROPOSAL: 'proposal',
+  NEGOTIATION: 'negotiation',
+  WON: 'won',
+  LOST: 'lost',
+} as const;
+
+export const LOYALTY_PATRON_GAME_TYPES = {
+  SPIN_WHEEL: 'spin_wheel',
+  SCRATCH_CARD: 'scratch_card',
+} as const;
+
+export type LoyaltyPatronGameType =
+  (typeof LOYALTY_PATRON_GAME_TYPES)[keyof typeof LOYALTY_PATRON_GAME_TYPES];
+
+/** Earn-rule condition keys stored in LoyaltyEarnRule.conditions JSON (SRS §6 rule builder). */
+export interface LoyaltyEarnRuleConditions {
+  minPurchaseCents?: number;
+  branchId?: string;
+  tierSlugs?: string[];
+  minLifetimePoints?: number;
+}
+
 export const LOYALTY_EVENTS = {
   TICKET_COMPLETED: 'loyalty.ticket.completed',
   TICKET_NO_SHOW: 'loyalty.ticket.no_show',

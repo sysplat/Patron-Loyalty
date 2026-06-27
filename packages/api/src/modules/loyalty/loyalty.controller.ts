@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
@@ -22,6 +23,7 @@ import { LoyaltyCampaignService } from './loyalty-campaign.service';
 import { LoyaltyDashboardService } from './loyalty-dashboard.service';
 import { LoyaltyGamificationService } from './loyalty-gamification.service';
 import { LoyaltyCrmTaskService } from './loyalty-crm-task.service';
+import { LoyaltyCrmExtendedService } from './loyalty-crm-extended.service';
 import { LoyaltyActivationService } from './loyalty-activation.service';
 import { LoyaltyApiKeyService } from './loyalty-api-key.service';
 import { LoyaltyPortalService } from './loyalty-portal.service';
@@ -29,6 +31,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { PatronCrmFeatureService } from '../../common/features/patron-crm-feature.service';
 import {
   CreateCrmTaskDto,
+  CreateCrmSupportTicketDto,
+  CreateCrmSalesOpportunityDto,
   CreateGiftCardDto,
   CreateLoyaltyBadgeDto,
   CreateLoyaltyCampaignDto,
@@ -42,6 +46,8 @@ import {
   LoyaltyWalletAdjustDto,
   RedeemLoyaltyRewardDto,
   UpdateCrmTaskDto,
+  UpdateCrmSupportTicketDto,
+  UpdateCrmSalesOpportunityDto,
   UpdateLoyaltyEarnRuleDto,
   UpdateLoyaltyCampaignDto,
   UpdateLoyaltyProfileDto,
@@ -54,7 +60,9 @@ import {
   LoyaltyPortalProfileDto,
   LoyaltyPortalRedeemDto,
   LoyaltyPortalLegalConsentDto,
+  LoyaltyPortalGamePlayDto,
 } from './dto/loyalty-integration.dto';
+import { rowsToCsv } from '../../common/utils/csv-response';
 import { LoyaltyPublicReferralJoinDto } from './dto/loyalty-referral.dto';
 
 @ApiTags('Loyalty')
@@ -71,6 +79,7 @@ export class LoyaltyController {
     private readonly dashboard: LoyaltyDashboardService,
     private readonly gamification: LoyaltyGamificationService,
     private readonly crmTasks: LoyaltyCrmTaskService,
+    private readonly crmExtended: LoyaltyCrmExtendedService,
     private readonly prisma: PrismaService,
     private readonly patronCrmFeature: PatronCrmFeatureService,
     private readonly activation: LoyaltyActivationService,
@@ -198,6 +207,55 @@ export class LoyaltyController {
     return this.dashboard.getVipReport(user.orgId);
   }
 
+  @Get('reports/branches')
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  getBranchReport(@CurrentUser() user: AuthenticatedUser) {
+    return this.dashboard.getBranchPerformanceReport(user.orgId);
+  }
+
+  @Get('reports/campaign-roi')
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  getCampaignRoiReport(@CurrentUser() user: AuthenticatedUser) {
+    return this.dashboard.getCampaignRoiReport(user.orgId);
+  }
+
+  @Get('reports/sales-dashboard')
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  getSalesDashboard(@CurrentUser() user: AuthenticatedUser) {
+    return this.dashboard.getSalesDashboard(user.orgId);
+  }
+
+  @Get('reports/points/export')
+  @Header('Content-Type', 'text/csv')
+  @Header('Content-Disposition', 'attachment; filename="loyalty-points-report.csv"')
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  async exportPointsReport(@CurrentUser() user: AuthenticatedUser) {
+    const report = await this.dashboard.getPointsReport(user.orgId);
+    return rowsToCsv(
+      ['type', 'total_points', 'entry_count'],
+      report.byType.map((row) => [row.type, row._sum.points ?? 0, row._count._all]),
+    );
+  }
+
+  @Get('reports/referrals/export')
+  @Header('Content-Type', 'text/csv')
+  @Header('Content-Disposition', 'attachment; filename="loyalty-referrals-report.csv"')
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  async exportReferralsReport(@CurrentUser() user: AuthenticatedUser) {
+    const report = await this.dashboard.getReferralReport(user.orgId);
+    return rowsToCsv(
+      ['patron_name', 'completed_count'],
+      report.topReferrers.map((r) => [r.patronName, r.completedCount]),
+    );
+  }
+
+  @Get('lookup/patron')
+  @ApiOperation({ summary: 'Staff quick lookup by phone number' })
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  lookupPatron(@CurrentUser() user: AuthenticatedUser, @Query('phone') phone: string) {
+    return this.accounts.lookupPatronByPhone(user.orgId, phone);
+  }
+
   @Get('leaderboard')
   @RequirePermissions({ resource: 'customer', action: 'read' })
   getLeaderboard(@CurrentUser() user: AuthenticatedUser, @Query('limit') limit?: string) {
@@ -208,6 +266,16 @@ export class LoyaltyController {
   @RequirePermissions({ resource: 'customer', action: 'read' })
   getAccount(@CurrentUser() user: AuthenticatedUser, @Param('customerId') customerId: string) {
     return this.accounts.getAccountWithLedger(user.orgId, customerId);
+  }
+
+  @Get('accounts/:customerId/dsar-export')
+  @ApiOperation({ summary: 'DSAR subject-access export for patron loyalty data' })
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  exportPatronDsar(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('customerId') customerId: string,
+  ) {
+    return this.accounts.exportPatronDsar(user.orgId, customerId);
   }
 
   @Patch('accounts/:customerId/profile')
@@ -452,6 +520,78 @@ export class LoyaltyController {
     });
   }
 
+  @Get('crm/support-tickets')
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  listSupportTickets(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('customerId') customerId?: string,
+  ) {
+    return this.crmExtended.listSupportTickets(user.orgId, customerId);
+  }
+
+  @Post('crm/support-tickets')
+  @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions({ resource: 'customer', action: 'update' })
+  createSupportTicket(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: CreateCrmSupportTicketDto,
+  ) {
+    return this.crmExtended.createSupportTicket(user.orgId, {
+      customerId: body.customerId,
+      subject: body.subject,
+      description: body.description ?? undefined,
+      priority: body.priority,
+      assigneeId: body.assigneeId ?? undefined,
+    });
+  }
+
+  @Patch('crm/support-tickets/:id')
+  @RequirePermissions({ resource: 'customer', action: 'update' })
+  updateSupportTicket(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() body: UpdateCrmSupportTicketDto,
+  ) {
+    return this.crmExtended.updateSupportTicket(user.orgId, id, body);
+  }
+
+  @Get('crm/sales-opportunities')
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  listSalesOpportunities(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('customerId') customerId?: string,
+  ) {
+    return this.crmExtended.listSalesOpportunities(user.orgId, customerId);
+  }
+
+  @Post('crm/sales-opportunities')
+  @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions({ resource: 'customer', action: 'update' })
+  createSalesOpportunity(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: CreateCrmSalesOpportunityDto,
+  ) {
+    return this.crmExtended.createSalesOpportunity(user.orgId, {
+      customerId: body.customerId,
+      title: body.title,
+      stage: body.stage,
+      valueCents: body.valueCents,
+      expectedCloseDate: body.expectedCloseDate ?? undefined,
+      notes: body.notes ?? undefined,
+      assigneeId: body.assigneeId ?? undefined,
+    });
+  }
+
+  @Patch('crm/sales-opportunities/:id')
+  @RequirePermissions({ resource: 'customer', action: 'update' })
+  updateSalesOpportunity(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() body: UpdateCrmSalesOpportunityDto,
+  ) {
+    return this.crmExtended.updateSalesOpportunity(user.orgId, id, body);
+  }
+
   @Get('integrations/api-key')
   @ApiOperation({ summary: 'LMS integration API key status' })
   @RequirePermissions({ resource: 'customer', action: 'update' })
@@ -527,6 +667,24 @@ export class LoyaltyController {
     @Body() body: LoyaltyPortalLegalConsentDto,
   ) {
     return this.portal.recordPatronLegalConsent(referralCode, body);
+  }
+
+  @Public()
+  @Post('public/portal/:referralCode/play')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Patron spin wheel or scratch card game' })
+  publicPlayGame(
+    @Param('referralCode') referralCode: string,
+    @Body() body: LoyaltyPortalGamePlayDto,
+  ) {
+    return this.portal.playPatronGame(referralCode, body.gameType);
+  }
+
+  @Public()
+  @Get('public/branches/:orgSlug')
+  @ApiOperation({ summary: 'Public store locator for patron portal' })
+  getPublicBranches(@Param('orgSlug') orgSlug: string) {
+    return this.portal.getPublicBranches(orgSlug);
   }
 
   @Public()

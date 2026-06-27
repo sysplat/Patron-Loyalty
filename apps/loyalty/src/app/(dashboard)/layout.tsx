@@ -41,13 +41,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/auth/session', { credentials: 'include' });
-        const payload = (await res.json().catch(() => null)) as {
-          authenticated?: boolean;
-          data?: { accessToken?: string };
-        } | null;
-        if (!cancelled && payload?.authenticated && payload?.data?.accessToken) {
-          setTokensFromRefresh(payload.data.accessToken);
+        const hydrateFromSession = async (): Promise<boolean> => {
+          const res = await fetch('/api/auth/session', { credentials: 'include' });
+          const payload = (await res.json().catch(() => null)) as {
+            authenticated?: boolean;
+            data?: { accessToken?: string };
+          } | null;
+          if (payload?.authenticated && payload?.data?.accessToken) {
+            setTokensFromRefresh(payload.data.accessToken);
+            return true;
+          }
+          return false;
+        };
+
+        const hydratedFromSession = await hydrateFromSession();
+        if (!hydratedFromSession && !cancelled) {
+          const refreshRes = await fetch('/api/auth/refresh', {
+            method: 'POST',
+            credentials: 'include',
+          });
+          const refreshPayload = (await refreshRes.json().catch(() => null)) as {
+            success?: boolean;
+            data?: { accessToken?: string };
+          } | null;
+          if (
+            !cancelled &&
+            refreshRes.ok &&
+            refreshPayload?.success &&
+            refreshPayload?.data?.accessToken
+          ) {
+            setTokensFromRefresh(refreshPayload.data.accessToken);
+          }
         }
       } finally {
         if (!cancelled) setSessionChecked(true);

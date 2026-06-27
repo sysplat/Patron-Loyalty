@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.patronLoyaltyIntegrationConfigSchema = exports.loyaltyIntegrationQueueEventSchema = exports.loyaltyPublicReferralJoinSchema = exports.loyaltyPortalLegalConsentSchema = exports.loyaltyPortalProfileSchema = exports.loyaltyPortalRedeemSchema = exports.loyaltyIntegrationWalletAdjustSchema = exports.loyaltyIntegrationCouponRedeemSchema = exports.loyaltyIntegrationValidateCouponSchema = exports.loyaltyIntegrationRedeemSchema = exports.loyaltyIntegrationEarnSchema = exports.loyaltyIntegrationUpsertCustomerSchema = void 0;
+exports.patronLoyaltyIntegrationConfigSchema = exports.loyaltyIntegrationQueueEventSchema = exports.loyaltyPublicReferralJoinSchema = exports.loyaltyPortalGamePlaySchema = exports.loyaltyPortalLegalConsentSchema = exports.loyaltyPortalProfileSchema = exports.loyaltyPortalRedeemSchema = exports.loyaltyIntegrationWalletAdjustSchema = exports.loyaltyIntegrationCouponRedeemSchema = exports.loyaltyIntegrationValidateCouponSchema = exports.loyaltyIntegrationRedeemSchema = exports.loyaltyIntegrationEarnSchema = exports.loyaltyIntegrationUpsertCustomerSchema = void 0;
 const zod_1 = require("zod");
 const loyalty_1 = require("../constants/loyalty");
 const loyalty_connector_1 = require("../constants/loyalty-connector");
@@ -88,6 +88,9 @@ exports.loyaltyPortalProfileSchema = zod_1.z.object({
 exports.loyaltyPortalLegalConsentSchema = zod_1.z.object({
     termsVersion: zod_1.z.string().max(30),
     privacyVersion: zod_1.z.string().max(30),
+});
+exports.loyaltyPortalGamePlaySchema = zod_1.z.object({
+    gameType: zod_1.z.enum(['spin_wheel', 'scratch_card']),
 });
 exports.loyaltyPublicReferralJoinSchema = zod_1.z
     .object({

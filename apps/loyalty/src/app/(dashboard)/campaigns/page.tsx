@@ -36,7 +36,7 @@ const TRIGGERS = [
   'ABANDONED',
 ] as const;
 
-const CHANNELS = ['EMAIL', 'SMS', 'IN_APP'] as const;
+const CHANNELS = ['EMAIL', 'SMS', 'IN_APP', 'WHATSAPP', 'PUSH'] as const;
 
 export default function CampaignsPage() {
   const token = useAuthStore((s) => s.accessToken);

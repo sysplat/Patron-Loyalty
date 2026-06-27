@@ -166,14 +166,37 @@ export class LoyaltyCampaignDispatchService {
     }
 
     if (channel === LOYALTY_CAMPAIGN_CHANNELS.PUSH) {
+      await this.markSend(
+        orgId,
+        sendId,
+        'skipped',
+        'Push provider not configured — use IN_APP channel',
+      );
+      return 'skipped';
+    }
+
+    if (channel === LOYALTY_CAMPAIGN_CHANNELS.WHATSAPP) {
+      if (customer.marketingSmsConsent !== 'GRANTED') {
+        await this.markSend(orgId, sendId, 'skipped', 'Marketing WhatsApp/SMS not consented');
+        return 'skipped';
+      }
+      if (!customer.phone?.trim()) {
+        await this.markSend(orgId, sendId, 'skipped', 'No phone on file');
+        return 'skipped';
+      }
+      await this.notifications.send(orgId, {
+        channel: 'whatsapp',
+        to: customer.phone,
+        subject,
+        body,
+        messageCategory: 'marketing',
+        metadata,
+      });
       await this.markSend(orgId, sendId, 'sent');
       return 'sent';
     }
 
-    if (
-      channel === LOYALTY_CAMPAIGN_CHANNELS.SMS ||
-      channel === LOYALTY_CAMPAIGN_CHANNELS.WHATSAPP
-    ) {
+    if (channel === LOYALTY_CAMPAIGN_CHANNELS.SMS) {
       if (customer.marketingSmsConsent !== 'GRANTED') {
         await this.markSend(orgId, sendId, 'skipped', 'Marketing SMS not consented');
         return 'skipped';

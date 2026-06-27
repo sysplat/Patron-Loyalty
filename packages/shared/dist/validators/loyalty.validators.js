@@ -1,12 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateLoyaltyProfileSchema = exports.updateCrmTaskSchema = exports.createCrmTaskSchema = exports.createGiftCardSchema = exports.createLoyaltyChallengeSchema = exports.createLoyaltyBadgeSchema = exports.updateLoyaltyEarnRuleSchema = exports.updateLoyaltyCampaignSchema = exports.createLoyaltyCampaignSchema = exports.createReferralSchema = exports.loyaltyPointsAdjustSchema = exports.loyaltyWalletAdjustSchema = exports.validateLoyaltyCouponSchema = exports.createLoyaltyCouponSchema = exports.redeemLoyaltyRewardSchema = exports.updateLoyaltyRewardSchema = exports.createLoyaltyRewardSchema = exports.createLoyaltyEarnRuleSchema = exports.updateLoyaltyTierSchema = exports.createLoyaltyTierSchema = exports.updateLoyaltyProgramSchema = void 0;
+exports.updateLoyaltyProfileSchema = exports.updateCrmTaskSchema = exports.createCrmTaskSchema = exports.createGiftCardSchema = exports.createLoyaltyChallengeSchema = exports.createLoyaltyBadgeSchema = exports.updateCrmSalesOpportunitySchema = exports.createCrmSalesOpportunitySchema = exports.updateCrmSupportTicketSchema = exports.createCrmSupportTicketSchema = exports.updateLoyaltyEarnRuleSchema = exports.updateLoyaltyCampaignSchema = exports.createLoyaltyCampaignSchema = exports.createReferralSchema = exports.loyaltyPointsAdjustSchema = exports.loyaltyWalletAdjustSchema = exports.validateLoyaltyCouponSchema = exports.createLoyaltyCouponSchema = exports.redeemLoyaltyRewardSchema = exports.updateLoyaltyRewardSchema = exports.createLoyaltyRewardSchema = exports.createLoyaltyEarnRuleSchema = exports.updateLoyaltyTierSchema = exports.createLoyaltyTierSchema = exports.updateLoyaltyProgramSchema = void 0;
 const zod_1 = require("zod");
 const loyalty_1 = require("../constants/loyalty");
 const optionalDate = zod_1.z.string().datetime().optional().nullable();
 exports.updateLoyaltyProgramSchema = zod_1.z.object({
     enabled: zod_1.z.boolean().optional(),
     pointsCurrencyName: zod_1.z.string().min(1).max(50).optional(),
+    displayCurrencyCode: zod_1.z.string().length(3).optional(),
+    defaultLocale: zod_1.z.string().min(2).max(10).optional(),
     defaultEarnPoints: zod_1.z.number().int().min(0).max(100000).optional(),
     referralBonusPoints: zod_1.z.number().int().min(0).max(100000).optional(),
     referredBonusPoints: zod_1.z.number().int().min(0).max(100000).optional(),
@@ -144,6 +146,77 @@ exports.updateLoyaltyEarnRuleSchema = zod_1.z.object({
     name: zod_1.z.string().min(1).max(100).optional(),
     points: zod_1.z.number().int().min(0).max(100000).optional(),
     active: zod_1.z.boolean().optional(),
+    conditions: zod_1.z.record(zod_1.z.unknown()).optional(),
+});
+exports.createCrmSupportTicketSchema = zod_1.z.object({
+    customerId: zod_1.z.string().uuid(),
+    subject: zod_1.z.string().min(1).max(200),
+    description: zod_1.z.string().max(5000).optional().nullable(),
+    priority: zod_1.z
+        .enum([
+        loyalty_1.CRM_SUPPORT_TICKET_PRIORITIES.LOW,
+        loyalty_1.CRM_SUPPORT_TICKET_PRIORITIES.NORMAL,
+        loyalty_1.CRM_SUPPORT_TICKET_PRIORITIES.HIGH,
+        loyalty_1.CRM_SUPPORT_TICKET_PRIORITIES.URGENT,
+    ])
+        .optional(),
+    assigneeId: zod_1.z.string().uuid().optional().nullable(),
+});
+exports.updateCrmSupportTicketSchema = zod_1.z.object({
+    subject: zod_1.z.string().min(1).max(200).optional(),
+    description: zod_1.z.string().max(5000).optional().nullable(),
+    priority: zod_1.z
+        .enum([
+        loyalty_1.CRM_SUPPORT_TICKET_PRIORITIES.LOW,
+        loyalty_1.CRM_SUPPORT_TICKET_PRIORITIES.NORMAL,
+        loyalty_1.CRM_SUPPORT_TICKET_PRIORITIES.HIGH,
+        loyalty_1.CRM_SUPPORT_TICKET_PRIORITIES.URGENT,
+    ])
+        .optional(),
+    status: zod_1.z
+        .enum([
+        loyalty_1.CRM_SUPPORT_TICKET_STATUSES.OPEN,
+        loyalty_1.CRM_SUPPORT_TICKET_STATUSES.PENDING,
+        loyalty_1.CRM_SUPPORT_TICKET_STATUSES.RESOLVED,
+        loyalty_1.CRM_SUPPORT_TICKET_STATUSES.CLOSED,
+    ])
+        .optional(),
+    assigneeId: zod_1.z.string().uuid().optional().nullable(),
+});
+exports.createCrmSalesOpportunitySchema = zod_1.z.object({
+    customerId: zod_1.z.string().uuid(),
+    title: zod_1.z.string().min(1).max(200),
+    stage: zod_1.z
+        .enum([
+        loyalty_1.CRM_SALES_STAGES.LEAD,
+        loyalty_1.CRM_SALES_STAGES.QUALIFIED,
+        loyalty_1.CRM_SALES_STAGES.PROPOSAL,
+        loyalty_1.CRM_SALES_STAGES.NEGOTIATION,
+        loyalty_1.CRM_SALES_STAGES.WON,
+        loyalty_1.CRM_SALES_STAGES.LOST,
+    ])
+        .optional(),
+    valueCents: zod_1.z.number().int().min(0).optional(),
+    expectedCloseDate: optionalDate,
+    notes: zod_1.z.string().max(5000).optional().nullable(),
+    assigneeId: zod_1.z.string().uuid().optional().nullable(),
+});
+exports.updateCrmSalesOpportunitySchema = zod_1.z.object({
+    title: zod_1.z.string().min(1).max(200).optional(),
+    stage: zod_1.z
+        .enum([
+        loyalty_1.CRM_SALES_STAGES.LEAD,
+        loyalty_1.CRM_SALES_STAGES.QUALIFIED,
+        loyalty_1.CRM_SALES_STAGES.PROPOSAL,
+        loyalty_1.CRM_SALES_STAGES.NEGOTIATION,
+        loyalty_1.CRM_SALES_STAGES.WON,
+        loyalty_1.CRM_SALES_STAGES.LOST,
+    ])
+        .optional(),
+    valueCents: zod_1.z.number().int().min(0).optional(),
+    expectedCloseDate: optionalDate,
+    notes: zod_1.z.string().max(5000).optional().nullable(),
+    assigneeId: zod_1.z.string().uuid().optional().nullable(),
 });
 exports.createLoyaltyBadgeSchema = zod_1.z.object({
     name: zod_1.z.string().min(1).max(100),

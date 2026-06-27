@@ -258,4 +258,91 @@ export class LoyaltyDashboardService {
       };
     });
   }
+
+  async getBranchPerformanceReport(orgId: string) {
+    await this.patronCrmFeature.requireEnabled(orgId);
+    const rows = await this.prisma.withTenant(orgId, (tx) =>
+      tx.$queryRaw<
+        Array<{ branch_id: string; branch_name: string; visit_count: bigint }>
+      >(Prisma.sql`
+        SELECT b.id AS branch_id, b.name AS branch_name, COUNT(t.id)::bigint AS visit_count
+        FROM branches b
+        LEFT JOIN tickets t ON t.branch_id = b.id AND t.org_id = b.org_id
+          AND t.status IN ('completed', 'served')
+        WHERE b.org_id = ${orgId}::uuid
+        GROUP BY b.id, b.name
+        ORDER BY visit_count DESC
+        LIMIT 25
+      `),
+    );
+    return {
+      branches: rows.map((r) => ({
+        branchId: r.branch_id,
+        branchName: r.branch_name,
+        visitCount: Number(r.visit_count),
+      })),
+    };
+  }
+
+  async getCampaignRoiReport(orgId: string) {
+    await this.patronCrmFeature.requireEnabled(orgId);
+    return this.prisma.withTenant(orgId, async (tx) => {
+      const campaigns = await tx.loyaltyCampaign.findMany({
+        where: { orgId },
+        orderBy: { createdAt: 'desc' },
+        take: 30,
+        select: {
+          id: true,
+          name: true,
+          channel: true,
+          trigger: true,
+          sentCount: true,
+          status: true,
+        },
+      });
+      const sends = await tx.loyaltyCampaignSend.groupBy({
+        by: ['campaignId', 'status'],
+        where: { orgId },
+        _count: { _all: true },
+      });
+      return {
+        campaigns: campaigns.map((c) => ({
+          ...c,
+          sendBreakdown: sends
+            .filter((s) => s.campaignId === c.id)
+            .map((s) => ({ status: s.status, count: s._count._all })),
+          estimatedRoiNote:
+            'Track redemptions within 7 days of send for full ROI — wire POS integration for revenue attribution.',
+        })),
+      };
+    });
+  }
+
+  async getSalesDashboard(orgId: string) {
+    await this.patronCrmFeature.requireEnabled(orgId);
+    const [accounts, repeatBuyers, redemptions] = await this.prisma.withTenant(
+      orgId,
+      async (tx) => {
+        const acc = await tx.loyaltyAccount.aggregate({
+          where: { orgId },
+          _count: { _all: true },
+          _sum: { lifetimeValueCents: true, lifetimePointsEarned: true },
+          _avg: { totalVisits: true },
+        });
+        const repeat = await tx.loyaltyAccount.count({
+          where: { orgId, totalVisits: { gte: 2 } },
+        });
+        const red = await tx.loyaltyRedemption.count({ where: { orgId } });
+        return [acc, repeat, red] as const;
+      },
+    );
+    const members = accounts._count._all || 1;
+    return {
+      repeatPurchaseRate: Math.round((repeatBuyers / members) * 100) / 100,
+      redemptionRate: Math.round((redemptions / members) * 100) / 100,
+      avgVisitsPerMember: Math.round((accounts._avg.totalVisits ?? 0) * 10) / 10,
+      totalLifetimeValueCents: accounts._sum.lifetimeValueCents ?? 0,
+      totalLifetimePoints: accounts._sum.lifetimePointsEarned ?? 0,
+    };
+  }
 }

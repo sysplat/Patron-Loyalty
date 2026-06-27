@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LOYALTY_WEBHOOK_EVENTS = exports.LOYALTY_EVENTS = exports.CRM_TASK_STATUSES = exports.LOYALTY_CHALLENGE_TARGET_TYPES = exports.LOYALTY_STAMP_CARD_TARGET = exports.LOYALTY_DEFAULT_EARN_RULES = exports.LOYALTY_DEFAULT_TIERS = exports.LOYALTY_CAMPAIGN_STATUSES = exports.LOYALTY_CAMPAIGN_TRIGGERS = exports.LOYALTY_CAMPAIGN_CHANNELS = exports.LOYALTY_WALLET_TX_TYPES = exports.LOYALTY_COUPON_TYPES = exports.LOYALTY_REWARD_TYPES = exports.LOYALTY_INTEGRATION_API_KEY_SETTING = exports.LOYALTY_EARN_EVENT_TYPES = exports.LOYALTY_POINT_LEDGER_TYPES = void 0;
+exports.LOYALTY_WEBHOOK_EVENTS = exports.LOYALTY_EVENTS = exports.LOYALTY_PATRON_GAME_TYPES = exports.CRM_SALES_STAGES = exports.CRM_SUPPORT_TICKET_STATUSES = exports.CRM_SUPPORT_TICKET_PRIORITIES = exports.CRM_TASK_STATUSES = exports.LOYALTY_CHALLENGE_TARGET_TYPES = exports.LOYALTY_STAMP_CARD_TARGET = exports.LOYALTY_DEFAULT_EARN_RULES = exports.LOYALTY_DEFAULT_TIERS = exports.LOYALTY_CAMPAIGN_STATUSES = exports.LOYALTY_CAMPAIGN_TRIGGERS = exports.LOYALTY_CAMPAIGN_CHANNELS = exports.LOYALTY_WALLET_TX_TYPES = exports.LOYALTY_COUPON_TYPES = exports.LOYALTY_REWARD_TYPES = exports.LOYALTY_INTEGRATION_API_KEY_SETTING = exports.LOYALTY_EARN_EVENT_TYPES = exports.LOYALTY_POINT_LEDGER_TYPES = void 0;
 exports.LOYALTY_POINT_LEDGER_TYPES = {
     EARN: 'EARN',
     BURN: 'BURN',
@@ -93,6 +93,30 @@ exports.CRM_TASK_STATUSES = {
     IN_PROGRESS: 'in_progress',
     DONE: 'done',
     CANCELLED: 'cancelled',
+};
+exports.CRM_SUPPORT_TICKET_PRIORITIES = {
+    LOW: 'low',
+    NORMAL: 'normal',
+    HIGH: 'high',
+    URGENT: 'urgent',
+};
+exports.CRM_SUPPORT_TICKET_STATUSES = {
+    OPEN: 'open',
+    PENDING: 'pending',
+    RESOLVED: 'resolved',
+    CLOSED: 'closed',
+};
+exports.CRM_SALES_STAGES = {
+    LEAD: 'lead',
+    QUALIFIED: 'qualified',
+    PROPOSAL: 'proposal',
+    NEGOTIATION: 'negotiation',
+    WON: 'won',
+    LOST: 'lost',
+};
+exports.LOYALTY_PATRON_GAME_TYPES = {
+    SPIN_WHEEL: 'spin_wheel',
+    SCRATCH_CARD: 'scratch_card',
 };
 exports.LOYALTY_EVENTS = {
     TICKET_COMPLETED: 'loyalty.ticket.completed',

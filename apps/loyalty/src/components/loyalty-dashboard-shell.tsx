@@ -15,6 +15,7 @@ import {
   Megaphone,
   Menu,
   Moon,
+  Phone,
   Plug,
   Settings2,
   Sun,
@@ -36,6 +37,7 @@ import { formatRoleLabel, formatUserDisplayName } from '@/lib/rbac-ui';
 
 export const LOYALTY_NAV = [
   { href: '/overview', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/lookup', label: 'Lookup', icon: Phone },
   { href: '/patrons', label: 'Patrons', icon: Users },
   { href: '/rewards', label: 'Rewards', icon: Gift },
   { href: '/coupons', label: 'Coupons', icon: Tag },

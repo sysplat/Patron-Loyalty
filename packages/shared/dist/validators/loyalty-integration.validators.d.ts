@@ -237,6 +237,13 @@ export declare const loyaltyPortalLegalConsentSchema: z.ZodObject<{
     termsVersion: string;
     privacyVersion: string;
 }>;
+export declare const loyaltyPortalGamePlaySchema: z.ZodObject<{
+    gameType: z.ZodEnum<["spin_wheel", "scratch_card"]>;
+}, "strip", z.ZodTypeAny, {
+    gameType: "spin_wheel" | "scratch_card";
+}, {
+    gameType: "spin_wheel" | "scratch_card";
+}>;
 export declare const loyaltyPublicReferralJoinSchema: z.ZodEffects<z.ZodObject<{
     name: z.ZodString;
     email: z.ZodNullable<z.ZodOptional<z.ZodString>>;

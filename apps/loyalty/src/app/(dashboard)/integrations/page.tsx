@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { loyaltyGet, loyaltyPost } from '@/lib/api-response';
+import { loyaltyGet, loyaltyPost, unwrapApiData } from '@/lib/api-response';
+import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
 import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { LOYALTY_WEBHOOK_EVENTS } from '@queueplatform/shared';
 import { toast } from 'sonner';
 
@@ -16,16 +18,37 @@ interface ApiKeyStatus {
   createdAt: string | null;
 }
 
+interface WebhookEndpoint {
+  id: string;
+  url: string;
+  events: string[];
+  status: string;
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+const LOYALTY_EVENT_OPTIONS = Object.values(LOYALTY_WEBHOOK_EVENTS);
 
 export default function IntegrationsPage() {
   const token = useAuthStore((s) => s.accessToken);
   const qc = useQueryClient();
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [selectedEvents, setSelectedEvents] = useState<string[]>([
+    LOYALTY_WEBHOOK_EVENTS.POINTS_EARNED,
+  ]);
 
   const { data: status, isLoading } = useQuery({
     queryKey: ['loyalty', 'integrations', 'api-key'],
     queryFn: () => loyaltyGet<ApiKeyStatus>('/loyalty/integrations/api-key', token!),
+    enabled: !!token,
+  });
+
+  const { data: webhooks = [], isLoading: webhooksLoading } = useQuery({
+    queryKey: ['webhooks'],
+    queryFn: () =>
+      api
+        .get<{ success: boolean; data: WebhookEndpoint[] }>('/webhooks', { token: token! })
+        .then((payload) => unwrapApiData<WebhookEndpoint[]>(payload)),
     enabled: !!token,
   });
 
@@ -52,6 +75,36 @@ export default function IntegrationsPage() {
     },
     onError: () => toast.error('Could not revoke API key'),
   });
+
+  const createWebhook = useMutation({
+    mutationFn: () =>
+      api.post<{ success: boolean; data: WebhookEndpoint }>(
+        '/webhooks',
+        { url: webhookUrl.trim(), events: selectedEvents },
+        { token: token! },
+      ),
+    onSuccess: () => {
+      toast.success('Webhook endpoint created');
+      setWebhookUrl('');
+      qc.invalidateQueries({ queryKey: ['webhooks'] });
+    },
+    onError: () => toast.error('Could not create webhook — use an HTTPS URL'),
+  });
+
+  const deleteWebhook = useMutation({
+    mutationFn: (id: string) => api.delete(`/webhooks/${id}`, { token: token! }),
+    onSuccess: () => {
+      toast.success('Webhook removed');
+      qc.invalidateQueries({ queryKey: ['webhooks'] });
+    },
+    onError: () => toast.error('Could not delete webhook'),
+  });
+
+  const toggleEvent = (event: string) => {
+    setSelectedEvents((prev) =>
+      prev.includes(event) ? prev.filter((e) => e !== event) : [...prev, event],
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -124,17 +177,76 @@ export default function IntegrationsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Outbound webhook events</CardTitle>
+          <CardTitle className="text-base">Outbound webhooks</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <p className="text-muted-foreground">
-            Configure tenant webhooks in QMS settings to receive loyalty events:
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground text-sm">
+            Receive HTTPS callbacks when loyalty events occur (points earned, tier upgrades, etc.).
           </p>
-          <ul className="font-mono text-xs">
-            {Object.values(LOYALTY_WEBHOOK_EVENTS).map((event) => (
-              <li key={event}>{event}</li>
-            ))}
-          </ul>
+
+          <div className="space-y-2">
+            <Input
+              placeholder="https://your-server.com/webhooks/loyalty"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+            />
+            <div className="flex flex-wrap gap-2">
+              {LOYALTY_EVENT_OPTIONS.map((event) => (
+                <button
+                  key={event}
+                  type="button"
+                  onClick={() => toggleEvent(event)}
+                  className={`rounded-full border px-2 py-1 font-mono text-xs ${
+                    selectedEvents.includes(event)
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border'
+                  }`}
+                >
+                  {event}
+                </button>
+              ))}
+            </div>
+            <Button
+              onClick={() => createWebhook.mutate()}
+              disabled={
+                !webhookUrl.startsWith('https://') ||
+                selectedEvents.length === 0 ||
+                createWebhook.isPending
+              }
+            >
+              Add webhook
+            </Button>
+          </div>
+
+          {webhooksLoading ? (
+            <p className="text-muted-foreground text-sm">Loading webhooks…</p>
+          ) : webhooks.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No webhooks configured yet.</p>
+          ) : (
+            <ul className="space-y-3">
+              {webhooks.map((hook) => (
+                <li
+                  key={hook.id}
+                  className="flex flex-wrap items-start justify-between gap-2 rounded-lg border p-3 text-sm"
+                >
+                  <div>
+                    <p className="break-all font-mono text-xs">{hook.url}</p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      {hook.status} · {hook.events.join(', ')}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => deleteWebhook.mutate(hook.id)}
+                    disabled={deleteWebhook.isPending}
+                  >
+                    Remove
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
     </div>

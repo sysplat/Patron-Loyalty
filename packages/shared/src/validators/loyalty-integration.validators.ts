@@ -105,6 +105,10 @@ export const loyaltyPortalLegalConsentSchema = z.object({
   privacyVersion: z.string().max(30),
 });
 
+export const loyaltyPortalGamePlaySchema = z.object({
+  gameType: z.enum(['spin_wheel', 'scratch_card']),
+});
+
 export const loyaltyPublicReferralJoinSchema = z
   .object({
     name: z.string().min(1).max(200),

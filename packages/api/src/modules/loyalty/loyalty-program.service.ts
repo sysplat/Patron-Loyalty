@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import {
   LOYALTY_DEFAULT_EARN_RULES,
   LOYALTY_DEFAULT_TIERS,
+  LOYALTY_EARN_EVENT_TYPES,
   type LoyaltyEarnEventType,
 } from '@queueplatform/shared';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -77,6 +78,8 @@ export class LoyaltyProgramService {
       referralBonusPoints?: number;
       referredBonusPoints?: number;
       pointsExpiryDays?: number | null;
+      displayCurrencyCode?: string;
+      defaultLocale?: string;
     },
   ) {
     await this.getOrCreateProgram(orgId);
@@ -146,18 +149,67 @@ export class LoyaltyProgramService {
   async updateEarnRule(
     orgId: string,
     ruleId: string,
-    data: { name?: string; points?: number; active?: boolean },
+    data: {
+      name?: string;
+      points?: number;
+      active?: boolean;
+      conditions?: Record<string, unknown>;
+    },
   ) {
     await this.getOrCreateProgram(orgId);
     return this.prisma.withTenant(orgId, (tx) =>
       tx.loyaltyEarnRule.update({
         where: { id: ruleId },
-        data,
+        data: {
+          name: data.name,
+          points: data.points,
+          active: data.active,
+          ...(data.conditions !== undefined
+            ? { conditions: data.conditions as Prisma.InputJsonValue }
+            : {}),
+        },
       }),
     );
   }
 
-  async resolveEarnPoints(orgId: string, eventType: LoyaltyEarnEventType): Promise<number> {
+  private ruleMatchesConditions(
+    conditions: Record<string, unknown>,
+    ctx: {
+      purchaseAmountCents?: number;
+      branchId?: string;
+      tierSlug?: string | null;
+      lifetimePointsEarned?: number;
+    },
+  ): boolean {
+    const minPurchase = conditions.minPurchaseCents;
+    if (typeof minPurchase === 'number' && (ctx.purchaseAmountCents ?? 0) < minPurchase) {
+      return false;
+    }
+    const branchId = conditions.branchId;
+    if (typeof branchId === 'string' && branchId && ctx.branchId !== branchId) {
+      return false;
+    }
+    const tierSlugs = conditions.tierSlugs;
+    if (Array.isArray(tierSlugs) && tierSlugs.length > 0) {
+      if (!ctx.tierSlug || !tierSlugs.includes(ctx.tierSlug)) return false;
+    }
+    const minLifetime = conditions.minLifetimePoints;
+    if (typeof minLifetime === 'number' && (ctx.lifetimePointsEarned ?? 0) < minLifetime) {
+      return false;
+    }
+    return true;
+  }
+
+  async resolveEarnPoints(
+    orgId: string,
+    eventType: LoyaltyEarnEventType,
+    ctx: {
+      purchaseAmountCents?: number;
+      branchId?: string;
+      tierSlug?: string | null;
+      lifetimePointsEarned?: number;
+    } = {},
+  ): Promise<number> {
     const enabled = await this.patronCrmFeature.isEnabled(orgId);
     if (!enabled) return 0;
 
@@ -165,14 +217,30 @@ export class LoyaltyProgramService {
       tx.loyaltyProgram.findUnique({
         where: { orgId },
         include: {
-          earnRules: { where: { eventType, active: true }, take: 1 },
+          earnRules: { where: { eventType, active: true }, orderBy: { createdAt: 'asc' } },
         },
       }),
     );
 
     if (!program?.enabled) return 0;
-    const rule = program.earnRules[0];
-    if (rule) return rule.points;
+
+    for (const rule of program.earnRules) {
+      const conditions = (rule.conditions ?? {}) as Record<string, unknown>;
+      if (!this.ruleMatchesConditions(conditions, ctx)) continue;
+      if (
+        eventType === LOYALTY_EARN_EVENT_TYPES.PURCHASE &&
+        rule.points === 1 &&
+        (ctx.purchaseAmountCents ?? 0) > 0
+      ) {
+        return Math.floor((ctx.purchaseAmountCents ?? 0) / 100);
+      }
+      return rule.points;
+    }
+
+    if (eventType === LOYALTY_EARN_EVENT_TYPES.PURCHASE && (ctx.purchaseAmountCents ?? 0) > 0) {
+      return Math.floor((ctx.purchaseAmountCents ?? 0) / 100);
+    }
+
     return program.defaultEarnPoints;
   }
 

@@ -114,16 +114,25 @@ export class LoyaltyAccountService {
     eventType: LoyaltyEarnEventType,
     source: { sourceType: string; sourceId: string; description?: string },
     incrementVisit = false,
+    earnContext: {
+      branchId?: string;
+      purchaseAmountCents?: number;
+    } = {},
   ) {
     if (!customerId) return null;
     const enabled = await this.patronCrmFeature.isEnabled(orgId);
     if (!enabled) return null;
 
-    const points = await this.programService.resolveEarnPoints(orgId, eventType);
-    if (points <= 0) return null;
-
     const account = await this.ensureAccount(orgId, customerId);
     if (!account) return null;
+
+    const points = await this.programService.resolveEarnPoints(orgId, eventType, {
+      branchId: earnContext.branchId,
+      tierSlug: account.tier?.slug ?? null,
+      lifetimePointsEarned: account.lifetimePointsEarned,
+      purchaseAmountCents: earnContext.purchaseAmountCents,
+    });
+    if (points <= 0) return null;
 
     return this.applyPoints(orgId, account.id, points, LOYALTY_POINT_LEDGER_TYPES.EARN, {
       ...source,
@@ -424,6 +433,7 @@ export class LoyaltyAccountService {
         description: 'Points for completed visit',
       },
       true,
+      { branchId: branchId || undefined },
     );
   }
 
@@ -431,6 +441,7 @@ export class LoyaltyAccountService {
     orgId: string,
     appointmentId: string,
     customerId: string | null,
+    branchId?: string,
   ) {
     return this.earnFromEvent(
       orgId,
@@ -442,6 +453,7 @@ export class LoyaltyAccountService {
         description: 'Points for completed appointment',
       },
       true,
+      { branchId: branchId || undefined },
     );
   }
 
@@ -451,5 +463,127 @@ export class LoyaltyAccountService {
       sourceId: reviewId,
       description: 'Points for review',
     });
+  }
+
+  async lookupPatronByPhone(orgId: string, phone: string) {
+    await this.patronCrmFeature.requireEnabled(orgId);
+    const normalized = phone.replace(/\D/g, '');
+    if (normalized.length < 10) {
+      throw new BadRequestException('Enter a valid phone number');
+    }
+    const customer = await this.prisma.withTenant(orgId, (tx) =>
+      tx.customer.findFirst({
+        where: {
+          orgId,
+          OR: [{ phone }, { phone: { contains: normalized.slice(-10) } }],
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+        },
+      }),
+    );
+    if (!customer) return { found: false as const };
+    const visitCount = await this.prisma.withTenant(orgId, (tx) =>
+      tx.ticket.count({ where: { orgId, customerId: customer.id } }),
+    );
+    const account = await this.ensureAccount(orgId, customer.id);
+    return {
+      found: true as const,
+      customer: { ...customer, visitCount },
+      loyaltyAccount: account
+        ? {
+            id: account.id,
+            pointsBalance: account.pointsBalance,
+            lifetimePointsEarned: account.lifetimePointsEarned,
+            tier: account.tier,
+            referralCode: account.referralCode,
+          }
+        : null,
+    };
+  }
+
+  /** DSAR subject-access export for patron loyalty + CRM data (SRS §22). */
+  async exportPatronDsar(orgId: string, customerId: string) {
+    await this.patronCrmFeature.requireEnabled(orgId);
+    const customer = await this.prisma.withTenant(orgId, (tx) =>
+      tx.customer.findFirst({
+        where: { id: customerId, orgId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          birthday: true,
+          gender: true,
+          city: true,
+          region: true,
+          postalCode: true,
+          marketingSmsConsent: true,
+          marketingEmailConsent: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+    );
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    const account = await this.prisma.withTenant(orgId, (tx) =>
+      tx.loyaltyAccount.findUnique({
+        where: { customerId },
+        include: {
+          tier: true,
+          wallet: true,
+          badges: { include: { badge: true } },
+          challengeProgress: { include: { challenge: true } },
+        },
+      }),
+    );
+
+    const [ledger, redemptions, referrals, tasks, tickets, opportunities, consent, gamePlays] =
+      await this.prisma.withTenant(orgId, async (tx) => {
+        const accountId = account?.id;
+        return Promise.all([
+          accountId
+            ? tx.loyaltyPointLedger.findMany({
+                where: { accountId },
+                orderBy: { createdAt: 'desc' },
+              })
+            : [],
+          accountId
+            ? tx.loyaltyRedemption.findMany({
+                where: { accountId },
+                include: { reward: { select: { name: true } } },
+              })
+            : [],
+          tx.loyaltyReferral.findMany({
+            where: {
+              orgId,
+              OR: [{ referredCustomerId: customerId }, { referrerAccount: { customerId } }],
+            },
+          }),
+          tx.crmTask.findMany({ where: { orgId, customerId } }),
+          tx.crmSupportTicket.findMany({ where: { orgId, customerId } }),
+          tx.crmSalesOpportunity.findMany({ where: { orgId, customerId } }),
+          tx.consentLedgerEntry.findMany({ where: { orgId, customerId } }),
+          accountId ? tx.loyaltyPatronGamePlay.findMany({ where: { orgId, accountId } }) : [],
+        ]);
+      });
+
+    return {
+      exportedAt: new Date().toISOString(),
+      customer,
+      loyaltyAccount: account,
+      pointLedger: ledger,
+      redemptions,
+      referrals,
+      crmTasks: tasks,
+      supportTickets: tickets,
+      salesOpportunities: opportunities,
+      consentLedger: consent,
+      patronGamePlays: gamePlays,
+    };
   }
 }

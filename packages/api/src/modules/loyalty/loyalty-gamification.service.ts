@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { LOYALTY_PATRON_GAME_TYPES, type LoyaltyPatronGameType } from '@queueplatform/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PatronCrmFeatureService } from '../../common/features/patron-crm-feature.service';
 import { LoyaltyAccountService } from './loyalty-account.service';
@@ -132,5 +133,97 @@ export class LoyaltyGamificationService {
       totalVisits: row.totalVisits,
       tier: row.tier,
     }));
+  }
+
+  private spinOutcomes = [
+    { label: '10 bonus points', points: 10, weight: 40 },
+    { label: '25 bonus points', points: 25, weight: 30 },
+    { label: '50 bonus points', points: 50, weight: 20 },
+    { label: 'Try again soon', points: 0, weight: 10 },
+  ];
+
+  private scratchOutcomes = [
+    { label: '5 points', points: 5 },
+    { label: '10 points', points: 10 },
+    { label: '15 points', points: 15 },
+    { label: '25 points', points: 25 },
+    { label: '50 points', points: 50 },
+  ];
+
+  private pickWeighted<T extends { weight: number }>(items: T[]): T {
+    const total = items.reduce((sum, item) => sum + item.weight, 0);
+    let roll = Math.random() * total;
+    for (const item of items) {
+      roll -= item.weight;
+      if (roll <= 0) return item;
+    }
+    return items[items.length - 1];
+  }
+
+  async getPatronGameStatus(orgId: string, accountId: string) {
+    const cooldownDays: Record<LoyaltyPatronGameType, number> = {
+      [LOYALTY_PATRON_GAME_TYPES.SPIN_WHEEL]: 7,
+      [LOYALTY_PATRON_GAME_TYPES.SCRATCH_CARD]: 3,
+    };
+    const result: Record<string, { canPlay: boolean; nextEligibleAt: string | null }> = {};
+    for (const gameType of Object.values(LOYALTY_PATRON_GAME_TYPES)) {
+      const last = await this.prisma.withTenant(orgId, (tx) =>
+        tx.loyaltyPatronGamePlay.findFirst({
+          where: { orgId, accountId, gameType },
+          orderBy: { playedAt: 'desc' },
+        }),
+      );
+      const days = cooldownDays[gameType];
+      const next = last && days > 0 ? new Date(last.playedAt.getTime() + days * 86_400_000) : null;
+      result[gameType] = {
+        canPlay: !next || next <= new Date(),
+        nextEligibleAt: next && next > new Date() ? next.toISOString() : null,
+      };
+    }
+    return result;
+  }
+
+  async playPatronGame(orgId: string, accountId: string, gameType: LoyaltyPatronGameType) {
+    await this.patronCrmFeature.requireEnabled(orgId);
+    const status = await this.getPatronGameStatus(orgId, accountId);
+    if (!status[gameType]?.canPlay) {
+      throw new BadRequestException('Game not available yet');
+    }
+
+    const account = await this.prisma.withTenant(orgId, (tx) =>
+      tx.loyaltyAccount.findFirst({
+        where: { id: accountId, orgId },
+        select: { customerId: true },
+      }),
+    );
+    if (!account) throw new BadRequestException('Account not found');
+
+    const outcome =
+      gameType === LOYALTY_PATRON_GAME_TYPES.SPIN_WHEEL
+        ? this.pickWeighted(this.spinOutcomes)
+        : this.scratchOutcomes[Math.floor(Math.random() * this.scratchOutcomes.length)];
+
+    await this.prisma.withTenant(orgId, (tx) =>
+      tx.loyaltyPatronGamePlay.create({
+        data: {
+          orgId,
+          accountId,
+          gameType,
+          resultLabel: outcome.label,
+          pointsAwarded: outcome.points,
+        },
+      }),
+    );
+
+    if (outcome.points > 0) {
+      await this.accounts.adjustPoints(
+        orgId,
+        account.customerId,
+        outcome.points,
+        `Patron ${gameType.replace('_', ' ')}: ${outcome.label}`,
+      );
+    }
+
+    return { gameType, resultLabel: outcome.label, pointsAwarded: outcome.points };
   }
 }

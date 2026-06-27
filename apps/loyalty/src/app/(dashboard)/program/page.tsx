@@ -13,6 +13,8 @@ import { toast } from 'sonner';
 interface Program {
   enabled: boolean;
   pointsCurrencyName: string;
+  displayCurrencyCode?: string;
+  defaultLocale?: string;
   defaultEarnPoints: number;
   referralBonusPoints: number;
   referredBonusPoints: number;
@@ -30,6 +32,7 @@ interface Program {
     eventType: string;
     points: number;
     active: boolean;
+    conditions?: Record<string, unknown> | null;
   }>;
 }
 
@@ -38,6 +41,8 @@ export default function ProgramPage() {
   const qc = useQueryClient();
 
   const [currencyName, setCurrencyName] = useState('');
+  const [displayCurrency, setDisplayCurrency] = useState('');
+  const [defaultLocale, setDefaultLocale] = useState('');
   const [defaultEarn, setDefaultEarn] = useState('');
   const [expiryDays, setExpiryDays] = useState('');
   const [tierName, setTierName] = useState('');
@@ -46,6 +51,9 @@ export default function ProgramPage() {
   const [ruleName, setRuleName] = useState('');
   const [ruleEvent, setRuleEvent] = useState('PURCHASE');
   const [rulePoints, setRulePoints] = useState('1');
+  const [ruleMinPurchase, setRuleMinPurchase] = useState('');
+  const [ruleBranchId, setRuleBranchId] = useState('');
+  const [ruleMinLifetime, setRuleMinLifetime] = useState('');
 
   const {
     data: program,
@@ -92,13 +100,19 @@ export default function ProgramPage() {
   });
 
   const createRule = useMutation({
-    mutationFn: () =>
-      loyaltyPost('/loyalty/program/earn-rules', token!, {
+    mutationFn: () => {
+      const conditions: Record<string, unknown> = {};
+      if (ruleMinPurchase) conditions.minPurchaseCents = Number(ruleMinPurchase) * 100;
+      if (ruleBranchId.trim()) conditions.branchId = ruleBranchId.trim();
+      if (ruleMinLifetime) conditions.minLifetimePoints = Number(ruleMinLifetime);
+      return loyaltyPost('/loyalty/program/earn-rules', token!, {
         name: ruleName,
         eventType: ruleEvent,
         points: Number(rulePoints),
         active: true,
-      }),
+        ...(Object.keys(conditions).length ? { conditions } : {}),
+      });
+    },
     onSuccess: () => {
       toast.success('Earn rule created');
       setRuleName('');
@@ -138,6 +152,16 @@ export default function ProgramPage() {
               onChange={(e) => setCurrencyName(e.target.value)}
             />
             <Input
+              placeholder={`ISO currency (${program.displayCurrencyCode ?? 'USD'})`}
+              defaultValue={program.displayCurrencyCode ?? 'USD'}
+              onChange={(e) => setDisplayCurrency(e.target.value.toUpperCase())}
+            />
+            <Input
+              placeholder={`Locale (${program.defaultLocale ?? 'en'})`}
+              defaultValue={program.defaultLocale ?? 'en'}
+              onChange={(e) => setDefaultLocale(e.target.value)}
+            />
+            <Input
               placeholder={`Default earn (${program.defaultEarnPoints})`}
               defaultValue={String(program.defaultEarnPoints)}
               onChange={(e) => setDefaultEarn(e.target.value)}
@@ -151,6 +175,8 @@ export default function ProgramPage() {
               onClick={() =>
                 updateProgram.mutate({
                   pointsCurrencyName: currencyName || program.pointsCurrencyName,
+                  displayCurrencyCode: displayCurrency || program.displayCurrencyCode || 'USD',
+                  defaultLocale: defaultLocale || program.defaultLocale || 'en',
                   defaultEarnPoints: defaultEarn ? Number(defaultEarn) : program.defaultEarnPoints,
                   pointsExpiryDays: expiryDays ? Number(expiryDays) : null,
                 })
@@ -162,7 +188,8 @@ export default function ProgramPage() {
           </div>
           <p className="text-muted-foreground text-xs">
             Referrer bonus: {program.referralBonusPoints} pts · Referred:{' '}
-            {program.referredBonusPoints} pts
+            {program.referredBonusPoints} pts · Display currency:{' '}
+            {program.displayCurrencyCode ?? 'USD'} · Locale: {program.defaultLocale ?? 'en'}
           </p>
         </CardContent>
       </Card>
@@ -212,22 +239,31 @@ export default function ProgramPage() {
           <CardTitle>Earn rules</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {program.earnRules.map((r) => (
-            <div key={r.id} className="flex items-center justify-between gap-2 text-sm">
-              <span>
-                {r.name} — {r.points} pts · {r.eventType}
-                {!r.active ? ' (inactive)' : ''}
-              </span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => toggleRule.mutate({ id: r.id, active: !r.active })}
-                disabled={toggleRule.isPending}
-              >
-                {r.active ? 'Deactivate' : 'Activate'}
-              </Button>
-            </div>
-          ))}
+          {program.earnRules.map((r) => {
+            const cond = (r.conditions ?? {}) as Record<string, unknown>;
+            const condParts: string[] = [];
+            if (cond.minPurchaseCents)
+              condParts.push(`min $${Number(cond.minPurchaseCents) / 100}`);
+            if (cond.branchId) condParts.push(`branch ${String(cond.branchId).slice(0, 8)}…`);
+            if (cond.minLifetimePoints) condParts.push(`≥${cond.minLifetimePoints} lifetime pts`);
+            return (
+              <div key={r.id} className="flex items-center justify-between gap-2 text-sm">
+                <span>
+                  {r.name} — {r.points} pts · {r.eventType}
+                  {condParts.length ? ` · if ${condParts.join(', ')}` : ''}
+                  {!r.active ? ' (inactive)' : ''}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => toggleRule.mutate({ id: r.id, active: !r.active })}
+                  disabled={toggleRule.isPending}
+                >
+                  {r.active ? 'Deactivate' : 'Activate'}
+                </Button>
+              </div>
+            );
+          })}
           <div className="flex flex-wrap gap-2 border-t pt-4">
             <Input
               placeholder="Rule name"
@@ -252,6 +288,24 @@ export default function ProgramPage() {
               value={rulePoints}
               onChange={(e) => setRulePoints(e.target.value)}
               className="max-w-[80px]"
+            />
+            <Input
+              placeholder="Min purchase ($)"
+              value={ruleMinPurchase}
+              onChange={(e) => setRuleMinPurchase(e.target.value)}
+              className="max-w-[120px]"
+            />
+            <Input
+              placeholder="Branch ID (optional)"
+              value={ruleBranchId}
+              onChange={(e) => setRuleBranchId(e.target.value)}
+              className="max-w-[140px]"
+            />
+            <Input
+              placeholder="Min lifetime pts"
+              value={ruleMinLifetime}
+              onChange={(e) => setRuleMinLifetime(e.target.value)}
+              className="max-w-[120px]"
             />
             <Button
               onClick={() => createRule.mutate()}

@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { getApiBase } from '@queueplatform/shared';
 
 /** Unwrap `{ success: true, data }` envelopes; pass through raw API payloads. */
 export function unwrapApiData<T>(payload: unknown): T {
@@ -47,4 +48,19 @@ export function fetchPaginated<T>(path: string, token: string): Promise<Paginate
     }
     return unwrapped;
   });
+}
+
+/** Download a CSV export from a loyalty report endpoint. */
+export async function loyaltyDownloadCsv(path: string, token: string, filename: string) {
+  const res = await fetch(`${getApiBase()}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Export failed');
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
 }

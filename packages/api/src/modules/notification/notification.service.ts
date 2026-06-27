@@ -115,6 +115,7 @@ export class NotificationService {
     },
   ) {
     let organizationNameForSms = 'Your organization';
+    const isPhoneChannel = data.channel === 'sms' || data.channel === 'whatsapp';
     if (data.channel === 'sms') {
       const org = await this.prisma.organization.findUnique({
         where: { id: orgId },
@@ -140,10 +141,12 @@ export class NotificationService {
     }
 
     const requestId = this.requestContext.getRequestId();
-    const recipient = data.channel === 'sms' ? normalizeSmsRecipient(data.to) : data.to.trim();
+    const recipient = isPhoneChannel ? normalizeSmsRecipient(data.to) : data.to.trim();
     if (!recipient) {
       throw new BadRequestException(
-        'SMS recipient must be a valid E.164 phone number. Use +country code, e.g. +14155552671. US/Canada 10-digit numbers are also accepted.',
+        isPhoneChannel
+          ? 'SMS/WhatsApp recipient must be a valid E.164 phone number. Use +country code, e.g. +14155552671. US/Canada 10-digit numbers are also accepted.'
+          : 'Notification recipient is required.',
       );
     }
 

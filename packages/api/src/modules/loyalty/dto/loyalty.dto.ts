@@ -1,6 +1,8 @@
 import { createZodDto } from 'nestjs-zod';
 import {
   createCrmTaskSchema,
+  createCrmSupportTicketSchema,
+  createCrmSalesOpportunitySchema,
   createGiftCardSchema,
   createLoyaltyBadgeSchema,
   createLoyaltyCampaignSchema,
@@ -14,6 +16,8 @@ import {
   loyaltyWalletAdjustSchema,
   redeemLoyaltyRewardSchema,
   updateCrmTaskSchema,
+  updateCrmSupportTicketSchema,
+  updateCrmSalesOpportunitySchema,
   updateLoyaltyCampaignSchema,
   updateLoyaltyProfileSchema,
   updateLoyaltyEarnRuleSchema,
@@ -41,4 +45,8 @@ export class CreateLoyaltyChallengeDto extends createZodDto(createLoyaltyChallen
 export class CreateGiftCardDto extends createZodDto(createGiftCardSchema) {}
 export class CreateCrmTaskDto extends createZodDto(createCrmTaskSchema) {}
 export class UpdateCrmTaskDto extends createZodDto(updateCrmTaskSchema) {}
+export class CreateCrmSupportTicketDto extends createZodDto(createCrmSupportTicketSchema) {}
+export class UpdateCrmSupportTicketDto extends createZodDto(updateCrmSupportTicketSchema) {}
+export class CreateCrmSalesOpportunityDto extends createZodDto(createCrmSalesOpportunitySchema) {}
+export class UpdateCrmSalesOpportunityDto extends createZodDto(updateCrmSalesOpportunitySchema) {}
 export class UpdateLoyaltyProfileDto extends createZodDto(updateLoyaltyProfileSchema) {}

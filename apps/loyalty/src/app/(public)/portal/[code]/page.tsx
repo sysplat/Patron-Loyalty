@@ -53,6 +53,21 @@ interface PortalData {
     filled: number;
     totalVisits: number;
   };
+  wallet?: {
+    balanceCents: number;
+    currency: string;
+    transactions?: Array<{
+      id: string;
+      type: string;
+      amountCents: number;
+      balanceAfter: number;
+      description?: string | null;
+      createdAt: string;
+    }>;
+  } | null;
+  gameStatus?: Record<string, { canPlay: boolean; nextEligibleAt: string | null }>;
+  nextBestOffer?: { id: string; name: string; pointsCost: number } | null;
+  orgSlug?: string;
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
@@ -147,6 +162,41 @@ export default function PatronPortalPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const playGame = useMutation({
+    mutationFn: (gameType: 'spin_wheel' | 'scratch_card') =>
+      portalPost(code, '/play', { gameType }),
+    onSuccess: (result: { resultLabel: string; pointsAwarded: number }) => {
+      toast.success(
+        `${result.resultLabel}${result.pointsAwarded ? ` (+${result.pointsAwarded} pts)` : ''}`,
+      );
+      qc.invalidateQueries({ queryKey: ['patron-portal', code] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const { data: branchData } = useQuery({
+    queryKey: ['patron-branches', data?.orgSlug],
+    queryFn: async () => {
+      const res = await fetch(
+        `${API_BASE}/loyalty/public/branches/${encodeURIComponent(data!.orgSlug!)}`,
+        { cache: 'no-store' },
+      );
+      if (!res.ok) return { found: false as const, branches: [] };
+      return res.json() as Promise<{
+        found: boolean;
+        branches: Array<{
+          id: string;
+          name: string;
+          address?: string | null;
+          phone?: string | null;
+          lat?: number | null;
+          lng?: number | null;
+        }>;
+      }>;
+    },
+    enabled: !!data?.orgSlug,
+  });
+
   const handleSaveProfile = async () => {
     if (!(await ensurePatronConsent())) return;
     saveProfile.mutate();
@@ -155,6 +205,11 @@ export default function PatronPortalPage() {
   const handleRedeem = async (rewardId: string) => {
     if (!(await ensurePatronConsent())) return;
     redeem.mutate(rewardId);
+  };
+
+  const handlePlayGame = async (gameType: 'spin_wheel' | 'scratch_card') => {
+    if (!(await ensurePatronConsent())) return;
+    playGame.mutate(gameType);
   };
 
   const handleAcceptLegal = async (checked: boolean) => {
@@ -240,7 +295,86 @@ export default function PatronPortalPage() {
             {data.lifetimePointsEarned ?? 0} lifetime · {data.totalVisits ?? 0} visits
           </p>
           <p className="mt-4 font-mono text-sm tracking-widest">{data.referralCode}</p>
+          {data.wallet && (
+            <p className="mt-2 text-xs text-white/60">
+              Wallet: ${(data.wallet.balanceCents / 100).toFixed(2)} {data.wallet.currency}
+            </p>
+          )}
         </section>
+
+        {data.wallet?.transactions && data.wallet.transactions.length > 0 && (
+          <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
+            <h2 className="mb-3 text-sm font-semibold">Wallet activity</h2>
+            <ul className="space-y-2 text-xs text-white/70">
+              {data.wallet.transactions.map((tx) => (
+                <li key={tx.id} className="flex justify-between gap-2">
+                  <span>
+                    {tx.type} {tx.amountCents >= 0 ? '+' : ''}${(tx.amountCents / 100).toFixed(2)}
+                    {tx.description ? ` · ${tx.description}` : ''}
+                  </span>
+                  <span className="shrink-0">{new Date(tx.createdAt).toLocaleDateString()}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {data.nextBestOffer && (
+          <section className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+            <h2 className="mb-1 text-sm font-semibold">Recommended for you</h2>
+            <p className="text-sm">
+              {data.nextBestOffer.name} — {data.nextBestOffer.pointsCost} pts
+            </p>
+          </section>
+        )}
+
+        {data.gameStatus && (
+          <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
+            <h2 className="mb-3 text-sm font-semibold">Games</h2>
+            <div className="flex flex-wrap gap-2">
+              {(['spin_wheel', 'scratch_card'] as const).map((gameType) => {
+                const status = data.gameStatus![gameType];
+                const label = gameType === 'spin_wheel' ? 'Spin wheel' : 'Scratch card';
+                return (
+                  <button
+                    key={gameType}
+                    type="button"
+                    disabled={!status?.canPlay || playGame.isPending || !acceptLegal}
+                    onClick={() => handlePlayGame(gameType)}
+                    className="rounded-md bg-white/15 px-3 py-2 text-sm hover:bg-white/25 disabled:opacity-40"
+                  >
+                    {label}
+                    {!status?.canPlay && status?.nextEligibleAt
+                      ? ` · ${new Date(status.nextEligibleAt).toLocaleDateString()}`
+                      : ''}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {branchData?.found && branchData.branches.length > 0 && (
+          <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
+            <h2 className="mb-3 text-sm font-semibold">Store locator</h2>
+            <ul className="space-y-2 text-xs text-white/70">
+              {branchData.branches.map((branch) => (
+                <li key={branch.id}>
+                  <p className="font-medium text-white">{branch.name}</p>
+                  {(branch.address || branch.lat) && (
+                    <p>
+                      {branch.address ?? ''}
+                      {branch.lat != null && branch.lng != null
+                        ? ` (${branch.lat.toFixed(4)}, ${branch.lng.toFixed(4)})`
+                        : ''}
+                    </p>
+                  )}
+                  {branch.phone && <p>{branch.phone}</p>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {data.stampCard && (
           <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CUSTOMER_SEGMENT_PRESET_LABELS,
-  CUSTOMER_SEGMENT_PRESETS,
+  CUSTOMER_SEGMENT_PRESET_VALUES,
   type CustomerSegmentPreset,
   RESOURCES,
   ACTIONS,
@@ -43,24 +43,11 @@ interface SavedSegment {
   filters: Record<string, unknown>;
 }
 
-const PRESET_OPTIONS: { value: CustomerSegmentPreset; label: string }[] = [
-  {
-    value: CUSTOMER_SEGMENT_PRESETS.REPEAT_VISITORS_90D,
-    label: CUSTOMER_SEGMENT_PRESET_LABELS[CUSTOMER_SEGMENT_PRESETS.REPEAT_VISITORS_90D],
-  },
-  {
-    value: CUSTOMER_SEGMENT_PRESETS.APPOINTMENT_NO_SHOW_LAST,
-    label: CUSTOMER_SEGMENT_PRESET_LABELS[CUSTOMER_SEGMENT_PRESETS.APPOINTMENT_NO_SHOW_LAST],
-  },
-  {
-    value: CUSTOMER_SEGMENT_PRESETS.LOW_RATING_REVIEW,
-    label: CUSTOMER_SEGMENT_PRESET_LABELS[CUSTOMER_SEGMENT_PRESETS.LOW_RATING_REVIEW],
-  },
-  {
-    value: CUSTOMER_SEGMENT_PRESETS.MARKETING_SMS_OPTED_IN,
-    label: CUSTOMER_SEGMENT_PRESET_LABELS[CUSTOMER_SEGMENT_PRESETS.MARKETING_SMS_OPTED_IN],
-  },
-];
+const PRESET_OPTIONS: { value: CustomerSegmentPreset; label: string }[] =
+  CUSTOMER_SEGMENT_PRESET_VALUES.map((value) => ({
+    value,
+    label: CUSTOMER_SEGMENT_PRESET_LABELS[value],
+  }));
 
 export default function CustomersPage() {
   const token = useAuthStore((s) => s.accessToken);

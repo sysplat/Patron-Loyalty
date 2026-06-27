@@ -1,10 +1,12 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { loyaltyGet } from '@/lib/api-response';
+import { loyaltyGet, loyaltyDownloadCsv } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
 import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
 
 interface PointsReport {
   byType: Array<{
@@ -70,8 +72,39 @@ interface VipReport {
   }>;
 }
 
+interface BranchReport {
+  branches: Array<{ branchId: string; branchName: string; visitCount: number }>;
+}
+
+interface CampaignRoiReport {
+  campaigns: Array<{
+    id: string;
+    name: string;
+    channel: string;
+    sentCount: number;
+    sendBreakdown: Array<{ status: string; count: number }>;
+  }>;
+}
+
+interface SalesDashboard {
+  repeatPurchaseRate: number;
+  redemptionRate: number;
+  avgVisitsPerMember: number;
+  totalLifetimeValueCents: number;
+  totalLifetimePoints: number;
+}
+
 export default function ReportsPage() {
   const token = useAuthStore((s) => s.accessToken);
+
+  const downloadCsv = async (path: string, filename: string) => {
+    if (!token) return;
+    try {
+      await loyaltyDownloadCsv(path, token, filename);
+    } catch {
+      toast.error('CSV export failed');
+    }
+  };
 
   const { data: report, isLoading: reportLoading } = useQuery({
     queryKey: ['loyalty', 'reports', 'points'],
@@ -118,6 +151,24 @@ export default function ReportsPage() {
   const { data: vipReport, isLoading: vipLoading } = useQuery({
     queryKey: ['loyalty', 'reports', 'vip'],
     queryFn: () => loyaltyGet<VipReport>('/loyalty/reports/vip', token!),
+    enabled: !!token,
+  });
+
+  const { data: branchReport, isLoading: branchLoading } = useQuery({
+    queryKey: ['loyalty', 'reports', 'branches'],
+    queryFn: () => loyaltyGet<BranchReport>('/loyalty/reports/branches', token!),
+    enabled: !!token,
+  });
+
+  const { data: roiReport, isLoading: roiLoading } = useQuery({
+    queryKey: ['loyalty', 'reports', 'campaign-roi'],
+    queryFn: () => loyaltyGet<CampaignRoiReport>('/loyalty/reports/campaign-roi', token!),
+    enabled: !!token,
+  });
+
+  const { data: salesDashboard, isLoading: salesLoading } = useQuery({
+    queryKey: ['loyalty', 'reports', 'sales-dashboard'],
+    queryFn: () => loyaltyGet<SalesDashboard>('/loyalty/reports/sales-dashboard', token!),
     enabled: !!token,
   });
 
@@ -173,8 +224,17 @@ export default function ReportsPage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Points ledger by type</CardTitle>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              downloadCsv('/loyalty/reports/points/export', 'loyalty-points-report.csv')
+            }
+          >
+            Export CSV
+          </Button>
         </CardHeader>
         <CardContent className="space-y-2">
           {reportLoading ? (
@@ -243,8 +303,17 @@ export default function ReportsPage() {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Referral performance</CardTitle>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              downloadCsv('/loyalty/reports/referrals/export', 'loyalty-referrals-report.csv')
+            }
+          >
+            Export CSV
+          </Button>
         </CardHeader>
         <CardContent className="space-y-2">
           {referralLoading ? (
@@ -346,6 +415,81 @@ export default function ReportsPage() {
           ) : (
             <p className="text-muted-foreground text-sm">No loyalty accounts yet.</p>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Branch performance</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {branchLoading ? (
+            <p className="text-muted-foreground text-sm">Loading…</p>
+          ) : branchReport?.branches.length ? (
+            branchReport.branches.map((row) => (
+              <div key={row.branchId} className="flex justify-between text-sm">
+                <span>{row.branchName}</span>
+                <span>{row.visitCount} visits</span>
+              </div>
+            ))
+          ) : (
+            <p className="text-muted-foreground text-sm">No branch visit data yet.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Campaign ROI</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {roiLoading ? (
+            <p className="text-muted-foreground text-sm">Loading…</p>
+          ) : roiReport?.campaigns.length ? (
+            roiReport.campaigns.slice(0, 10).map((c) => (
+              <div
+                key={c.id}
+                className="flex justify-between border-t pt-2 text-sm first:border-0 first:pt-0"
+              >
+                <span>{c.name}</span>
+                <span className="text-muted-foreground">
+                  {c.channel} · {c.sentCount} sent
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="text-muted-foreground text-sm">No campaigns yet.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Sales dashboard</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {salesLoading ? (
+            <p className="text-muted-foreground text-sm">Loading…</p>
+          ) : salesDashboard ? (
+            <>
+              <div className="flex justify-between text-sm">
+                <span>Repeat purchase rate</span>
+                <span>{Math.round(salesDashboard.repeatPurchaseRate * 100)}%</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Redemption rate</span>
+                <span>{Math.round(salesDashboard.redemptionRate * 100)}%</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Avg visits per member</span>
+                <span>{salesDashboard.avgVisitsPerMember}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Total lifetime value</span>
+                <span>${(salesDashboard.totalLifetimeValueCents / 100).toFixed(2)}</span>
+              </div>
+            </>
+          ) : null}
         </CardContent>
       </Card>
     </div>

@@ -128,6 +128,38 @@ export declare const CRM_TASK_STATUSES: {
     readonly DONE: "done";
     readonly CANCELLED: "cancelled";
 };
+export declare const CRM_SUPPORT_TICKET_PRIORITIES: {
+    readonly LOW: "low";
+    readonly NORMAL: "normal";
+    readonly HIGH: "high";
+    readonly URGENT: "urgent";
+};
+export declare const CRM_SUPPORT_TICKET_STATUSES: {
+    readonly OPEN: "open";
+    readonly PENDING: "pending";
+    readonly RESOLVED: "resolved";
+    readonly CLOSED: "closed";
+};
+export declare const CRM_SALES_STAGES: {
+    readonly LEAD: "lead";
+    readonly QUALIFIED: "qualified";
+    readonly PROPOSAL: "proposal";
+    readonly NEGOTIATION: "negotiation";
+    readonly WON: "won";
+    readonly LOST: "lost";
+};
+export declare const LOYALTY_PATRON_GAME_TYPES: {
+    readonly SPIN_WHEEL: "spin_wheel";
+    readonly SCRATCH_CARD: "scratch_card";
+};
+export type LoyaltyPatronGameType = (typeof LOYALTY_PATRON_GAME_TYPES)[keyof typeof LOYALTY_PATRON_GAME_TYPES];
+/** Earn-rule condition keys stored in LoyaltyEarnRule.conditions JSON (SRS §6 rule builder). */
+export interface LoyaltyEarnRuleConditions {
+    minPurchaseCents?: number;
+    branchId?: string;
+    tierSlugs?: string[];
+    minLifetimePoints?: number;
+}
 export declare const LOYALTY_EVENTS: {
     readonly TICKET_COMPLETED: "loyalty.ticket.completed";
     readonly TICKET_NO_SHOW: "loyalty.ticket.no_show";
