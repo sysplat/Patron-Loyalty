@@ -11,7 +11,13 @@ export class CustomerSegmentService {
     orgId: string,
     preset: CustomerSegmentPreset,
   ): Promise<string[] | null> {
-    if (preset === CUSTOMER_SEGMENT_PRESETS.MARKETING_SMS_OPTED_IN) {
+    if (
+      preset === CUSTOMER_SEGMENT_PRESETS.MARKETING_SMS_OPTED_IN ||
+      preset === CUSTOMER_SEGMENT_PRESETS.LOYALTY_VIP ||
+      preset === CUSTOMER_SEGMENT_PRESETS.LOYALTY_HIGH_LTV ||
+      preset === CUSTOMER_SEGMENT_PRESETS.LOYALTY_RFM_CHAMPIONS ||
+      preset === CUSTOMER_SEGMENT_PRESETS.LOYALTY_AT_RISK
+    ) {
       return null;
     }
 
@@ -23,6 +29,8 @@ export class CustomerSegmentService {
           return this.appointmentNoShowLast(tx, orgId);
         case CUSTOMER_SEGMENT_PRESETS.LOW_RATING_REVIEW:
           return this.lowRatingReview(tx, orgId);
+        case CUSTOMER_SEGMENT_PRESETS.LOYALTY_INACTIVE_90D:
+          return this.loyaltyInactive90d(tx, orgId);
         default: {
           const _exhaustive: never = preset;
           return _exhaustive;
@@ -34,6 +42,31 @@ export class CustomerSegmentService {
   presetWhere(preset: CustomerSegmentPreset): Prisma.CustomerWhereInput | null {
     if (preset === CUSTOMER_SEGMENT_PRESETS.MARKETING_SMS_OPTED_IN) {
       return { marketingSmsConsent: 'GRANTED' };
+    }
+    if (preset === CUSTOMER_SEGMENT_PRESETS.LOYALTY_VIP) {
+      return {
+        loyaltyAccount: {
+          OR: [
+            { tier: { slug: { in: ['gold', 'platinum', 'diamond'] } } },
+            { lifetimePointsEarned: { gte: 5000 } },
+          ],
+        },
+      };
+    }
+    if (preset === CUSTOMER_SEGMENT_PRESETS.LOYALTY_HIGH_LTV) {
+      return { loyaltyAccount: { lifetimeValueCents: { gte: 100_000 } } };
+    }
+    if (preset === CUSTOMER_SEGMENT_PRESETS.LOYALTY_RFM_CHAMPIONS) {
+      return {
+        loyaltyAccount: {
+          healthScore: { gte: 70 },
+          totalVisits: { gte: 5 },
+          lifetimeValueCents: { gte: 50_000 },
+        },
+      };
+    }
+    if (preset === CUSTOMER_SEGMENT_PRESETS.LOYALTY_AT_RISK) {
+      return { loyaltyAccount: { churnRisk: { in: ['high', 'medium'] } } };
     }
     return null;
   }
@@ -116,5 +149,20 @@ export class CustomerSegmentService {
         )
     `);
     return rows.map((r) => r.id);
+  }
+
+  private async loyaltyInactive90d(tx: Prisma.TransactionClient, orgId: string): Promise<string[]> {
+    const rows = await tx.$queryRaw<Array<{ customer_id: string }>>(Prisma.sql`
+      SELECT la.customer_id
+      FROM loyalty_accounts la
+      WHERE la.org_id = ${orgId}::uuid
+        AND NOT EXISTS (
+          SELECT 1
+          FROM loyalty_point_ledger lpl
+          WHERE lpl.account_id = la.id
+            AND lpl.created_at >= NOW() - INTERVAL '90 days'
+        )
+    `);
+    return rows.map((r) => r.customer_id);
   }
 }

@@ -137,6 +137,7 @@ Do **not** fork a random open-source LMS into the monorepo; build queue-native l
 
 ## Related docs
 
+- [SRS completion map](./srs-completion.md) — module-by-module status vs `Complete_Loyalty_Management_System_SRS.pdf`
 - [admin-surface.md](./admin-surface.md) — web vs admin boundaries
 - [queue-session.md](./queue-session.md) — serve/kiosk session model
 - `packages/api/src/modules/customer/` — Patron CRM v1 (interim)

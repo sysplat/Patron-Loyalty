@@ -8,6 +8,7 @@ import {
   CURRENT_LOYALTY_PATRON_LEGAL_CONSENT_VERSION,
   CURRENT_LOYALTY_PATRON_PRIVACY_VERSION,
   CURRENT_LOYALTY_PATRON_TERMS_VERSION,
+  LOYALTY_STAMP_CARD_TARGET,
 } from '@queueplatform/shared';
 
 @Injectable()
@@ -135,6 +136,11 @@ export class LoyaltyPortalService {
       })),
       rewards,
       recentActivity: ledger,
+      stampCard: {
+        target: LOYALTY_STAMP_CARD_TARGET,
+        filled: account.totalVisits % LOYALTY_STAMP_CARD_TARGET,
+        totalVisits: account.totalVisits,
+      },
     };
   }
 

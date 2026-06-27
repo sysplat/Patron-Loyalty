@@ -4,6 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { PatronCrmFeatureService } from '../../common/features/patron-crm-feature.service';
 import { LoyaltyAccountService } from './loyalty-account.service';
 import { LoyaltyProgramService } from './loyalty-program.service';
+import { LoyaltyIntegrationService } from './loyalty-integration.service';
 
 @Injectable()
 export class LoyaltyReferralService {
@@ -12,6 +13,7 @@ export class LoyaltyReferralService {
     private readonly patronCrmFeature: PatronCrmFeatureService,
     private readonly accounts: LoyaltyAccountService,
     private readonly programService: LoyaltyProgramService,
+    private readonly integration: LoyaltyIntegrationService,
   ) {}
 
   async applyReferral(orgId: string, referralCode: string, referredCustomerId: string) {
@@ -93,5 +95,90 @@ export class LoyaltyReferralService {
       return [all, done, (agg._sum.referrerBonusPoints ?? 0) + (agg._sum.referredBonusPoints ?? 0)];
     });
     return { total, completed, bonusPointsAwarded: bonusPoints };
+  }
+
+  async getPublicReferralLanding(referralCode: string) {
+    const referrer = await this.prisma.withBypassRls((tx) =>
+      tx.loyaltyAccount.findFirst({
+        where: { referralCode: referralCode.toUpperCase() },
+        include: {
+          customer: { select: { name: true } },
+          organization: {
+            select: {
+              name: true,
+              slug: true,
+              loyaltyProgram: {
+                select: { referredBonusPoints: true, referralBonusPoints: true },
+              },
+            },
+          },
+        },
+      }),
+    );
+    if (!referrer) return { found: false as const };
+
+    const enabled = await this.patronCrmFeature.isEnabled(referrer.orgId);
+    if (!enabled) return { found: false as const };
+
+    const program = referrer.organization.loyaltyProgram;
+    const firstName = referrer.customer.name.trim().split(/\s+/)[0] ?? referrer.customer.name;
+
+    return {
+      found: true as const,
+      orgName: referrer.organization.name,
+      orgSlug: referrer.organization.slug,
+      referrerFirstName: firstName,
+      referralCode: referrer.referralCode,
+      referredBonusPoints: program?.referredBonusPoints ?? 25,
+      referrerBonusPoints: program?.referralBonusPoints ?? 50,
+    };
+  }
+
+  async joinViaPublicReferral(
+    referralCode: string,
+    data: { name: string; email?: string | null; phone?: string | null },
+  ) {
+    const landing = await this.getPublicReferralLanding(referralCode);
+    if (!landing.found) throw new NotFoundException('Referral code not found');
+
+    const referrer = await this.prisma.withBypassRls((tx) =>
+      tx.loyaltyAccount.findFirst({
+        where: { referralCode: referralCode.toUpperCase() },
+        select: { orgId: true, customerId: true },
+      }),
+    );
+    if (!referrer) throw new NotFoundException('Referral code not found');
+
+    const upsert = await this.integration.upsertCustomer(referrer.orgId, {
+      name: data.name.trim(),
+      email: data.email?.trim() || null,
+      phone: data.phone?.trim() || null,
+    });
+
+    if (upsert.customerId === referrer.customerId) {
+      throw new BadRequestException('Cannot join using your own referral code');
+    }
+
+    const existingReferral = await this.prisma.withTenant(referrer.orgId, (tx) =>
+      tx.loyaltyReferral.findFirst({ where: { referredCustomerId: upsert.customerId } }),
+    );
+
+    if (!existingReferral && upsert.created) {
+      await this.applyReferral(referrer.orgId, referralCode, upsert.customerId);
+    }
+
+    const account = await this.prisma.withTenant(referrer.orgId, (tx) =>
+      tx.loyaltyAccount.findUnique({
+        where: { customerId: upsert.customerId },
+        select: { referralCode: true, pointsBalance: true },
+      }),
+    );
+
+    return {
+      joined: true,
+      referralApplied: !existingReferral && upsert.created,
+      portalCode: account?.referralCode ?? null,
+      pointsBalance: account?.pointsBalance ?? 0,
+    };
   }
 }

@@ -6,6 +6,8 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { PatronLegalModal } from '@/components/legal/patron-legal-modal';
+import { ReferralQr } from '@/components/referral-qr';
+import { buildReferralInviteUrl } from '@/lib/patron-urls';
 import {
   hasStoredPatronConsent,
   recordPatronLegalConsentOnServer,
@@ -46,6 +48,11 @@ interface PortalData {
     description?: string | null;
     createdAt: string;
   }>;
+  stampCard?: {
+    target: number;
+    filled: number;
+    totalVisits: number;
+  };
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
@@ -234,6 +241,47 @@ export default function PatronPortalPage() {
           </p>
           <p className="mt-4 font-mono text-sm tracking-widest">{data.referralCode}</p>
         </section>
+
+        {data.stampCard && (
+          <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
+            <h2 className="mb-3 text-sm font-semibold">Visit stamp card</h2>
+            <p className="mb-3 text-xs text-white/60">
+              Collect {data.stampCard.target} visits for a reward cycle ·{' '}
+              {data.stampCard.totalVisits} total visits
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {Array.from({ length: data.stampCard.target }).map((_, index) => (
+                <span
+                  key={index}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm ${
+                    index < data.stampCard!.filled
+                      ? 'border-emerald-400 bg-emerald-500/30'
+                      : 'border-white/20 bg-white/5 text-white/40'
+                  }`}
+                >
+                  {index < data.stampCard!.filled ? '✓' : index + 1}
+                </span>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {data.referralCode && (
+          <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
+            <h2 className="mb-3 text-sm font-semibold">Invite friends</h2>
+            <p className="mb-3 text-xs text-white/60">
+              Share your link or QR code — you both earn bonus points when they join.
+            </p>
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+              <ReferralQr value={buildReferralInviteUrl(data.referralCode)} size={112} />
+              <div className="min-w-0 flex-1 text-xs">
+                <p className="break-all rounded-md bg-black/20 p-2 font-mono text-white/80">
+                  {buildReferralInviteUrl(data.referralCode)}
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
           <h2 className="mb-3 text-sm font-semibold">Your profile</h2>

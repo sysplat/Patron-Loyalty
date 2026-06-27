@@ -105,6 +105,22 @@ export const loyaltyPortalLegalConsentSchema = z.object({
   privacyVersion: z.string().max(30),
 });
 
+export const loyaltyPublicReferralJoinSchema = z
+  .object({
+    name: z.string().min(1).max(200),
+    email: z.string().email().optional().nullable(),
+    phone: z.string().max(30).optional().nullable(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.email?.trim() && !data.phone?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Email or phone is required',
+        path: ['email'],
+      });
+    }
+  });
+
 export const loyaltyIntegrationQueueEventSchema = z
   .object({
     event: z.enum(QLESSQ_QUEUE_INTEGRATION_EVENT_VALUES),

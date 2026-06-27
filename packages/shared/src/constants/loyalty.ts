@@ -108,6 +108,9 @@ export const LOYALTY_DEFAULT_EARN_RULES = [
   { eventType: LOYALTY_EARN_EVENT_TYPES.MANUAL, name: 'Manual / POS', points: 0 },
 ] as const;
 
+/** Visits required for one digital stamp-card cycle (SRS §13). */
+export const LOYALTY_STAMP_CARD_TARGET = 10;
+
 export const LOYALTY_CHALLENGE_TARGET_TYPES = {
   VISITS: 'VISITS',
   POINTS_EARNED: 'POINTS_EARNED',

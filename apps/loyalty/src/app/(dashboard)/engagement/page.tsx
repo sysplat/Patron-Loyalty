@@ -26,6 +26,14 @@ interface Challenge {
   rewardPoints: number;
 }
 
+interface LeaderboardRow {
+  rank: number;
+  patronName: string;
+  lifetimePointsEarned: number;
+  totalVisits: number;
+  tier?: { name: string } | null;
+}
+
 export default function EngagementPage() {
   const token = useAuthStore((s) => s.accessToken);
   const qc = useQueryClient();
@@ -45,6 +53,12 @@ export default function EngagementPage() {
   const { data: challenges = [], isLoading: challengesLoading } = useQuery({
     queryKey: ['loyalty', 'challenges'],
     queryFn: () => loyaltyGet<Challenge[]>('/loyalty/challenges', token!),
+    enabled: !!token,
+  });
+
+  const { data: leaderboard = [], isLoading: leaderboardLoading } = useQuery({
+    queryKey: ['loyalty', 'leaderboard'],
+    queryFn: () => loyaltyGet<LeaderboardRow[]>('/loyalty/leaderboard?limit=15', token!),
     enabled: !!token,
   });
 
@@ -85,8 +99,34 @@ export default function EngagementPage() {
       <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Gamification</h1>
       <p className="text-muted-foreground max-w-2xl text-sm">
         Badges award automatically when patrons meet criteria. Challenges track visit goals and
-        grant bonus points on completion.
+        grant bonus points on completion. Patrons also see a digital stamp card on their portal (SRS
+        §13).
       </p>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Points leaderboard</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {leaderboardLoading ? (
+            <p className="text-muted-foreground text-sm">Loading…</p>
+          ) : leaderboard.length ? (
+            leaderboard.map((row) => (
+              <div key={row.rank} className="flex justify-between text-sm">
+                <span>
+                  #{row.rank} {row.patronName}
+                  {row.tier ? ` · ${row.tier.name}` : ''}
+                </span>
+                <span className="text-muted-foreground">
+                  {row.lifetimePointsEarned} pts · {row.totalVisits} visits
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="text-muted-foreground text-sm">No loyalty members yet.</p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

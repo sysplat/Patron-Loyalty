@@ -237,6 +237,27 @@ export declare const loyaltyPortalLegalConsentSchema: z.ZodObject<{
     termsVersion: string;
     privacyVersion: string;
 }>;
+export declare const loyaltyPublicReferralJoinSchema: z.ZodEffects<z.ZodObject<{
+    name: z.ZodString;
+    email: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    phone: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+}, "strip", z.ZodTypeAny, {
+    name: string;
+    email?: string | null | undefined;
+    phone?: string | null | undefined;
+}, {
+    name: string;
+    email?: string | null | undefined;
+    phone?: string | null | undefined;
+}>, {
+    name: string;
+    email?: string | null | undefined;
+    phone?: string | null | undefined;
+}, {
+    name: string;
+    email?: string | null | undefined;
+    phone?: string | null | undefined;
+}>;
 export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObject<{
     event: z.ZodEnum<[import("../constants/loyalty-connector").QlessqQueueIntegrationEvent, ...import("../constants/loyalty-connector").QlessqQueueIntegrationEvent[]]>;
     sourceId: z.ZodString;

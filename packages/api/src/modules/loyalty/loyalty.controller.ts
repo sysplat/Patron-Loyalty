@@ -55,6 +55,7 @@ import {
   LoyaltyPortalRedeemDto,
   LoyaltyPortalLegalConsentDto,
 } from './dto/loyalty-integration.dto';
+import { LoyaltyPublicReferralJoinDto } from './dto/loyalty-referral.dto';
 
 @ApiTags('Loyalty')
 @ApiBearerAuth()
@@ -171,6 +172,36 @@ export class LoyaltyController {
   @RequirePermissions({ resource: 'customer', action: 'read' })
   getChurnReport(@CurrentUser() user: AuthenticatedUser) {
     return this.dashboard.getChurnReport(user.orgId);
+  }
+
+  @Get('reports/referrals')
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  getReferralReport(@CurrentUser() user: AuthenticatedUser) {
+    return this.dashboard.getReferralReport(user.orgId);
+  }
+
+  @Get('reports/growth')
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  getGrowthReport(@CurrentUser() user: AuthenticatedUser) {
+    return this.dashboard.getGrowthReport(user.orgId);
+  }
+
+  @Get('reports/redemptions')
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  getRedemptionReport(@CurrentUser() user: AuthenticatedUser) {
+    return this.dashboard.getRedemptionReport(user.orgId);
+  }
+
+  @Get('reports/vip')
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  getVipReport(@CurrentUser() user: AuthenticatedUser) {
+    return this.dashboard.getVipReport(user.orgId);
+  }
+
+  @Get('leaderboard')
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  getLeaderboard(@CurrentUser() user: AuthenticatedUser, @Query('limit') limit?: string) {
+    return this.gamification.getLeaderboard(user.orgId, limit ? Number(limit) : 20);
   }
 
   @Get('accounts/:customerId')
@@ -442,6 +473,24 @@ export class LoyaltyController {
   @RequirePermissions({ resource: 'customer', action: 'update' })
   async revokeIntegrationApiKey(@CurrentUser() user: AuthenticatedUser) {
     await this.apiKeys.revokeKey(user.orgId);
+  }
+
+  @Public()
+  @Get('public/refer/:referralCode')
+  @ApiOperation({ summary: 'Public referral invite landing metadata' })
+  getPublicReferralLanding(@Param('referralCode') referralCode: string) {
+    return this.referrals.getPublicReferralLanding(referralCode);
+  }
+
+  @Public()
+  @Post('public/refer/:referralCode/join')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Join loyalty program via referral invite link' })
+  joinViaPublicReferral(
+    @Param('referralCode') referralCode: string,
+    @Body() body: LoyaltyPublicReferralJoinDto,
+  ) {
+    return this.referrals.joinViaPublicReferral(referralCode, body);
   }
 
   @Public()

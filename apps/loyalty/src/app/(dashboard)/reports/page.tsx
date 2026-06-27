@@ -46,6 +46,30 @@ interface ChurnReport {
   }>;
 }
 
+interface GrowthReport {
+  monthlyNewPatrons: Array<{ month: string; count: number }>;
+}
+
+interface ReferralReport {
+  completed: number;
+  bonusPointsAwarded: number;
+  topReferrers: Array<{ patronName: string; completedCount: number }>;
+}
+
+interface RedemptionReport {
+  byStatus: Array<{ status: string; _count: { _all: number } }>;
+  byReward: Array<{ count: number; reward: { name: string } | null }>;
+}
+
+interface VipReport {
+  vipCount: number;
+  topPatrons: Array<{
+    patronName: string;
+    lifetimePointsEarned: number;
+    tier: { name: string } | null;
+  }>;
+}
+
 export default function ReportsPage() {
   const token = useAuthStore((s) => s.accessToken);
 
@@ -70,6 +94,30 @@ export default function ReportsPage() {
   const { data: churnReport, isLoading: churnLoading } = useQuery({
     queryKey: ['loyalty', 'reports', 'churn'],
     queryFn: () => loyaltyGet<ChurnReport>('/loyalty/reports/churn', token!),
+    enabled: !!token,
+  });
+
+  const { data: growthReport, isLoading: growthLoading } = useQuery({
+    queryKey: ['loyalty', 'reports', 'growth'],
+    queryFn: () => loyaltyGet<GrowthReport>('/loyalty/reports/growth', token!),
+    enabled: !!token,
+  });
+
+  const { data: referralReport, isLoading: referralLoading } = useQuery({
+    queryKey: ['loyalty', 'reports', 'referrals'],
+    queryFn: () => loyaltyGet<ReferralReport>('/loyalty/reports/referrals', token!),
+    enabled: !!token,
+  });
+
+  const { data: redemptionReport, isLoading: redemptionLoading } = useQuery({
+    queryKey: ['loyalty', 'reports', 'redemptions'],
+    queryFn: () => loyaltyGet<RedemptionReport>('/loyalty/reports/redemptions', token!),
+    enabled: !!token,
+  });
+
+  const { data: vipReport, isLoading: vipLoading } = useQuery({
+    queryKey: ['loyalty', 'reports', 'vip'],
+    queryFn: () => loyaltyGet<VipReport>('/loyalty/reports/vip', token!),
     enabled: !!token,
   });
 
@@ -171,6 +219,110 @@ export default function ReportsPage() {
               ))}
             </>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Customer growth (6 months)</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {growthLoading ? (
+            <p className="text-muted-foreground text-sm">Loading…</p>
+          ) : growthReport?.monthlyNewPatrons.length ? (
+            growthReport.monthlyNewPatrons.map((row) => (
+              <div key={row.month} className="flex justify-between text-sm">
+                <span>{row.month}</span>
+                <span>{row.count} new patrons</span>
+              </div>
+            ))
+          ) : (
+            <p className="text-muted-foreground text-sm">No patron signups in the last 6 months.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Referral performance</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {referralLoading ? (
+            <p className="text-muted-foreground text-sm">Loading…</p>
+          ) : referralReport ? (
+            <>
+              <div className="flex justify-between text-sm">
+                <span>Completed referrals</span>
+                <span>{referralReport.completed}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Bonus points awarded</span>
+                <span>{referralReport.bonusPointsAwarded}</span>
+              </div>
+              {referralReport.topReferrers.slice(0, 5).map((row) => (
+                <div key={row.patronName} className="flex justify-between border-t pt-2 text-sm">
+                  <span>{row.patronName}</span>
+                  <span className="text-muted-foreground">{row.completedCount} referrals</span>
+                </div>
+              ))}
+            </>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Reward redemptions</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {redemptionLoading ? (
+            <p className="text-muted-foreground text-sm">Loading…</p>
+          ) : (
+            <>
+              {redemptionReport?.byStatus.map((row) => (
+                <div key={row.status} className="flex justify-between text-sm">
+                  <span>{row.status}</span>
+                  <span>{row._count._all}</span>
+                </div>
+              ))}
+              {redemptionReport?.byReward.slice(0, 8).map((row) => (
+                <div
+                  key={row.reward?.name ?? row.count}
+                  className="flex justify-between border-t pt-2 text-sm"
+                >
+                  <span>{row.reward?.name ?? 'Unknown reward'}</span>
+                  <span className="text-muted-foreground">{row.count}</span>
+                </div>
+              ))}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>VIP patrons</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {vipLoading ? (
+            <p className="text-muted-foreground text-sm">Loading…</p>
+          ) : vipReport ? (
+            <>
+              <p className="text-sm">
+                <span className="font-medium">{vipReport.vipCount}</span> VIP members (Gold+ or 5k+
+                lifetime points)
+              </p>
+              {vipReport.topPatrons.map((row) => (
+                <div key={row.patronName} className="flex justify-between border-t pt-2 text-sm">
+                  <span>
+                    {row.patronName}
+                    {row.tier ? ` · ${row.tier.name}` : ''}
+                  </span>
+                  <span className="text-muted-foreground">{row.lifetimePointsEarned} pts</span>
+                </div>
+              ))}
+            </>
+          ) : null}
         </CardContent>
       </Card>
 

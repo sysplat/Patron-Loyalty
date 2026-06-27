@@ -3,6 +3,8 @@
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import { ReferralQr } from '@/components/referral-qr';
+import { buildPatronPortalUrl } from '@/lib/patron-urls';
 
 interface PublicCard {
   found: boolean;
@@ -64,7 +66,11 @@ export default function PublicCardPage() {
           <p className="text-xs uppercase tracking-wide text-white/60">Points balance</p>
           <p className="text-4xl font-bold">{data.pointsBalance ?? 0}</p>
         </div>
-        <p className="mt-6 text-center font-mono text-sm tracking-widest">{data.referralCode}</p>
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <ReferralQr value={buildPatronPortalUrl(data.referralCode ?? code)} size={96} />
+          <p className="text-center text-xs text-white/50">Scan for full portal</p>
+        </div>
+        <p className="mt-4 text-center font-mono text-sm tracking-widest">{data.referralCode}</p>
         <p className="mt-6 text-center text-xs text-white/40">
           <Link href={`/portal/${data.referralCode}`} className="underline">
             Full portal view

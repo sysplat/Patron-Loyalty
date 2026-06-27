@@ -110,4 +110,27 @@ export class LoyaltyGamificationService {
       });
     }
   }
+
+  async getLeaderboard(orgId: string, limit = 20) {
+    await this.patronCrmFeature.requireEnabled(orgId);
+    const capped = Math.min(Math.max(limit, 1), 50);
+    const rows = await this.prisma.withTenant(orgId, (tx) =>
+      tx.loyaltyAccount.findMany({
+        where: { orgId },
+        orderBy: { lifetimePointsEarned: 'desc' },
+        take: capped,
+        include: {
+          customer: { select: { name: true } },
+          tier: { select: { name: true, color: true } },
+        },
+      }),
+    );
+    return rows.map((row, index) => ({
+      rank: index + 1,
+      patronName: row.customer.name,
+      lifetimePointsEarned: row.lifetimePointsEarned,
+      totalVisits: row.totalVisits,
+      tier: row.tier,
+    }));
+  }
 }

@@ -22,7 +22,7 @@ const publicPaths = [
   '/verify-email',
   '/reset-password',
 ];
-const publicPrefixes = ['/portal', '/card'];
+const publicPrefixes = ['/portal', '/card', '/refer'];
 const displayPath = '/display';
 const kioskPath = '/kiosk';
 const trackPath = '/track';

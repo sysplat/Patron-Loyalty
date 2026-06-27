@@ -115,6 +115,8 @@ export declare const LOYALTY_DEFAULT_EARN_RULES: readonly [{
     readonly name: "Manual / POS";
     readonly points: 0;
 }];
+/** Visits required for one digital stamp-card cycle (SRS §13). */
+export declare const LOYALTY_STAMP_CARD_TARGET = 10;
 export declare const LOYALTY_CHALLENGE_TARGET_TYPES: {
     readonly VISITS: "VISITS";
     readonly POINTS_EARNED: "POINTS_EARNED";
