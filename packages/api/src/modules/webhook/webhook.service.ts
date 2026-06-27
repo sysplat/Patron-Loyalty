@@ -67,18 +67,19 @@ export class WebhookService {
   ) {}
 
   async list(orgId: string) {
-    return this.prisma.withTenant(orgId, (tx) =>
+    const rows = await this.prisma.withTenant(orgId, (tx) =>
       tx.webhookEndpoint.findMany({
         where: { orgId },
         orderBy: { createdAt: 'desc' },
       }),
     );
+    return rows.map(({ secret: _secret, ...endpoint }) => endpoint);
   }
 
   async create(orgId: string, data: { url: string; events: string[] }) {
     await this.assertSafeWebhookUrl(data.url);
     const secret = `whsec_${randomBytes(24).toString('hex')}`;
-    return this.prisma.withTenant(orgId, (tx) =>
+    const created = await this.prisma.withTenant(orgId, (tx) =>
       tx.webhookEndpoint.create({
         data: {
           orgId,
@@ -89,6 +90,8 @@ export class WebhookService {
         },
       }),
     );
+    const { secret: _secret, ...endpoint } = created;
+    return endpoint;
   }
 
   async update(
@@ -122,9 +125,10 @@ export class WebhookService {
     );
     if (!endpoint) throw new NotFoundException('Webhook endpoint not found');
     const secret = `whsec_${randomBytes(24).toString('hex')}`;
-    return this.prisma.withTenant(orgId, (tx) =>
+    const updated = await this.prisma.withTenant(orgId, (tx) =>
       tx.webhookEndpoint.update({ where: { id }, data: { secret } }),
     );
+    return { ...updated, secret };
   }
 
   /**

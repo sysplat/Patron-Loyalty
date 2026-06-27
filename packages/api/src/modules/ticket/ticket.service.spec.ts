@@ -101,12 +101,28 @@ const mockBranchHours = {
   assertBranchAcceptsCustomerIntake: vi.fn().mockResolvedValue(undefined),
 };
 
+const ticketLockDefaults = {
+  queueId: 'queue-1',
+  branchId: 'branch-1',
+  orgId: 'org-1',
+  bookedAt: new Date('2026-04-26T10:00:00.000Z'),
+  servedAt: null as Date | null,
+  calledAt: null as Date | null,
+};
+
+/** Matches `transitionTicketCore` FOR UPDATE row shape (queue/branch must align with queue mock). */
+function mockTicketLock(status: string, overrides: Partial<typeof ticketLockDefaults> = {}) {
+  mockPrisma.$queryRaw.mockResolvedValueOnce([{ status, ...ticketLockDefaults, ...overrides }]);
+}
+
 describe('TicketService', () => {
   let service: TicketService;
   let staffGuards: TicketStaffGuardService;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockPrisma.$queryRaw.mockReset();
+    mockPrisma.$queryRaw.mockResolvedValue([]);
     mockPrisma.desk.count.mockResolvedValue(1);
     mockPrisma.desk.findMany.mockResolvedValue([{ number: '1' }]);
     mockPrisma.desk.findUnique.mockResolvedValue({ status: 'open' });
@@ -1214,6 +1230,7 @@ describe('TicketService', () => {
       });
       mockPrisma.queue.findUnique.mockResolvedValueOnce({
         id: 'queue-1',
+        branchId: 'branch-1',
         status: 'open',
       });
       mockPrisma.ticket.update.mockResolvedValueOnce({
@@ -1816,7 +1833,7 @@ describe('TicketService', () => {
         stepIndex: null,
         queueId: 'queue-1',
       });
-      mockPrisma.$queryRaw.mockResolvedValue([{ status: 'completed' }]);
+      mockTicketLock('completed');
       mockPrisma.ticket.findFirst.mockImplementation(
         (args: { select?: Record<string, boolean> }) => {
           const select = args?.select;
@@ -1866,7 +1883,7 @@ describe('TicketService', () => {
         stepIndex: null,
         queueId: 'queue-1',
       });
-      mockPrisma.$queryRaw.mockResolvedValue([{ status: 'serving' }]);
+      mockTicketLock('serving');
       mockPrisma.ticket.findFirst.mockImplementation(
         (args: { select?: Record<string, boolean>; include?: unknown }) => {
           if (statusOnlySelect(args?.select)) {
@@ -1894,7 +1911,7 @@ describe('TicketService', () => {
         stepIndex: 1,
         queueId: 'queue-1',
       });
-      mockPrisma.$queryRaw.mockResolvedValue([{ status: 'cancelled' }]);
+      mockTicketLock('cancelled');
       mockPrisma.ticket.findFirst.mockImplementation(
         (args: { select?: Record<string, boolean> }) => {
           if (statusOnlySelect(args?.select)) {
@@ -1938,7 +1955,8 @@ describe('TicketService', () => {
       let statusChecks = 0;
       mockPrisma.$queryRaw.mockImplementation(() => {
         statusChecks += 1;
-        return Promise.resolve([{ status: statusChecks === 1 ? 'serving' : 'completed' }]);
+        const status = statusChecks === 1 ? 'serving' : 'completed';
+        return Promise.resolve([{ status, ...ticketLockDefaults }]);
       });
       mockPrisma.ticket.findFirst.mockImplementation(
         (args: { select?: Record<string, boolean>; include?: unknown }) => {
@@ -1989,7 +2007,12 @@ describe('TicketService', () => {
       });
       mockWorkflow.getNextStep.mockResolvedValue(null);
       mockPrisma.$queryRaw.mockResolvedValue([
-        { status: 'completed', visitId: 'visit-1', stepIndex: 1 },
+        {
+          status: 'completed',
+          visitId: 'visit-1',
+          stepIndex: 1,
+          flowTemplateId: null,
+        },
       ]);
       mockPrisma.ticket.findFirst
         .mockResolvedValueOnce({
@@ -2039,7 +2062,12 @@ describe('TicketService', () => {
         stepIndex: 2,
       });
       mockPrisma.$queryRaw.mockResolvedValue([
-        { status: 'completed', visitId: 'visit-1', stepIndex: 1 },
+        {
+          status: 'completed',
+          visitId: 'visit-1',
+          stepIndex: 1,
+          flowTemplateId: null,
+        },
       ]);
       mockPrisma.ticket.findFirst
         .mockResolvedValueOnce({
@@ -2106,16 +2134,16 @@ describe('TicketService', () => {
         id: ticketId,
         visitId: null,
         stepIndex: null,
-        queueId: 'q1',
+        queueId: 'queue-1',
         status: 'called',
       });
-      mockPrisma.$queryRaw.mockResolvedValue([{ status: 'called' }]);
+      mockTicketLock('called');
       mockPrisma.ticket.findFirst.mockResolvedValue({
         id: ticketId,
         orgId,
         status: 'called',
-        queueId: 'q1',
-        branchId: 'b1',
+        queueId: 'queue-1',
+        branchId: 'branch-1',
       });
 
       mockPrisma.ticket.update.mockResolvedValue({
@@ -2151,16 +2179,16 @@ describe('TicketService', () => {
         id: ticketId,
         visitId: null,
         stepIndex: null,
-        queueId: 'q1',
+        queueId: 'queue-1',
         status: 'serving',
       });
-      mockPrisma.$queryRaw.mockResolvedValue([{ status: 'serving' }]);
+      mockTicketLock('serving');
       mockPrisma.ticket.findFirst.mockResolvedValue({
         id: ticketId,
         orgId,
         status: 'serving',
-        queueId: 'q1',
-        branchId: 'b1',
+        queueId: 'queue-1',
+        branchId: 'branch-1',
       });
 
       mockPrisma.ticket.update.mockResolvedValue({
@@ -2195,17 +2223,17 @@ describe('TicketService', () => {
         id: ticketId,
         visitId: null,
         stepIndex: null,
-        queueId: 'q1',
+        queueId: 'queue-1',
         status: 'called',
         metadata: { resummonSmsOnServe: true },
       });
-      mockPrisma.$queryRaw.mockResolvedValue([{ status: 'called' }]);
+      mockTicketLock('called');
       mockPrisma.ticket.findFirst.mockResolvedValue({
         id: ticketId,
         orgId,
         status: 'called',
-        queueId: 'q1',
-        branchId: 'b1',
+        queueId: 'queue-1',
+        branchId: 'branch-1',
       });
 
       mockPrisma.ticket.update.mockResolvedValue({
@@ -2236,16 +2264,16 @@ describe('TicketService', () => {
         id: ticketId,
         visitId: null,
         stepIndex: null,
-        queueId: 'q1',
+        queueId: 'queue-1',
         status: 'called',
       });
-      mockPrisma.$queryRaw.mockResolvedValue([{ status: 'called' }]);
+      mockTicketLock('called');
       mockPrisma.ticket.findFirst.mockImplementation(
         (args: { select?: Record<string, boolean>; include?: unknown }) => {
           if (args?.select?.status === true) {
             return Promise.resolve({
               status: 'called',
-              branchId: 'b1',
+              branchId: 'branch-1',
               deskNumber: '1',
               metadata: { resummonSmsOnServe: true },
             });
@@ -2256,7 +2284,7 @@ describe('TicketService', () => {
             deskNumber: '1',
             customerPhone: '+14155558530',
             transactionalSmsAllowed: true,
-            queue: { id: 'q1', name: 'Phone Demo' },
+            queue: { id: 'queue-1', name: 'Phone Demo' },
             service: { id: 's1', name: 'Lab' },
           });
         },
@@ -2517,7 +2545,23 @@ describe('TicketService', () => {
         branch: {
           findUnique: vi
             .fn()
-            .mockResolvedValue({ orgId: 'org-1', defaultJourneyMode: 'visit_multi_step' }),
+            .mockResolvedValue({
+              orgId: 'org-1',
+              defaultJourneyMode: 'visit_multi_step',
+              timezone: 'UTC',
+            }),
+        },
+        branchDateOverride: {
+          findUnique: vi.fn().mockResolvedValue(null),
+        },
+        workingHours: {
+          findUnique: vi.fn().mockResolvedValue({
+            openTime: '00:00',
+            closeTime: '23:59',
+            isClosed: false,
+            breakStart: null,
+            breakEnd: null,
+          }),
         },
         branchFlowTemplate: {
           findFirst: vi.fn().mockResolvedValue(null),

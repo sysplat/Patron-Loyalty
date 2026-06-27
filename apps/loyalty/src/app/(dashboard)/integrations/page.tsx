@@ -36,6 +36,10 @@ export default function IntegrationsPage() {
   const [selectedEvents, setSelectedEvents] = useState<string[]>([
     LOYALTY_WEBHOOK_EVENTS.POINTS_EARNED,
   ]);
+  const [revealedWebhookSecret, setRevealedWebhookSecret] = useState<{
+    id: string;
+    secret: string;
+  } | null>(null);
 
   const { data: status, isLoading } = useQuery({
     queryKey: ['loyalty', 'integrations', 'api-key'],
@@ -84,11 +88,26 @@ export default function IntegrationsPage() {
         { token: token! },
       ),
     onSuccess: () => {
-      toast.success('Webhook endpoint created');
+      toast.success('Webhook endpoint created — rotate the signing secret to reveal it once');
       setWebhookUrl('');
       qc.invalidateQueries({ queryKey: ['webhooks'] });
     },
     onError: () => toast.error('Could not create webhook — use an HTTPS URL'),
+  });
+
+  const rotateWebhookSecret = useMutation({
+    mutationFn: (id: string) =>
+      api
+        .post<{
+          success: boolean;
+          data: WebhookEndpoint & { secret: string };
+        }>(`/webhooks/${id}/rotate-secret`, {}, { token: token! })
+        .then((payload) => unwrapApiData<WebhookEndpoint & { secret: string }>(payload)),
+    onSuccess: (data) => {
+      setRevealedWebhookSecret({ id: data.id, secret: data.secret });
+      toast.success('New signing secret — copy it now; it will not be shown again');
+    },
+    onError: () => toast.error('Could not rotate webhook secret'),
   });
 
   const deleteWebhook = useMutation({
@@ -234,15 +253,30 @@ export default function IntegrationsPage() {
                     <p className="text-muted-foreground mt-1 text-xs">
                       {hook.status} · {hook.events.join(', ')}
                     </p>
+                    {revealedWebhookSecret?.id === hook.id && (
+                      <div className="bg-muted mt-2 break-all rounded-lg p-2 font-mono text-xs">
+                        {revealedWebhookSecret.secret}
+                      </div>
+                    )}
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => deleteWebhook.mutate(hook.id)}
-                    disabled={deleteWebhook.isPending}
-                  >
-                    Remove
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => rotateWebhookSecret.mutate(hook.id)}
+                      disabled={rotateWebhookSecret.isPending}
+                    >
+                      Rotate secret
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => deleteWebhook.mutate(hook.id)}
+                      disabled={deleteWebhook.isPending}
+                    >
+                      Remove
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>

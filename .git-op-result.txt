@@ -1,0 +1,12 @@
+ M apps/loyalty/public/manifest.webmanifest
+ M apps/loyalty/src/app/(dashboard)/integrations/page.tsx
+ M apps/loyalty/src/app/layout.tsx
+ M package.json
+ M packages/api/src/modules/ticket/ticket.service.spec.ts
+ M packages/api/src/modules/webhook/webhook.service.spec.ts
+ M packages/api/src/modules/webhook/webhook.service.ts
+?? .git-op-result.txt
+?? apps/loyalty/public/brand/icon-192.png
+?? apps/loyalty/public/brand/icon-512.png
+?? scripts/check-prod-migration.mjs
+?? scripts/loyalty-auth-smoke.mjs
