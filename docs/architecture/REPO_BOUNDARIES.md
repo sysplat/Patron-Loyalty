@@ -36,3 +36,12 @@ See [qlessq-integration.md](./qlessq-integration.md) for the HTTP connector (`PO
 - `check:architecture:api-module-boundary`
 
 QMS-only checks (`check:architecture:web-admin-boundary`, service-size budgets for ticket/workbench) run in the **QMS** repo.
+
+## API deploy profile
+
+| Variable             | Values           | Use                                                                 |
+| -------------------- | ---------------- | ------------------------------------------------------------------- |
+| `API_DEPLOY_PROFILE` | `full` (default) | Bundle / QMS deploy — all API modules                               |
+| `API_DEPLOY_PROFILE` | `loyalty`        | Patron Loyalty `pl-api` — no ticket/queue/workbench modules at boot |
+
+On `full` deploy, `QueueProductGuard` returns **404** for QMS route prefixes when the tenant org’s `productSku` is `loyalty` (no queue license).

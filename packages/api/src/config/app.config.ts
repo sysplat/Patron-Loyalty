@@ -12,6 +12,7 @@ export const appConfig = registerAs('app', () => ({
     closePriorSessionWaiting: process.env.APP_QUEUE_CLOSE_PRIOR_SESSION_WAITING !== 'false',
   },
   nodeEnv: process.env.NODE_ENV || 'development',
+  deployProfile: process.env.API_DEPLOY_PROFILE?.trim().toLowerCase() || 'full',
   port: parseInt(process.env.PORT || '4000', 10),
   appUrl: process.env.APP_URL || 'http://localhost:3000',
   loyaltyUrl:

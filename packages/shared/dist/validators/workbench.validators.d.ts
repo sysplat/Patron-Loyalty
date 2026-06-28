@@ -39,25 +39,25 @@ export declare const createStationProfileSchema: z.ZodObject<{
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
     name: string;
-    branchId: string;
     queues: {
         queueId: string;
         sortOrder?: number | undefined;
         visibilityOnly?: boolean | undefined;
         capabilities?: string[] | undefined;
     }[];
+    branchId: string;
     flowTemplateId?: string | null | undefined;
     primaryQueueId?: string | null | undefined;
     isDefault?: boolean | undefined;
 }, {
     name: string;
-    branchId: string;
     queues: {
         queueId: string;
         sortOrder?: number | undefined;
         visibilityOnly?: boolean | undefined;
         capabilities?: string[] | undefined;
     }[];
+    branchId: string;
     flowTemplateId?: string | null | undefined;
     primaryQueueId?: string | null | undefined;
     isDefault?: boolean | undefined;
@@ -86,28 +86,28 @@ export declare const updateStationProfileSchema: z.ZodObject<{
     }>, "many">>;
 }, "strip", z.ZodTypeAny, {
     name?: string | undefined;
-    branchId?: string | undefined;
-    flowTemplateId?: string | null | undefined;
-    primaryQueueId?: string | null | undefined;
-    isDefault?: boolean | undefined;
     queues?: {
         queueId: string;
         sortOrder?: number | undefined;
         visibilityOnly?: boolean | undefined;
         capabilities?: string[] | undefined;
     }[] | undefined;
+    branchId?: string | undefined;
+    flowTemplateId?: string | null | undefined;
+    primaryQueueId?: string | null | undefined;
+    isDefault?: boolean | undefined;
 }, {
     name?: string | undefined;
-    branchId?: string | undefined;
-    flowTemplateId?: string | null | undefined;
-    primaryQueueId?: string | null | undefined;
-    isDefault?: boolean | undefined;
     queues?: {
         queueId: string;
         sortOrder?: number | undefined;
         visibilityOnly?: boolean | undefined;
         capabilities?: string[] | undefined;
     }[] | undefined;
+    branchId?: string | undefined;
+    flowTemplateId?: string | null | undefined;
+    primaryQueueId?: string | null | undefined;
+    isDefault?: boolean | undefined;
 }>;
 export declare const startAgentSessionSchema: z.ZodObject<{
     branchId: z.ZodString;

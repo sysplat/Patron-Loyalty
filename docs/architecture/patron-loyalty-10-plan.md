@@ -14,9 +14,23 @@ Roadmap to elite architecture for **this repo** (LMS split). The historical QMS 
 | Static gates in `pnpm validate:ci`                                      | `security:check:*`, `check:architecture:api-module-boundary`                                   |
 | Queue-events smoke in pre-release docs                                  | `TESTING.md`, `PATRON_LOYALTY_LAUNCH_CHECKLIST.md`, `audit-patron-loyalty.mjs`                 |
 
-## Phase 1 — Product boundary (next)
+## Phase 1 — Product boundary ✅
 
-LMS-only API module registry; QMS routes 404 on `productSku=loyalty`.
+**Status:** Complete (2026-06-26)
+
+| Item                                         | Done                                                                               |
+| -------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `API_DEPLOY_PROFILE=loyalty` module registry | `app-modules.registry.ts` — QMS modules omitted at boot                            |
+| Loyalty scheduled jobs only                  | `ScheduledJobsLoyaltyModule`                                                       |
+| Runtime QMS route guard (full deploy)        | `QueueProductGuard` → 404 when org lacks queue SKU                                 |
+| Centrifugo optional on loyalty deploy        | `main.ts` validateEnv                                                              |
+| Tests                                        | `app-modules.registry.spec.ts`, `queue-product.guard.spec.ts`, shared profile spec |
+
+Set on **Patron Loyalty Railway `pl-api` service:**
+
+```bash
+API_DEPLOY_PROFILE=loyalty
+```
 
 ## Phase 2 — Loyalty domain layering
 

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-28T19:00:13.176Z",
+  "generatedAt": "2026-06-28T20:08:54.395Z",
   "description": "Existing cross-module imports in packages/api/src/modules (baseline mode).",
   "violations": [
     "announcement->display|packages/api/src/modules/announcement/announcement.module.ts|../display/display.module",
@@ -73,6 +73,10 @@
     "review->loyalty|packages/api/src/modules/review/review.service.ts|../loyalty/loyalty.events",
     "scheduler->appointment|packages/api/src/modules/scheduler/scheduled-jobs.module.ts|../appointment/appointment.module",
     "scheduler->appointment|packages/api/src/modules/scheduler/scheduled-jobs.processor.ts|../appointment/appointment.service",
+    "scheduler->loyalty|packages/api/src/modules/scheduler/scheduled-jobs-loyalty.module.ts|../loyalty/loyalty.module",
+    "scheduler->loyalty|packages/api/src/modules/scheduler/scheduled-jobs-loyalty.processor.ts|../loyalty/loyalty-campaign-automation.service",
+    "scheduler->loyalty|packages/api/src/modules/scheduler/scheduled-jobs-loyalty.processor.ts|../loyalty/loyalty-campaign.service",
+    "scheduler->loyalty|packages/api/src/modules/scheduler/scheduled-jobs-loyalty.processor.ts|../loyalty/loyalty-points-expiry.service",
     "scheduler->loyalty|packages/api/src/modules/scheduler/scheduled-jobs.module.ts|../loyalty/loyalty.module",
     "scheduler->loyalty|packages/api/src/modules/scheduler/scheduled-jobs.processor.ts|../loyalty/loyalty-campaign-automation.service",
     "scheduler->loyalty|packages/api/src/modules/scheduler/scheduled-jobs.processor.ts|../loyalty/loyalty-campaign.service",

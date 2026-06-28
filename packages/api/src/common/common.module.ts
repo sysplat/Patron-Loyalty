@@ -5,6 +5,7 @@ import { AuditService } from './audit/audit.service';
 import { PlatformAuditService } from './audit/platform-audit.service';
 import { PatronCrmFeatureService } from './features/patron-crm-feature.service';
 import { ProductEntitlementService } from './features/product-entitlement.service';
+import { QueueProductFeatureService } from './features/queue-product-feature.service';
 import { RequestContextService } from './request-context/request-context.service';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { SentryContextInterceptor } from './interceptors/sentry-context.interceptor';
@@ -18,6 +19,7 @@ import { SentryContextInterceptor } from './interceptors/sentry-context.intercep
     PlatformAuditService,
     PatronCrmFeatureService,
     ProductEntitlementService,
+    QueueProductFeatureService,
     LoggingInterceptor,
     SentryContextInterceptor,
   ],
@@ -27,6 +29,7 @@ import { SentryContextInterceptor } from './interceptors/sentry-context.intercep
     PlatformAuditService,
     PatronCrmFeatureService,
     ProductEntitlementService,
+    QueueProductFeatureService,
     LoggingInterceptor,
     SentryContextInterceptor,
   ],

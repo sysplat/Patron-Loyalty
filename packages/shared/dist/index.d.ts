@@ -3,6 +3,8 @@ export * from './types/api.types';
 export * from './types/public-branding';
 export * from './constants/platform';
 export * from './constants/product';
+export * from './constants/api-deploy-profile';
+export * from './constants/queue-product-api';
 export * from './constants/plans';
 export * from './constants/brand';
 export * from './constants/organization-logo';

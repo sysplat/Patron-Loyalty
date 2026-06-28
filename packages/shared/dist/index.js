@@ -19,6 +19,8 @@ __exportStar(require("./types/api.types"), exports);
 __exportStar(require("./types/public-branding"), exports);
 __exportStar(require("./constants/platform"), exports);
 __exportStar(require("./constants/product"), exports);
+__exportStar(require("./constants/api-deploy-profile"), exports);
+__exportStar(require("./constants/queue-product-api"), exports);
 __exportStar(require("./constants/plans"), exports);
 __exportStar(require("./constants/brand"), exports);
 __exportStar(require("./constants/organization-logo"), exports);

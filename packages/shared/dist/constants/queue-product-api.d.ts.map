@@ -1,0 +1,1 @@
+{"version":3,"file":"queue-product-api.d.ts","sourceRoot":"","sources":["../../src/constants/queue-product-api.ts"],"names":[],"mappings":"AAAA,4EAA4E;AAC5E,eAAO,MAAM,0BAA0B,+PAmB7B,CAAC;AAEX,MAAM,MAAM,qBAAqB,GAAG,CAAC,OAAO,0BAA0B,CAAC,CAAC,MAAM,CAAC,CAAC;AAEhF,wBAAgB,qBAAqB,CAAC,IAAI,EAAE,MAAM,GAAG,OAAO,CAK3D"}

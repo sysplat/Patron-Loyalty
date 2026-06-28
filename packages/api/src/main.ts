@@ -6,6 +6,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ZodValidationPipe, cleanupOpenApiDoc } from 'nestjs-zod';
 import type { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
+import { isLoyaltyOnlyApiDeploy, resolveApiDeployProfile } from '@queueplatform/shared';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -62,7 +63,10 @@ function validateEnv(): void {
         );
       }
     }
-    if (!process.env.CENTRIFUGO_WEBHOOK_SECRET?.trim()) {
+    if (
+      !process.env.CENTRIFUGO_WEBHOOK_SECRET?.trim() &&
+      !isLoyaltyOnlyApiDeploy(resolveApiDeployProfile())
+    ) {
       throw new Error('CENTRIFUGO_WEBHOOK_SECRET is required in production');
     }
     if (!process.env.TWILIO_AUTH_TOKEN?.trim()) {
@@ -98,8 +102,9 @@ function validateEnv(): void {
 
 async function bootstrap() {
   try {
+    const deployProfile = resolveApiDeployProfile();
     bootstrapLogger.log(
-      `Starting API bootstrap (NODE_ENV=${process.env.NODE_ENV ?? 'development'}, PORT=${process.env.PORT || '4000'})`,
+      `Starting API bootstrap (NODE_ENV=${process.env.NODE_ENV ?? 'development'}, PORT=${process.env.PORT || '4000'}, API_DEPLOY_PROFILE=${deployProfile})`,
     );
 
     validateEnv();
@@ -174,9 +179,15 @@ async function bootstrap() {
     if (!isDev) {
       // skip Swagger in production
     } else {
+      const deployProfile = resolveApiDeployProfile();
+      const isLoyalty = isLoyaltyOnlyApiDeploy(deployProfile);
       const swaggerConfig = new DocumentBuilder()
-        .setTitle('QlessQ API')
-        .setDescription('Multi-tenant SaaS API for queue management, appointments, and services')
+        .setTitle(isLoyalty ? 'Patron Loyalty API' : 'QlessQ API')
+        .setDescription(
+          isLoyalty
+            ? 'Patron Loyalty (LMS) — CRM, points, tiers, campaigns, integrations'
+            : 'Multi-tenant SaaS API for queue management, appointments, and services',
+        )
         .setVersion('1.0')
         .addBearerAuth()
         .addTag('auth', 'Authentication & registration')
