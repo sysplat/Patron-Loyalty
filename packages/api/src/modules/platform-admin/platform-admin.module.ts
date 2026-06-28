@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { isLoyaltyOnlyApiDeploy, resolveApiDeployProfile } from '@queueplatform/shared';
 import { AuthModule } from '../auth/auth.module';
 import { BillingModule } from '../billing/billing.module';
 import { PlatformPulseController } from './platform-pulse.controller';
@@ -18,8 +19,15 @@ import { AnnouncementModule } from '../announcement/announcement.module';
 import { SupportModule } from '../support/support.module';
 import { PlatformSupportController } from './platform-support.controller';
 
+const loyaltyOnlyApi = isLoyaltyOnlyApiDeploy(resolveApiDeployProfile());
+
 @Module({
-  imports: [AuthModule, BillingModule, AnnouncementModule, SupportModule],
+  imports: [
+    AuthModule,
+    BillingModule,
+    SupportModule,
+    ...(loyaltyOnlyApi ? [] : [AnnouncementModule]),
+  ],
   controllers: [
     PlatformPulseController,
     PlatformDeploymentController,
@@ -28,7 +36,7 @@ import { PlatformSupportController } from './platform-support.controller';
     PlatformAuditController,
     PlatformHealthController,
     PlatformDataController,
-    PlatformAnnouncementsController,
+    ...(loyaltyOnlyApi ? [] : [PlatformAnnouncementsController]),
     PlatformAdminsController,
     PlatformAdminTwoFactorController,
     PlatformSupportController,
