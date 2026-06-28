@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { LOYALTY_PATRON_GAME_TYPES, type LoyaltyPatronGameType } from '@queueplatform/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PatronCrmFeatureService } from '../../common/features/patron-crm-feature.service';
-import { LoyaltyAccountService } from './loyalty-account.service';
+import { ApplyPointsTxResult, LoyaltyAccountService } from './loyalty-account.service';
 
 @Injectable()
 export class LoyaltyGamificationService {
@@ -87,7 +87,7 @@ export class LoyaltyGamificationService {
     );
 
     for (const challenge of challenges) {
-      await this.prisma.withTenant(orgId, async (tx) => {
+      const pointsResult = await this.prisma.withTenant(orgId, async (tx) => {
         const progress = await tx.customerChallengeProgress.upsert({
           where: { accountId_challengeId: { accountId: account.id, challengeId: challenge.id } },
           create: { orgId, accountId: account.id, challengeId: challenge.id, progress: amount },
@@ -100,15 +100,23 @@ export class LoyaltyGamificationService {
             data: { completedAt: new Date(), progress: challenge.targetValue },
           });
           if (challenge.rewardPoints > 0) {
-            await this.accounts.adjustPoints(
+            return (await this.accounts.adjustPoints(
               orgId,
               customerId,
               challenge.rewardPoints,
               `Challenge completed: ${challenge.name}`,
-            );
+              tx,
+            )) as ApplyPointsTxResult;
           }
         }
+        return null;
       });
+
+      if (pointsResult && !pointsResult.idempotent) {
+        this.accounts.dispatchApplyPointsSideEffects(orgId, account.id, pointsResult, {
+          sourceType: 'manual',
+        });
+      }
     }
   }
 
@@ -203,8 +211,8 @@ export class LoyaltyGamificationService {
         ? this.pickWeighted(this.spinOutcomes)
         : this.scratchOutcomes[Math.floor(Math.random() * this.scratchOutcomes.length)];
 
-    await this.prisma.withTenant(orgId, (tx) =>
-      tx.loyaltyPatronGamePlay.create({
+    const pointsResult = await this.prisma.withTenant(orgId, async (tx) => {
+      await tx.loyaltyPatronGamePlay.create({
         data: {
           orgId,
           accountId,
@@ -212,16 +220,24 @@ export class LoyaltyGamificationService {
           resultLabel: outcome.label,
           pointsAwarded: outcome.points,
         },
-      }),
-    );
+      });
 
-    if (outcome.points > 0) {
-      await this.accounts.adjustPoints(
-        orgId,
-        account.customerId,
-        outcome.points,
-        `Patron ${gameType.replace('_', ' ')}: ${outcome.label}`,
-      );
+      if (outcome.points > 0) {
+        return (await this.accounts.adjustPoints(
+          orgId,
+          account.customerId,
+          outcome.points,
+          `Patron ${gameType.replace('_', ' ')}: ${outcome.label}`,
+          tx,
+        )) as ApplyPointsTxResult;
+      }
+      return null;
+    });
+
+    if (pointsResult && !pointsResult.idempotent) {
+      this.accounts.dispatchApplyPointsSideEffects(orgId, accountId, pointsResult, {
+        sourceType: 'manual',
+      });
     }
 
     return { gameType, resultLabel: outcome.label, pointsAwarded: outcome.points };

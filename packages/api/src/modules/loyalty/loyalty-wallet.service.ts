@@ -37,22 +37,34 @@ export class LoyaltyWalletService {
     if (!account?.wallet) throw new NotFoundException('Wallet not found');
 
     const isDebit = type === 'DEBIT';
-    if (isDebit && account.wallet.balanceCents < amountCents) {
-      throw new BadRequestException('Insufficient wallet balance');
-    }
-
-    const delta = isDebit ? -amountCents : amountCents;
-    const balanceAfter = account.wallet.balanceCents + delta;
+    const walletId = account.wallet.id;
 
     return this.prisma.withTenant(orgId, async (tx) => {
-      await tx.loyaltyWallet.update({
-        where: { id: account.wallet!.id },
-        data: { balanceCents: balanceAfter },
-      });
+      let balanceAfter: number;
+
+      if (isDebit) {
+        const debited = await tx.loyaltyWallet.updateMany({
+          where: { id: walletId, orgId, balanceCents: { gte: amountCents } },
+          data: { balanceCents: { decrement: amountCents } },
+        });
+        if (debited.count === 0) {
+          throw new BadRequestException('Insufficient wallet balance');
+        }
+        const wallet = await tx.loyaltyWallet.findUniqueOrThrow({ where: { id: walletId } });
+        balanceAfter = wallet.balanceCents;
+      } else {
+        const wallet = await tx.loyaltyWallet.update({
+          where: { id: walletId },
+          data: { balanceCents: { increment: amountCents } },
+        });
+        balanceAfter = wallet.balanceCents;
+      }
+
+      const delta = isDebit ? -amountCents : amountCents;
       await tx.loyaltyWalletTransaction.create({
         data: {
           orgId,
-          walletId: account.wallet!.id,
+          walletId,
           type,
           amountCents: delta,
           balanceAfter,
@@ -60,7 +72,7 @@ export class LoyaltyWalletService {
           sourceType: 'manual',
         },
       });
-      return tx.loyaltyWallet.findUniqueOrThrow({ where: { id: account.wallet!.id } });
+      return tx.loyaltyWallet.findUniqueOrThrow({ where: { id: walletId } });
     });
   }
 
