@@ -32,6 +32,7 @@
     "db:migrate:deploy:railway": "bash scripts/with-railway-db.sh bash -c 'cd packages/database && sh scripts/migrate-deploy.sh'",
     "db:migrate:status:railway": "bash scripts/with-railway-db.sh node scripts/check-prod-migration.mjs 20260627120000_srs_crm_gamification_locale",
     "audit:loyalty-auth-smoke": "dotenv -e .env -e .env.local -- node scripts/loyalty-auth-smoke.mjs",
+    "audit:loyalty-queue-events-smoke": "dotenv -e .env -e .env.local -- node scripts/loyalty-queue-events-smoke.mjs",
     "audit:prod-readiness": "pnpm db:migrate:status:railway && pnpm audit:loyalty-auth-smoke",
     "audit:patron-loyalty": "node scripts/audit-patron-loyalty.mjs --write-report",
     "db:migrate:local": "bash scripts/ensure-env-local.sh && dotenv -e .env.local -e .env -- bash -c 'bash scripts/assert-local-db.sh && pnpm --filter @queueplatform/database db:migrate'",

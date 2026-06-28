@@ -87,7 +87,16 @@ QlessQ sends `customer.externalId` = QlessQ `Customer.id`. LMS upserts patrons b
 | `review.submitted`      | Review bonus points                       |
 | `customer.created`      | Ensure loyalty account + welcome campaign |
 
-Idempotency: earn ledger uses `sourceType` + `sourceId` from the queue event (`ticket`, `appointment`, `review`).
+Idempotency: earn ledger dedupes on `(orgId, accountId, sourceType, sourceId)` for `earn` / `bonus` rows. QlessQ connector retries and duplicate `queue-events` deliveries return `{ ok: true, idempotent: true }` without re-awarding points, incrementing visits, or firing gamification side effects. Enforced in application code and by partial unique index `loyalty_point_ledger_earn_source_idempotent_idx`.
+
+### Connector verification (LMS)
+
+```bash
+# Requires LOYALTY_API_URL and LOYALTY_INTEGRATION_API_KEY in .env / .env.local
+pnpm audit:loyalty-queue-events-smoke
+```
+
+Sends a synthetic `ticket.completed`, asserts `{ ok: true }`, then retries the same `sourceId` and asserts `{ idempotent: true }`.
 
 ## Loyalty-only tenants
 
