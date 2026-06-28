@@ -25,6 +25,16 @@ import {
 } from './dto/loyalty-integration.dto';
 import { LoyaltyIntegrationQueueEventDto } from './dto/loyalty-connector.dto';
 import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
+import {
+  LoyaltyConnectorObservabilityService,
+  type ConnectorIngestOutcome,
+} from './loyalty-connector-observability.service';
+
+function deriveConnectorOutcome(result: Record<string, unknown>): ConnectorIngestOutcome {
+  if (result.idempotent === true) return 'idempotent';
+  if (result.skipped === true) return 'skipped';
+  return 'ok';
+}
 
 @ApiTags('Loyalty Integrations')
 @Public()
@@ -37,6 +47,8 @@ export class LoyaltyIntegrationController {
     private readonly integration: LoyaltyIntegrationService,
     @Inject(LoyaltyQueueEventsService)
     private readonly queueEvents: LoyaltyQueueEventsService,
+    @Inject(LoyaltyConnectorObservabilityService)
+    private readonly connectorObs: LoyaltyConnectorObservabilityService,
   ) {}
 
   @Get('customers/lookup')
@@ -110,6 +122,21 @@ export class LoyaltyIntegrationController {
     @Body(new ZodValidationPipe(LoyaltyIntegrationQueueEventDto))
     body: LoyaltyIntegrationQueueEventDto,
   ) {
-    return this.queueEvents.processRemoteEvent(orgId, body);
+    const started = Date.now();
+    return this.queueEvents.processRemoteEvent(orgId, body).then((result) => {
+      const record = result as Record<string, unknown>;
+      this.connectorObs.logIngest({
+        orgId,
+        route: 'queue-events',
+        event: body.event,
+        sourceId: body.sourceId,
+        connectorVersion: body.connectorVersion,
+        durationMs: Date.now() - started,
+        outcome: deriveConnectorOutcome(record),
+        idempotent: record.idempotent === true,
+        skippedReason: typeof record.reason === 'string' ? record.reason : undefined,
+      });
+      return result;
+    });
   }
 }

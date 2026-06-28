@@ -144,6 +144,7 @@ export const loyaltyIntegrationQueueEventSchema = z
     customerEmail: z.string().email().optional().nullable(),
     rating: z.number().int().min(1).max(5).optional(),
     occurredAt: z.string().datetime().optional(),
+    connectorVersion: z.number().int().min(1).max(99).optional().default(1),
   })
   .superRefine((data, ctx) => {
     const needsCustomer = [

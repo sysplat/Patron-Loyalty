@@ -52,6 +52,12 @@ describe('loyalty BFF session hardening', () => {
     expect(source).toContain("sameSite: 'lax'");
   });
 
+  it('strips tokens from login BFF JSON while setting cookies', () => {
+    const source = readFileSync(path.join(__dirname, 'server-auth-bff.ts'), 'utf8');
+    expect(source).toContain('stripTokensFromLoginPayload');
+    expect(source).toContain('delete nextData.tokens');
+  });
+
   it('applies shared security headers via next.config', () => {
     const source = readFileSync(path.join(__dirname, '../../next.config.js'), 'utf8');
     expect(source).toContain('securityHeaders');

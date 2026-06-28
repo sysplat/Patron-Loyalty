@@ -15,6 +15,7 @@ import { RequestContextService } from '../../common/request-context/request-cont
 import { LoyaltyIntegrationController } from './loyalty-integration.controller';
 import { LoyaltyIntegrationService } from './loyalty-integration.service';
 import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
+import { LoyaltyConnectorObservabilityService } from './loyalty-connector-observability.service';
 import { LOYALTY_ORG_ID_REQUEST_KEY, LoyaltyApiKeyGuard } from './guards/loyalty-api-key.guard';
 
 const ORG_ID = '00000000-0000-0000-0000-000000000099';
@@ -53,6 +54,11 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
     processRemoteEvent: vi.fn(),
   };
 
+  const connectorObs = {
+    logIngest: vi.fn(),
+    recordClientError: vi.fn(),
+  };
+
   const requestContext = {
     run: (_ctx: unknown, fn: () => void) => fn(),
     getContext: () => ({}),
@@ -64,6 +70,7 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
       providers: [
         { provide: LoyaltyIntegrationService, useValue: integration },
         { provide: LoyaltyQueueEventsService, useValue: queueEvents },
+        { provide: LoyaltyConnectorObservabilityService, useValue: connectorObs },
         { provide: RequestContextService, useValue: requestContext },
       ],
     })
@@ -134,7 +141,10 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
       .send(payload)
       .expect(200);
 
-    expect(queueEvents.processRemoteEvent).toHaveBeenCalledWith(ORG_ID, payload);
+    expect(queueEvents.processRemoteEvent).toHaveBeenCalledWith(ORG_ID, {
+      ...payload,
+      connectorVersion: 1,
+    });
     expect(res.body).toEqual({ ok: true, idempotent: false });
   });
 
@@ -183,5 +193,105 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
       .expect(400);
 
     expect(integration.upsertCustomer).not.toHaveBeenCalled();
+  });
+
+  it('returns lookup result from integration service', async () => {
+    integration.lookupCustomer.mockResolvedValue({
+      customerId: '00000000-0000-0000-0000-0000000000aa',
+      externalId: 'qlessq-cust-lookup',
+    });
+
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/loyalty/integrations/v1/customers/lookup')
+      .query({ externalId: 'qlessq-cust-lookup' })
+      .set('X-Loyalty-Api-Key', 'loyalty_live_test')
+      .expect(200);
+
+    expect(integration.lookupCustomer).toHaveBeenCalledWith(ORG_ID, {
+      customerId: undefined,
+      email: undefined,
+      phone: undefined,
+      externalId: 'qlessq-cust-lookup',
+    });
+    expect(res.body).toEqual({
+      customerId: '00000000-0000-0000-0000-0000000000aa',
+      externalId: 'qlessq-cust-lookup',
+    });
+  });
+
+  it('returns idempotent earn response on replay', async () => {
+    integration.earnPoints.mockResolvedValue({
+      idempotent: true,
+      accountId: 'acc-1',
+      points: 10,
+    });
+
+    const body = {
+      customerId: '00000000-0000-0000-0000-000000000001',
+      eventType: 'MANUAL',
+      externalTxnId: 'txn-contract-replay',
+      points: 10,
+    };
+
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/loyalty/integrations/v1/points/earn')
+      .set('X-Loyalty-Api-Key', 'loyalty_live_test')
+      .send(body)
+      .expect(200);
+
+    expect(res.body).toMatchObject({ idempotent: true, accountId: 'acc-1' });
+  });
+
+  it('forwards review.submitted queue-events', async () => {
+    queueEvents.processRemoteEvent.mockResolvedValue({ ok: true, idempotent: false });
+
+    const payload = {
+      event: 'review.submitted',
+      sourceId: 'review-contract-1',
+      customerId: '00000000-0000-0000-0000-000000000001',
+      rating: 5,
+      connectorVersion: 1,
+    };
+
+    await request(app.getHttpServer())
+      .post('/api/v1/loyalty/integrations/v1/queue-events')
+      .set('X-Loyalty-Api-Key', 'loyalty_live_test')
+      .send(payload)
+      .expect(200);
+
+    expect(queueEvents.processRemoteEvent).toHaveBeenCalledWith(ORG_ID, payload);
+    expect(connectorObs.logIngest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orgId: ORG_ID,
+        route: 'queue-events',
+        event: 'review.submitted',
+        outcome: 'ok',
+      }),
+    );
+  });
+
+  it('forwards appointment.completed queue-events', async () => {
+    queueEvents.processRemoteEvent.mockResolvedValue({ ok: true, idempotent: true });
+
+    const payload = {
+      event: 'appointment.completed',
+      sourceId: 'appt-contract-1',
+      branchId: '00000000-0000-0000-0000-000000000001',
+      customer: { externalId: 'qlessq-appt-cust', name: 'Appt Patron' },
+    };
+
+    await request(app.getHttpServer())
+      .post('/api/v1/loyalty/integrations/v1/queue-events')
+      .set('X-Loyalty-Api-Key', 'loyalty_live_test')
+      .send(payload)
+      .expect(200);
+
+    expect(queueEvents.processRemoteEvent).toHaveBeenCalledWith(ORG_ID, {
+      ...payload,
+      connectorVersion: 1,
+    });
+    expect(connectorObs.logIngest).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: 'idempotent' }),
+    );
   });
 });

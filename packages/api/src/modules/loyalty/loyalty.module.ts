@@ -3,6 +3,7 @@ import { CustomerModule } from '../customer/customer.module';
 import { NotificationModule } from '../notification/notification.module';
 import { BillingModule } from '../billing/billing.module';
 import { WebhookModule } from '../webhook/webhook.module';
+import { RedisModule } from '../../redis/redis.module';
 import { LoyaltyIntegrationController } from './loyalty-integration.controller';
 import { LoyaltyActivationController } from './controllers/loyalty-activation.controller';
 import { LoyaltyDashboardController } from './controllers/loyalty-dashboard.controller';
@@ -38,9 +39,16 @@ import { LoyaltyPortalService } from './loyalty-portal.service';
 import { LoyaltyWebhookService } from './loyalty-webhook.service';
 import { LoyaltyApiKeyGuard } from './guards/loyalty-api-key.guard';
 import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
+import { LoyaltyConnectorObservabilityService } from './loyalty-connector-observability.service';
 
 @Module({
-  imports: [CustomerModule, NotificationModule, WebhookModule, forwardRef(() => BillingModule)],
+  imports: [
+    CustomerModule,
+    NotificationModule,
+    WebhookModule,
+    RedisModule,
+    forwardRef(() => BillingModule),
+  ],
   controllers: [
     LoyaltyActivationController,
     LoyaltyDashboardController,
@@ -79,6 +87,7 @@ import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
     LoyaltyWebhookService,
     LoyaltyApiKeyGuard,
     LoyaltyQueueEventsService,
+    LoyaltyConnectorObservabilityService,
   ],
   exports: [
     LoyaltyAccountService,

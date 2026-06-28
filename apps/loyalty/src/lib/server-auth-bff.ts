@@ -40,6 +40,15 @@ async function parseJson(res: Response): Promise<unknown> {
   return res.json().catch(() => ({}));
 }
 
+/** Remove JWT material from login JSON — cookies are the browser session carrier. */
+function stripTokensFromLoginPayload(payload: Record<string, unknown>): Record<string, unknown> {
+  const data = payload.data;
+  if (!data || typeof data !== 'object') return payload;
+  const nextData = { ...(data as Record<string, unknown>) };
+  delete nextData.tokens;
+  return { ...payload, data: nextData };
+}
+
 export async function proxyLogin(request: NextRequest, apiPath: '/auth/login' | '/auth/login/2fa') {
   try {
     const body = await request.json().catch(() => ({}));
@@ -51,15 +60,18 @@ export async function proxyLogin(request: NextRequest, apiPath: '/auth/login' | 
     });
     const payload = (await parseJson(upstream)) as {
       success?: boolean;
-      data?: { tokens?: AuthTokens };
+      data?: { tokens?: AuthTokens; [key: string]: unknown };
       message?: string;
       error?: string;
     };
-    const response = NextResponse.json(payload, { status: upstream.status });
     if (upstream.ok && payload?.data?.tokens?.accessToken && payload.data.tokens.refreshToken) {
+      const response = NextResponse.json(stripTokensFromLoginPayload(payload), {
+        status: upstream.status,
+      });
       setAuthCookies(response, payload.data.tokens);
+      return response;
     }
-    return response;
+    return NextResponse.json(stripTokensFromLoginPayload(payload), { status: upstream.status });
   } catch (err) {
     console.error('[auth-bff] upstream login failed', err);
     return NextResponse.json(

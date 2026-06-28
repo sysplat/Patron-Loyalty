@@ -56,22 +56,44 @@ See conversation plan for Phases 4–7 (auth, tests, connector observability, op
 | Points-layer idempotency spec                              | `loyalty-points.service.spec.ts`                |
 | Physical Prisma schema split (`core` / `loyalty` / `qms`)  | Planned — deferred (multi-file preview)         |
 
-## Phase 4 — Auth hardening (in progress)
+## Phase 4 — Auth hardening ✅
 
-**Status:** Started (2026-06-28)
+**Status:** Complete (2026-06-28)
 
 | Item                                                     | Done                                             |
 | -------------------------------------------------------- | ------------------------------------------------ |
 | `GET /api/auth/session` returns `{ authenticated }` only | `apps/loyalty/src/app/api/auth/session/route.ts` |
 | Cross-tab sync via BFF `POST /api/auth/refresh` only     | `auth-refresh-coordination.ts`, dashboard layout |
 | CSP + SameSite audit specs                               | `auth-store.spec.ts`                             |
+| Strip accessToken from login BFF JSON (cookies-only)     | `server-auth-bff.ts`, `login/page.tsx`           |
 
-## Phase 5 — Integration API contract tests (in progress)
+## Phase 5 — Integration API contract tests ✅
+
+**Status:** Complete (2026-06-28)
+
+| Item                                              | Done                                          |
+| ------------------------------------------------- | --------------------------------------------- |
+| Supertest suite for `/loyalty/integrations/v1/*`  | `loyalty-integration.controller.http.spec.ts` |
+| Lookup, idempotent earn replay, extra event types | Same spec (11 cases)                          |
+
+## Phase 6 — QlessQ connector observability ✅
+
+**Status:** Complete (2026-06-28)
+
+| Item                                      | Done                                                             |
+| ----------------------------------------- | ---------------------------------------------------------------- |
+| Structured ingest logs + latency/outcome  | `loyalty-connector-observability.service.ts`                     |
+| 4xx spike warning per org (Redis, 1h)     | Same service                                                     |
+| `connectorVersion` on queue-event payload | `@queueplatform/shared`                                          |
+| Ops runbook                               | [QLESSQ_CONNECTOR_OPS.md](../operations/QLESSQ_CONNECTOR_OPS.md) |
+
+## Phase 7 — Operability & release discipline (in progress)
 
 **Status:** Started (2026-06-28)
 
-| Item                                             | Done                                          |
-| ------------------------------------------------ | --------------------------------------------- |
-| Supertest suite for `/loyalty/integrations/v1/*` | `loyalty-integration.controller.http.spec.ts` |
-
-See conversation plan for Phases 6–7 (connector observability, ops).
+| Item                                       | Done                                                             |
+| ------------------------------------------ | ---------------------------------------------------------------- |
+| Sentry / health release tag                | `getObservabilityRelease()` in shared + API                      |
+| Deploy verification in connector ops doc   | [QLESSQ_CONNECTOR_OPS.md](../operations/QLESSQ_CONNECTOR_OPS.md) |
+| Architecture scorecard (quarterly re-rate) | This doc                                                         |
+| Nightly load workflow (staging)            | Planned — needs staging secrets                                  |

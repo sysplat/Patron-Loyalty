@@ -4,11 +4,43 @@ import { useState, useRef, useCallback } from 'react';
 import { flushSync } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, refreshAccessToken } from '@/lib/api';
 import { validateLogin } from '@/lib/validation';
 import { useAuthStore } from '@/lib/auth-store';
 import { QlessqBrand } from '@/components/brand';
 import { AuthMarketingPanel } from '@/components/marketing/auth-marketing-panel';
+
+function mapLoginUser(data: {
+  user: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    orgId: string;
+    twoFactorEnabled: boolean;
+    platformOperator?: boolean;
+    role?: string;
+  };
+  organization: {
+    name: string;
+    slug: string;
+    timezone?: string;
+  };
+}) {
+  return {
+    id: data.user.id,
+    email: data.user.email,
+    firstName: data.user.firstName ?? '',
+    lastName: data.user.lastName ?? '',
+    orgId: data.user.orgId,
+    orgName: data.organization.name,
+    orgSlug: data.organization.slug,
+    orgTimezone: data.organization.timezone,
+    role: data.user.role ?? 'viewer',
+    twoFactorEnabled: data.user.twoFactorEnabled,
+    platformOperator: data.user.platformOperator ?? false,
+  };
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,6 +60,38 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const totpAutoRef = useRef<string | null>(null);
+
+  const finalizeLogin = useCallback(
+    async (data: {
+      user: {
+        id: string;
+        email: string;
+        firstName: string | null;
+        lastName: string | null;
+        orgId: string;
+        twoFactorEnabled: boolean;
+        platformOperator?: boolean;
+        role?: string;
+      };
+      organization: {
+        name: string;
+        slug: string;
+        timezone?: string;
+      };
+    }) => {
+      const refreshResult = await refreshAccessToken();
+      if (refreshResult !== 'success') {
+        throw new Error('Signed in but session could not be established. Please try again.');
+      }
+      const accessToken = useAuthStore.getState().accessToken;
+      if (!accessToken) {
+        throw new Error('Signed in but session could not be established. Please try again.');
+      }
+      setAuth(accessToken, mapLoginUser(data));
+      router.push('/overview');
+    },
+    [router, setAuth],
+  );
 
   async function handleSubmit(e?: React.FormEvent, selectedOrgId?: string) {
     if (e) e.preventDefault();
@@ -69,7 +133,6 @@ export default function LoginPage() {
             onboardingStep: string;
             timezone?: string;
           };
-          tokens?: { accessToken: string; refreshToken: string };
         };
       }>('/api/auth/login', { email, password, orgId: selectedOrgId }, { skipAuth: true });
 
@@ -88,25 +151,11 @@ export default function LoginPage() {
         return;
       }
 
-      if (res?.data?.tokens) {
-        setAuth(
-          res?.data?.tokens?.accessToken,
-          {
-            id: res?.data?.user?.id,
-            email: res?.data?.user?.email,
-            firstName: res?.data?.user?.firstName ?? '',
-            lastName: res?.data?.user?.lastName ?? '',
-            orgId: res?.data?.user?.orgId,
-            orgName: res?.data?.organization?.name,
-            orgSlug: res?.data?.organization?.slug,
-            orgTimezone: res?.data?.organization?.timezone,
-            role: (res?.data?.user as any)?.role ?? 'viewer',
-            twoFactorEnabled: res?.data?.user?.twoFactorEnabled,
-            platformOperator: res?.data?.user?.platformOperator ?? false,
-          },
-          res?.data?.tokens?.refreshToken,
-        );
-        router.push('/overview');
+      if (res?.data?.user && res?.data?.organization) {
+        await finalizeLogin({
+          user: res.data.user,
+          organization: res.data.organization,
+        });
       }
     } catch (err: any) {
       setError(err.data?.message ?? err.message ?? 'Invalid credentials');
@@ -136,31 +185,15 @@ export default function LoginPage() {
           data: {
             user: any;
             organization: any;
-            tokens: { accessToken: string; refreshToken: string };
           };
         }>('/api/auth/login/2fa', { twoFactorToken, code: code.trim() }, { skipAuth: true });
 
         if (attempt !== loginAttemptRef.current) return;
 
-        setAuth(
-          res?.data?.tokens?.accessToken,
-          {
-            id: res?.data?.user?.id,
-            email: res?.data?.user?.email,
-            firstName: res?.data?.user?.firstName ?? '',
-            lastName: res?.data?.user?.lastName ?? '',
-            orgId: res?.data?.user?.orgId,
-            orgName: res?.data?.organization?.name,
-            orgSlug: res?.data?.organization?.slug,
-            orgTimezone: res?.data?.organization?.timezone,
-            role: (res?.data?.user as any)?.role ?? 'viewer',
-            twoFactorEnabled: res?.data?.user?.twoFactorEnabled,
-            platformOperator:
-              (res?.data?.user as { platformOperator?: boolean })?.platformOperator ?? false,
-          },
-          res?.data?.tokens?.refreshToken,
-        );
-        router.push('/overview');
+        await finalizeLogin({
+          user: res.data.user,
+          organization: res.data.organization,
+        });
       } catch (err: any) {
         if (attempt !== loginAttemptRef.current) return;
 
@@ -180,7 +213,7 @@ export default function LoginPage() {
         }
       }
     },
-    [twoFactorToken, pendingUser, pendingOrg, router, setAuth],
+    [twoFactorToken, pendingUser, pendingOrg, router, setAuth, finalizeLogin],
   );
 
   async function handleTotpSubmit(e: React.FormEvent) {
