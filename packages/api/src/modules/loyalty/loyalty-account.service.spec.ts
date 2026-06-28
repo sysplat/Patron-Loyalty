@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BadRequestException } from '@nestjs/common';
 import { LOYALTY_EARN_EVENT_TYPES, LOYALTY_POINT_LEDGER_TYPES } from '@queueplatform/shared';
 import { LoyaltyAccountService } from './loyalty-account.service';
+import { LoyaltyPointsService } from './loyalty-points.service';
 
 const baseAccount = {
   id: 'acc-1',
@@ -35,12 +36,17 @@ describe('LoyaltyAccountService lookupPatronByPhone', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    const points = new LoyaltyPointsService(
+      prisma as never,
+      eventEmitter as never,
+      loyaltyWebhook as never,
+    );
     service = new LoyaltyAccountService(
       prisma as never,
       patronCrmFeature as never,
       programService as never,
-      eventEmitter as never,
       loyaltyWebhook as never,
+      points,
     );
   });
 
@@ -125,8 +131,8 @@ describe('LoyaltyAccountService earn idempotency', () => {
       prisma as never,
       patronCrmFeature as never,
       programService as never,
-      eventEmitter as never,
       loyaltyWebhook as never,
+      new LoyaltyPointsService(prisma as never, eventEmitter as never, loyaltyWebhook as never),
     );
 
     vi.spyOn(service, 'ensureAccount').mockResolvedValue({

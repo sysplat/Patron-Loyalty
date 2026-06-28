@@ -23,17 +23,17 @@ See [TESTING.md](../operations/TESTING.md) for full matrix.
 
 ## 2. Patron-Loyalty Railway (`Patron-Loyalty` project)
 
-| Service            | Check                                                                             |
-| ------------------ | --------------------------------------------------------------------------------- |
-| `pl-loyalty`       | Deployed from latest `main`; public URL works                                     |
-| `pl-api`           | `GET /api/v1/health` OK; `APP_DATABASE_URL` set; **`API_DEPLOY_PROFILE=loyalty`** |
-| `pl-notifications` | Running when SMS/email campaigns used                                             |
-| `pl-centrifugo`    | CORS includes loyalty origin                                                      |
+| Service            | Check                                                                                                                                       |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pl-loyalty`       | Deployed from latest `main`; public URL works                                                                                               |
+| `pl-api`           | `GET /api/v1/health` OK; `APP_DATABASE_URL` set; **`API_DEPLOY_PROFILE=loyalty`**; prod URL `https://pl-api-production-a528.up.railway.app` |
+| `pl-notifications` | Running when SMS/email campaigns used                                                                                                       |
+| `pl-centrifugo`    | CORS includes loyalty origin                                                                                                                |
 
 **Build-time on `pl-loyalty`:**
 
 ```bash
-NEXT_PUBLIC_API_URL=https://<pl-api-host>/api/v1
+NEXT_PUBLIC_API_URL=https://pl-api-production-a528.up.railway.app/api/v1
 NEXT_PUBLIC_CENTRIFUGO_WS_URL=wss://<centrifugo-host>/connection/websocket
 ```
 

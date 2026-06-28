@@ -3,10 +3,22 @@ import { CustomerModule } from '../customer/customer.module';
 import { NotificationModule } from '../notification/notification.module';
 import { BillingModule } from '../billing/billing.module';
 import { WebhookModule } from '../webhook/webhook.module';
-import { LoyaltyController } from './loyalty.controller';
 import { LoyaltyIntegrationController } from './loyalty-integration.controller';
+import { LoyaltyActivationController } from './controllers/loyalty-activation.controller';
+import { LoyaltyDashboardController } from './controllers/loyalty-dashboard.controller';
+import { LoyaltyProgramController } from './controllers/loyalty-program.controller';
+import { LoyaltyAccountsController } from './controllers/loyalty-accounts.controller';
+import { LoyaltyCatalogController } from './controllers/loyalty-catalog.controller';
+import { LoyaltyWalletController } from './controllers/loyalty-wallet.controller';
+import { LoyaltyReferralsController } from './controllers/loyalty-referrals.controller';
+import { LoyaltyCampaignsController } from './controllers/loyalty-campaigns.controller';
+import { LoyaltyGamificationController } from './controllers/loyalty-gamification.controller';
+import { LoyaltyCrmController } from './controllers/loyalty-crm.controller';
+import { LoyaltyApiKeyController } from './controllers/loyalty-api-key.controller';
+import { LoyaltyPublicController } from './controllers/loyalty-public.controller';
 import { LoyaltyProgramService } from './loyalty-program.service';
 import { LoyaltyAccountService } from './loyalty-account.service';
+import { LoyaltyPointsService } from './loyalty-points.service';
 import { LoyaltyCatalogService } from './loyalty-catalog.service';
 import { LoyaltyWalletService } from './loyalty-wallet.service';
 import { LoyaltyReferralService } from './loyalty-referral.service';
@@ -29,9 +41,24 @@ import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
 
 @Module({
   imports: [CustomerModule, NotificationModule, WebhookModule, forwardRef(() => BillingModule)],
-  controllers: [LoyaltyController, LoyaltyIntegrationController],
+  controllers: [
+    LoyaltyActivationController,
+    LoyaltyDashboardController,
+    LoyaltyProgramController,
+    LoyaltyAccountsController,
+    LoyaltyCatalogController,
+    LoyaltyWalletController,
+    LoyaltyReferralsController,
+    LoyaltyCampaignsController,
+    LoyaltyGamificationController,
+    LoyaltyCrmController,
+    LoyaltyApiKeyController,
+    LoyaltyPublicController,
+    LoyaltyIntegrationController,
+  ],
   providers: [
     LoyaltyProgramService,
+    LoyaltyPointsService,
     LoyaltyAccountService,
     LoyaltyCatalogService,
     LoyaltyWalletService,

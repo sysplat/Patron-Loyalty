@@ -101,6 +101,15 @@ pnpm audit:patron-loyalty                # Railway linked, prod smoke
 pnpm audit:loyalty-queue-events-smoke
 ```
 
+**Prod API boundary smoke** (`API_DEPLOY_PROFILE=loyalty` on `pl-api`):
+
+```bash
+API=https://pl-api-production-a528.up.railway.app
+curl -s -o /dev/null -w "health:%{http_code}\n" "$API/api/v1/health"          # 200
+curl -s -o /dev/null -w "tickets:%{http_code}\n" "$API/api/v1/tickets"        # 404
+curl -s -o /dev/null -w "queues:%{http_code}\n" "$API/api/v1/queues"          # 404
+```
+
 See also:
 
 - [TEST_AUDIT_BASELINE.md](./TEST_AUDIT_BASELINE.md) — baseline inventory

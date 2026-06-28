@@ -32,8 +32,14 @@ Set on **Patron Loyalty Railway `pl-api` service:**
 API_DEPLOY_PROFILE=loyalty
 ```
 
-## Phase 2 — Loyalty domain layering
+## Phase 2 — Loyalty domain layering ✅
 
-Split controllers and god services; transaction discipline at use-case boundary.
+**Status:** Complete (2026-06-28)
+
+| Item                                     | Done                                                                                                                                                        |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Split monolithic `loyalty.controller.ts` | `controllers/loyalty-*.controller.ts` (activation, dashboard, program, accounts, catalog, wallet, referrals, campaigns, gamification, CRM, API key, public) |
+| Extract points transaction core          | `loyalty-points.service.ts` — ledger, tier, health score, idempotency                                                                                       |
+| Account service as lifecycle facade      | `loyalty-account.service.ts` — ensure/get, earn handlers, DSAR, delegates to points                                                                         |
 
 See conversation plan for Phases 3–7 (schema, auth, tests, connector observability, ops).

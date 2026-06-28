@@ -44,7 +44,7 @@ Body for `POST /loyalty/connector`:
 ```json
 {
   "lmsOrgId": "optional-lms-org-uuid",
-  "apiBaseUrl": "https://pl-api-production.example.com/api/v1",
+  "apiBaseUrl": "https://pl-api-production-a528.up.railway.app/api/v1",
   "apiKey": "loyalty_live_..."
 }
 ```
@@ -115,7 +115,7 @@ QLESSQ_INTEGRATION_API_KEY=
 ### QlessQ (sibling `../QMS`)
 
 ```bash
-LOYALTY_INTEGRATION_URL=https://pl-api.example.com/api/v1
+LOYALTY_INTEGRATION_URL=https://pl-api-production-a528.up.railway.app/api/v1
 LOYALTY_INTEGRATION_API_KEY=   # optional global fallback; prefer per-org connector config
 LOYALTY_URL=https://loyalty.example.com
 ```

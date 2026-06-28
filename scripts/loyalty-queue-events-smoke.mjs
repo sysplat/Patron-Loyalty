@@ -3,7 +3,7 @@
  * Smoke-test QlessQ → LMS queue-events connector.
  *
  * Usage:
- *   LOYALTY_API_URL=https://pl-api.example.com/api/v1 \
+ *   LOYALTY_API_URL=https://pl-api-production-a528.up.railway.app/api/v1 \
  *   LOYALTY_INTEGRATION_API_KEY=loyalty_live_... \
  *   node scripts/loyalty-queue-events-smoke.mjs
  *
@@ -42,7 +42,7 @@ loadEnvFile(path.join(root, '.env.local'));
 const apiBase = (
   process.env.LOYALTY_API_URL ??
   process.env.API_URL ??
-  'http://localhost:4000/api/v1'
+  'https://pl-api-production-a528.up.railway.app/api/v1'
 ).replace(/\/$/, '');
 
 const apiKey = process.env.LOYALTY_INTEGRATION_API_KEY ?? process.env.LOYALTY_API_KEY;
