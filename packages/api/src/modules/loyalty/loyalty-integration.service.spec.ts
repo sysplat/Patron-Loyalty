@@ -109,3 +109,60 @@ describe('LoyaltyIntegrationService earnPoints', () => {
     );
   });
 });
+
+describe('LoyaltyIntegrationService lookupCustomer externalId', () => {
+  const patronCrmFeature = { requireEnabled: vi.fn().mockResolvedValue(undefined) };
+  const prisma = { withTenant: vi.fn() };
+  const customers = {};
+  const accounts = {
+    ensureAccount: vi.fn().mockResolvedValue({
+      id: 'acc-1',
+      pointsBalance: 100,
+      referralCode: 'REF1',
+    }),
+  };
+  const catalog = {};
+  const program = {};
+  const wallet = {};
+
+  let service: LoyaltyIntegrationService;
+  const customerFindFirst = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({ customer: { findFirst: customerFindFirst } }),
+    );
+    customerFindFirst.mockResolvedValue({
+      id: 'cust-1',
+      name: 'Connector Patron',
+      email: 'p@example.com',
+      phone: '+15551234567',
+    });
+
+    service = new LoyaltyIntegrationService(
+      prisma as never,
+      customers as never,
+      accounts as never,
+      catalog as never,
+      program as never,
+      wallet as never,
+      patronCrmFeature as never,
+    );
+  });
+
+  it('looks up patron by indexed externalId column', async () => {
+    const result = await service.lookupCustomer('org-1', { externalId: 'qlessq-cust-99' });
+
+    expect(customerFindFirst).toHaveBeenCalledWith({
+      where: { orgId: 'org-1', externalId: 'qlessq-cust-99' },
+    });
+    expect(result).toEqual(
+      expect.objectContaining({
+        customerId: 'cust-1',
+        accountId: 'acc-1',
+        pointsBalance: 100,
+      }),
+    );
+  });
+});

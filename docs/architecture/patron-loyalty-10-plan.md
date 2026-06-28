@@ -42,4 +42,16 @@ API_DEPLOY_PROFILE=loyalty
 | Extract points transaction core          | `loyalty-points.service.ts` — ledger, tier, health score, idempotency                                                                                       |
 | Account service as lifecycle facade      | `loyalty-account.service.ts` — ensure/get, earn handlers, DSAR, delegates to points                                                                         |
 
-See conversation plan for Phases 3–7 (schema, auth, tests, connector observability, ops).
+See conversation plan for Phases 4–7 (auth, tests, connector observability, ops).
+
+## Phase 3 — Data & schema clarity (in progress)
+
+**Status:** Started (2026-06-28)
+
+| Item                                                       | Done                                            |
+| ---------------------------------------------------------- | ----------------------------------------------- |
+| `customers.external_id` column + org-scoped unique index   | Migration `20260628220000_customer_external_id` |
+| Integration lookup uses indexed column (metadata fallback) | `loyalty-integration.service.ts`                |
+| Product SKU + schema layer matrix                          | [REPO_BOUNDARIES.md](./REPO_BOUNDARIES.md)      |
+| Points-layer idempotency spec                              | `loyalty-points.service.spec.ts`                |
+| Physical Prisma schema split (`core` / `loyalty` / `qms`)  | Planned — deferred (multi-file preview)         |

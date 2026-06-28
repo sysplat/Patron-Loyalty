@@ -62,7 +62,18 @@ export class LoyaltyIntegrationService {
         await this.prisma.withTenant(orgId, (tx) =>
           tx.customer.update({
             where: { id: existing.id },
-            data: { metadata: merged as Prisma.InputJsonValue, name: data.name.trim() },
+            data: {
+              externalId,
+              metadata: merged as Prisma.InputJsonValue,
+              name: data.name.trim(),
+            },
+          }),
+        );
+      } else {
+        await this.prisma.withTenant(orgId, (tx) =>
+          tx.customer.update({
+            where: { id: existing.id },
+            data: { name: data.name.trim() },
           }),
         );
       }
@@ -81,7 +92,10 @@ export class LoyaltyIntegrationService {
       await this.prisma.withTenant(orgId, (tx) =>
         tx.customer.update({
           where: { id: created.id },
-          data: { metadata: merged as Prisma.InputJsonValue },
+          data: {
+            externalId,
+            metadata: merged as Prisma.InputJsonValue,
+          },
         }),
       );
     }
@@ -279,10 +293,16 @@ export class LoyaltyIntegrationService {
         }
       }
       if (ref.externalId) {
+        const trimmed = ref.externalId.trim();
+        const byColumn = await tx.customer.findFirst({
+          where: { orgId, externalId: trimmed },
+        });
+        if (byColumn) return byColumn;
+
         const rows = await tx.$queryRaw<{ id: string }[]>`
           SELECT id FROM customers
           WHERE org_id = ${orgId}::uuid
-            AND metadata->>'externalId' = ${ref.externalId}
+            AND metadata->>'externalId' = ${trimmed}
           LIMIT 1
         `;
         if (rows[0]) {

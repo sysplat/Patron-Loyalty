@@ -45,3 +45,23 @@ QMS-only checks (`check:architecture:web-admin-boundary`, service-size budgets f
 | `API_DEPLOY_PROFILE` | `loyalty`        | Patron Loyalty `pl-api` — no ticket/queue/workbench modules at boot |
 
 On `full` deploy, `QueueProductGuard` returns **404** for QMS route prefixes when the tenant org’s `productSku` is `loyalty` (no queue license).
+
+## Product SKU matrix
+
+| `Organization.productSku` | `patronCrmEnabled` | LMS UI | QMS UI | API modules (loyalty deploy)                    | QMS REST (loyalty deploy) |
+| ------------------------- | ------------------ | ------ | ------ | ----------------------------------------------- | ------------------------- |
+| `loyalty`                 | `true`             | Yes    | No     | Auth, org, customer, loyalty, billing, webhooks | **404** (modules omitted) |
+| `qms`                     | `false`            | No     | Yes    | Full module set                                 | Yes (queue SKU)           |
+| `bundle`                  | `true`             | Yes    | Yes    | Full module set                                 | Yes                       |
+
+**Schema layers** (logical; single DB today):
+
+| Layer   | Examples                                                      | Notes                                             |
+| ------- | ------------------------------------------------------------- | ------------------------------------------------- |
+| Core    | `organizations`, `users`, `roles`, `customers`                | Shared tenancy                                    |
+| Loyalty | `loyalty_accounts`, `loyalty_point_ledger`, `loyalty_rewards` | Gated by `patronCrmEnabled`                       |
+| QMS     | `tickets`, `queues`, `visits`, `desks`                        | Omitted at boot when `API_DEPLOY_PROFILE=loyalty` |
+
+**Connector identity:** `customers.external_id` (unique per org) is the canonical QlessQ patron key; legacy `metadata.externalId` is backfilled and still read as fallback.
+
+**LMS prod migrations:** `pnpm db:migrate:deploy:railway` against Patron-Loyalty Postgres after linking Railway (`pl-api` / database service).
