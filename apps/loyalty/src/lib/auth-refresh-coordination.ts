@@ -45,17 +45,17 @@ async function waitForPeerRefresh(maxMs = 15_000): Promise<void> {
   }
 }
 
-/** Pull the access JWT from the HttpOnly session cookie into Zustand (after another tab refreshed). */
-export async function syncAccessTokenFromSessionCookie(): Promise<RefreshSessionResult> {
+/** After another tab refreshed HttpOnly cookies, pull a fresh access JWT via BFF refresh. */
+export async function syncAccessTokenAfterPeerRefresh(): Promise<RefreshSessionResult> {
   try {
-    const res = await fetch('/api/auth/session', { credentials: 'include' });
+    const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
     if (res.status === 401 || res.status === 403) return 'invalid';
     if (!res.ok) return 'unavailable';
     const payload = (await res.json().catch(() => null)) as {
-      authenticated?: boolean;
+      success?: boolean;
       data?: { accessToken?: string };
     } | null;
-    if (payload?.authenticated && payload.data?.accessToken) {
+    if (payload?.success && payload.data?.accessToken) {
       useAuthStore.getState().setTokensFromRefresh(payload.data.accessToken);
       return 'success';
     }
@@ -74,7 +74,7 @@ export async function coordinateRefresh(
 ): Promise<RefreshSessionResult> {
   if (!tryAcquireRefreshLock()) {
     await waitForPeerRefresh();
-    return syncAccessTokenFromSessionCookie();
+    return syncAccessTokenAfterPeerRefresh();
   }
 
   try {

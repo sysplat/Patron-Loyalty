@@ -4,10 +4,12 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ZodValidationPipe } from 'nestjs-zod';
 import { ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../common/decorators/public.decorator';
 import { LoyaltyOrgId } from './decorators/loyalty-org.decorator';
@@ -31,7 +33,9 @@ import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
 @Controller('loyalty/integrations/v1')
 export class LoyaltyIntegrationController {
   constructor(
+    @Inject(LoyaltyIntegrationService)
     private readonly integration: LoyaltyIntegrationService,
+    @Inject(LoyaltyQueueEventsService)
     private readonly queueEvents: LoyaltyQueueEventsService,
   ) {}
 
@@ -50,14 +54,21 @@ export class LoyaltyIntegrationController {
   @Post('customers/upsert')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Create or resolve patron by email, phone, or external ID' })
-  upsertCustomer(@LoyaltyOrgId() orgId: string, @Body() body: LoyaltyIntegrationUpsertCustomerDto) {
+  upsertCustomer(
+    @LoyaltyOrgId() orgId: string,
+    @Body(new ZodValidationPipe(LoyaltyIntegrationUpsertCustomerDto))
+    body: LoyaltyIntegrationUpsertCustomerDto,
+  ) {
     return this.integration.upsertCustomer(orgId, body);
   }
 
   @Post('points/earn')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Award points from POS or e-commerce (idempotent by externalTxnId)' })
-  earnPoints(@LoyaltyOrgId() orgId: string, @Body() body: LoyaltyIntegrationEarnDto) {
+  earnPoints(
+    @LoyaltyOrgId() orgId: string,
+    @Body(new ZodValidationPipe(LoyaltyIntegrationEarnDto)) body: LoyaltyIntegrationEarnDto,
+  ) {
     return this.integration.earnPoints(orgId, body);
   }
 
@@ -94,7 +105,11 @@ export class LoyaltyIntegrationController {
   @ApiOperation({
     summary: 'Ingest normalized QlessQ queue events (ticket/appointment/review/customer)',
   })
-  ingestQueueEvent(@LoyaltyOrgId() orgId: string, @Body() body: LoyaltyIntegrationQueueEventDto) {
+  ingestQueueEvent(
+    @LoyaltyOrgId() orgId: string,
+    @Body(new ZodValidationPipe(LoyaltyIntegrationQueueEventDto))
+    body: LoyaltyIntegrationQueueEventDto,
+  ) {
     return this.queueEvents.processRemoteEvent(orgId, body);
   }
 }

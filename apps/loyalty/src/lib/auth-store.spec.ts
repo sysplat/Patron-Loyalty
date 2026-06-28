@@ -38,3 +38,23 @@ describe('loyalty middleware session cookies', () => {
     expect(source).not.toContain("'/book'");
   });
 });
+
+describe('loyalty BFF session hardening', () => {
+  it('does not expose accessToken from GET /api/auth/session', () => {
+    const source = readFileSync(path.join(__dirname, '../app/api/auth/session/route.ts'), 'utf8');
+    expect(source).toContain('{ authenticated: true }');
+    expect(source).not.toMatch(/data:\s*\{\s*accessToken/);
+  });
+
+  it('sets HttpOnly session cookies with SameSite=lax in server-auth-bff', () => {
+    const source = readFileSync(path.join(__dirname, 'server-auth-bff.ts'), 'utf8');
+    expect(source).toContain('httpOnly: true');
+    expect(source).toContain("sameSite: 'lax'");
+  });
+
+  it('applies shared security headers via next.config', () => {
+    const source = readFileSync(path.join(__dirname, '../../next.config.js'), 'utf8');
+    expect(source).toContain('securityHeaders');
+    expect(source).toContain("source: '/(.*)'");
+  });
+});

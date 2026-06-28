@@ -6,5 +6,5 @@ export async function GET(request: NextRequest) {
   if (!accessToken) {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
-  return NextResponse.json({ authenticated: true, data: { accessToken } });
+  return NextResponse.json({ authenticated: true });
 }

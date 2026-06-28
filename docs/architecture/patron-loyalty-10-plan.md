@@ -55,3 +55,23 @@ See conversation plan for Phases 4–7 (auth, tests, connector observability, op
 | Product SKU + schema layer matrix                          | [REPO_BOUNDARIES.md](./REPO_BOUNDARIES.md)      |
 | Points-layer idempotency spec                              | `loyalty-points.service.spec.ts`                |
 | Physical Prisma schema split (`core` / `loyalty` / `qms`)  | Planned — deferred (multi-file preview)         |
+
+## Phase 4 — Auth hardening (in progress)
+
+**Status:** Started (2026-06-28)
+
+| Item                                                     | Done                                             |
+| -------------------------------------------------------- | ------------------------------------------------ |
+| `GET /api/auth/session` returns `{ authenticated }` only | `apps/loyalty/src/app/api/auth/session/route.ts` |
+| Cross-tab sync via BFF `POST /api/auth/refresh` only     | `auth-refresh-coordination.ts`, dashboard layout |
+| CSP + SameSite audit specs                               | `auth-store.spec.ts`                             |
+
+## Phase 5 — Integration API contract tests (in progress)
+
+**Status:** Started (2026-06-28)
+
+| Item                                             | Done                                          |
+| ------------------------------------------------ | --------------------------------------------- |
+| Supertest suite for `/loyalty/integrations/v1/*` | `loyalty-integration.controller.http.spec.ts` |
+
+See conversation plan for Phases 6–7 (connector observability, ops).
