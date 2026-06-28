@@ -1,6 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { LOYALTY_EARN_EVENT_TYPES, type LoyaltyEarnEventType } from '@queueplatform/shared';
+import {
+  LOYALTY_EARN_EVENT_TYPES,
+  LOYALTY_POINT_LEDGER_TYPES,
+  type LoyaltyEarnEventType,
+} from '@queueplatform/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CustomerService } from '../customer/customer.service';
 import { LoyaltyAccountService } from './loyalty-account.service';
@@ -8,7 +12,11 @@ import { LoyaltyCatalogService } from './loyalty-catalog.service';
 import { LoyaltyProgramService } from './loyalty-program.service';
 import { LoyaltyWalletService } from './loyalty-wallet.service';
 import { PatronCrmFeatureService } from '../../common/features/patron-crm-feature.service';
-import { mergeCustomerMetadata, parseCustomerMetadata } from '../customer/customer-contact.util';
+import {
+  mergeCustomerMetadata,
+  parseCustomerMetadata,
+  customerPhoneOr,
+} from '../customer/customer-contact.util';
 
 @Injectable()
 export class LoyaltyIntegrationService {
@@ -104,6 +112,7 @@ export class LoyaltyIntegrationService {
           orgId,
           sourceType: 'integration',
           sourceId: data.externalTxnId,
+          type: LOYALTY_POINT_LEDGER_TYPES.EARN,
         },
         select: { id: true, accountId: true, points: true },
       }),
@@ -112,7 +121,7 @@ export class LoyaltyIntegrationService {
       return {
         idempotent: true,
         accountId: duplicate.accountId,
-        points: duplicate.points,
+        points: Math.abs(duplicate.points),
       };
     }
 
@@ -122,9 +131,11 @@ export class LoyaltyIntegrationService {
 
     let points = data.points;
     if (!points && data.purchaseAmountCents) {
-      const rate = await this.program.resolveEarnPoints(orgId, LOYALTY_EARN_EVENT_TYPES.PURCHASE);
-      const dollars = data.purchaseAmountCents / 100;
-      points = Math.max(1, Math.floor(dollars * Math.max(rate, 1)));
+      points = await this.program.resolveEarnPoints(orgId, data.eventType, {
+        purchaseAmountCents: data.purchaseAmountCents,
+        tierSlug: account.tier?.slug ?? null,
+        lifetimePointsEarned: account.lifetimePointsEarned,
+      });
     }
     if (!points || points <= 0) {
       throw new BadRequestException('Could not resolve points for transaction');
@@ -261,21 +272,22 @@ export class LoyaltyIntegrationService {
         if (found) return found;
       }
       if (ref.phone) {
-        const found = await tx.customer.findFirst({ where: { orgId, phone: ref.phone.trim() } });
-        if (found) return found;
+        const phoneOr = customerPhoneOr(ref.phone);
+        if (phoneOr.length > 0) {
+          const found = await tx.customer.findFirst({ where: { orgId, OR: phoneOr } });
+          if (found) return found;
+        }
       }
       if (ref.externalId) {
-        const rows = await tx.customer.findMany({
-          where: { orgId },
-          select: { id: true, metadata: true, name: true, email: true, phone: true },
-          take: 5000,
-        });
-        return (
-          rows.find((row) => {
-            const meta = parseCustomerMetadata(row.metadata);
-            return meta.externalId === ref.externalId;
-          }) ?? null
-        );
+        const rows = await tx.$queryRaw<{ id: string }[]>`
+          SELECT id FROM customers
+          WHERE org_id = ${orgId}::uuid
+            AND metadata->>'externalId' = ${ref.externalId}
+          LIMIT 1
+        `;
+        if (rows[0]) {
+          return tx.customer.findFirst({ where: { id: rows[0].id, orgId } });
+        }
       }
       return null;
     });

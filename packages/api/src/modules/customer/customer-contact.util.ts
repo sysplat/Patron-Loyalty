@@ -93,3 +93,15 @@ export function mergeCustomerMetadata(
   }
   return base;
 }
+
+/** Phone OR clauses for customer lookup (exact + last-10-digit contains). */
+export function customerPhoneOr(phone: string): { phone: string | { contains: string } }[] {
+  const trimmed = phone.trim();
+  if (!trimmed) return [];
+  const normalized = trimmed.replace(/\D/g, '');
+  const or: { phone: string | { contains: string } }[] = [{ phone: trimmed }];
+  if (normalized.length >= 10) {
+    or.push({ phone: { contains: normalized.slice(-10) } });
+  }
+  return or;
+}

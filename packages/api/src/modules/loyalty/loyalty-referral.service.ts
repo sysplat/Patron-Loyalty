@@ -163,7 +163,7 @@ export class LoyaltyReferralService {
       tx.loyaltyReferral.findFirst({ where: { referredCustomerId: upsert.customerId } }),
     );
 
-    if (!existingReferral && upsert.created) {
+    if (!existingReferral) {
       await this.applyReferral(referrer.orgId, referralCode, upsert.customerId);
     }
 
@@ -176,7 +176,7 @@ export class LoyaltyReferralService {
 
     return {
       joined: true,
-      referralApplied: !existingReferral && upsert.created,
+      referralApplied: !existingReferral,
       portalCode: account?.referralCode ?? null,
       pointsBalance: account?.pointsBalance ?? 0,
     };

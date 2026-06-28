@@ -1184,7 +1184,7 @@ model LoyaltyPointLedger {
   points       Int
   balanceAfter Int            @map("balance_after")
   sourceType   String?        @map("source_type") @db.VarChar(30)
-  sourceId     String?        @map("source_id") @db.Uuid
+  sourceId     String?        @map("source_id") @db.VarChar(100)
   description  String?        @db.VarChar(500)
   expiresAt    DateTime?      @map("expires_at")
   createdAt    DateTime       @default(now()) @map("created_at")
@@ -1294,7 +1294,7 @@ model LoyaltyWalletTransaction {
   balanceAfter Int           @map("balance_after")
   description  String?       @db.VarChar(500)
   sourceType   String?       @map("source_type") @db.VarChar(30)
-  sourceId     String?       @map("source_id") @db.Uuid
+  sourceId     String?       @map("source_id") @db.VarChar(100)
   createdAt    DateTime      @default(now()) @map("created_at")
   wallet       LoyaltyWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
 

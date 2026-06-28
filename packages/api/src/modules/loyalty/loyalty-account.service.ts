@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import {
   LOYALTY_EARN_EVENT_TYPES,
   LOYALTY_POINT_LEDGER_TYPES,
@@ -11,6 +12,38 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { PatronCrmFeatureService } from '../../common/features/patron-crm-feature.service';
 import { LoyaltyProgramService } from './loyalty-program.service';
 import { LoyaltyWebhookService } from './loyalty-webhook.service';
+
+export type LoyaltyApplyPointsResult = {
+  account: {
+    id: string;
+    orgId: string;
+    customerId: string;
+    pointsBalance: number;
+    lifetimePointsEarned: number;
+    lifetimePointsBurned: number;
+    totalVisits: number;
+    tierId: string | null;
+    tier: { id: string; slug: string; name: string } | null;
+    customer: { id: string; name: string | null };
+  };
+  idempotent: boolean;
+};
+
+function isEarnSourceIdempotentType(type: string): boolean {
+  return type === LOYALTY_POINT_LEDGER_TYPES.EARN || type === LOYALTY_POINT_LEDGER_TYPES.BONUS;
+}
+
+export type LoyaltyPointsTx = Parameters<Parameters<PrismaService['withTenant']>[1]>[0];
+
+export type ApplyPointsTxResult = {
+  finalAccount: LoyaltyApplyPointsResult['account'];
+  type: string;
+  points: number;
+  delta: number;
+  customerId: string;
+  idempotent: boolean;
+  tierUpgradeSlug?: string | null;
+};
 
 @Injectable()
 export class LoyaltyAccountService {
@@ -58,34 +91,59 @@ export class LoyaltyAccountService {
 
       const referralCode = await this.programService.generateUniqueReferralCode(orgId);
 
-      const account = await tx.loyaltyAccount.create({
-        data: {
-          orgId,
-          customerId,
-          tierId: bronzeTier?.id ?? null,
-          referralCode,
-          wallet: { create: { orgId, balanceCents: 0 } },
-        },
-        include: {
-          tier: true,
-          wallet: true,
-          customer: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              phone: true,
-              birthday: true,
-              gender: true,
-              city: true,
-              region: true,
-              postalCode: true,
+      try {
+        const account = await tx.loyaltyAccount.create({
+          data: {
+            orgId,
+            customerId,
+            tierId: bronzeTier?.id ?? null,
+            referralCode,
+            wallet: { create: { orgId, balanceCents: 0 } },
+          },
+          include: {
+            tier: true,
+            wallet: true,
+            customer: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                birthday: true,
+                gender: true,
+                city: true,
+                region: true,
+                postalCode: true,
+              },
             },
           },
-        },
-      });
-
-      return account;
+        });
+        return account;
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          return tx.loyaltyAccount.findUniqueOrThrow({
+            where: { customerId },
+            include: {
+              tier: true,
+              wallet: true,
+              customer: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  birthday: true,
+                  gender: true,
+                  city: true,
+                  region: true,
+                  postalCode: true,
+                },
+              },
+            },
+          });
+        }
+        throw err;
+      }
     });
   }
 
@@ -118,7 +176,7 @@ export class LoyaltyAccountService {
       branchId?: string;
       purchaseAmountCents?: number;
     } = {},
-  ) {
+  ): Promise<LoyaltyApplyPointsResult | null> {
     if (!customerId) return null;
     const enabled = await this.patronCrmFeature.isEnabled(orgId);
     if (!enabled) return null;
@@ -140,16 +198,32 @@ export class LoyaltyAccountService {
     });
   }
 
-  async adjustPoints(orgId: string, customerId: string, points: number, description?: string) {
+  async adjustPoints(
+    orgId: string,
+    customerId: string,
+    points: number,
+    description?: string,
+    tx?: LoyaltyPointsTx,
+  ): Promise<LoyaltyApplyPointsResult['account'] | ApplyPointsTxResult> {
+    const type = points > 0 ? LOYALTY_POINT_LEDGER_TYPES.ADJUST : LOYALTY_POINT_LEDGER_TYPES.BURN;
+    const absPoints = Math.abs(points);
+    const opts = {
+      sourceType: 'manual',
+      description: description ?? 'Manual adjustment',
+    };
+
+    if (tx) {
+      const account = await tx.loyaltyAccount.findFirst({ where: { orgId, customerId } });
+      if (!account) throw new NotFoundException('Loyalty account not found');
+      return this.applyPointsInTransaction(tx, orgId, account.id, absPoints, type, opts);
+    }
+
     await this.patronCrmFeature.requireEnabled(orgId);
     const account = await this.ensureAccount(orgId, customerId);
     if (!account) throw new NotFoundException('Loyalty account not found');
 
-    const type = points > 0 ? LOYALTY_POINT_LEDGER_TYPES.ADJUST : LOYALTY_POINT_LEDGER_TYPES.BURN;
-    return this.applyPoints(orgId, account.id, Math.abs(points), type, {
-      sourceType: 'manual',
-      description: description ?? 'Manual adjustment',
-    });
+    const result = await this.applyPoints(orgId, account.id, absPoints, type, opts);
+    return result.account;
   }
 
   async earnIntegrationPoints(
@@ -158,12 +232,19 @@ export class LoyaltyAccountService {
     points: number,
     source: { sourceId: string; description?: string; incrementVisit?: boolean },
   ) {
-    return this.applyPoints(orgId, accountId, points, LOYALTY_POINT_LEDGER_TYPES.EARN, {
-      sourceType: 'integration',
-      sourceId: source.sourceId,
-      description: source.description,
-      incrementVisit: source.incrementVisit,
-    });
+    const result = await this.applyPoints(
+      orgId,
+      accountId,
+      points,
+      LOYALTY_POINT_LEDGER_TYPES.EARN,
+      {
+        sourceType: 'integration',
+        sourceId: source.sourceId,
+        description: source.description,
+        incrementVisit: source.incrementVisit,
+      },
+    );
+    return result.account;
   }
 
   async expireInactivePoints(orgId: string, pointsExpiryDays: number): Promise<number> {
@@ -242,85 +323,48 @@ export class LoyaltyAccountService {
     accountId: string,
     points: number,
     source: { sourceType: string; sourceId: string; description?: string },
-  ) {
-    return this.applyPoints(orgId, accountId, points, LOYALTY_POINT_LEDGER_TYPES.BURN, source);
+    tx?: LoyaltyPointsTx,
+  ): Promise<LoyaltyApplyPointsResult['account'] | ApplyPointsTxResult> {
+    if (tx) {
+      return this.applyPointsInTransaction(
+        tx,
+        orgId,
+        accountId,
+        points,
+        LOYALTY_POINT_LEDGER_TYPES.BURN,
+        source,
+      );
+    }
+    const result = await this.applyPoints(
+      orgId,
+      accountId,
+      points,
+      LOYALTY_POINT_LEDGER_TYPES.BURN,
+      source,
+    );
+    return result.account;
   }
 
-  private async applyPoints(
+  /** Post-commit side effects after `applyPointsInTransaction` inside an outer transaction. */
+  dispatchApplyPointsSideEffects(
     orgId: string,
     accountId: string,
-    points: number,
-    type: string,
+    result: ApplyPointsTxResult,
     opts: {
       sourceType?: string;
       sourceId?: string;
-      description?: string;
-      incrementVisit?: boolean;
     },
-  ) {
-    const result = await this.prisma.withTenant(orgId, async (tx) => {
-      const account = await tx.loyaltyAccount.findFirst({
-        where: { id: accountId, orgId },
-      });
-      if (!account) throw new NotFoundException('Loyalty account not found');
+  ): void {
+    if (result.idempotent) return;
 
-      const isBurn = type === LOYALTY_POINT_LEDGER_TYPES.BURN;
-      if (isBurn && account.pointsBalance < points) {
-        throw new BadRequestException('Insufficient points balance');
-      }
-
-      const delta = isBurn ? -points : points;
-      const balanceAfter = account.pointsBalance + delta;
-      const lifetimeEarned =
-        type === LOYALTY_POINT_LEDGER_TYPES.EARN || type === LOYALTY_POINT_LEDGER_TYPES.BONUS
-          ? account.lifetimePointsEarned + points
-          : account.lifetimePointsEarned;
-      const lifetimeBurned = isBurn
-        ? account.lifetimePointsBurned + points
-        : account.lifetimePointsBurned;
-
-      const updated = await tx.loyaltyAccount.update({
-        where: { id: accountId },
-        data: {
-          pointsBalance: balanceAfter,
-          lifetimePointsEarned: lifetimeEarned,
-          lifetimePointsBurned: lifetimeBurned,
-          totalVisits: opts.incrementVisit ? { increment: 1 } : undefined,
-        },
-        include: { tier: true },
-      });
-
-      await tx.loyaltyPointLedger.create({
-        data: {
-          orgId,
-          accountId,
-          type,
-          points: delta,
-          balanceAfter,
-          sourceType: opts.sourceType ?? null,
-          sourceId: opts.sourceId ?? null,
-          description: opts.description ?? null,
-        },
-      });
-
-      const newTier = await this.resolveTierForPoints(tx, orgId, lifetimeEarned);
-      if (newTier && newTier.id !== updated.tierId) {
-        await tx.loyaltyAccount.update({
-          where: { id: accountId },
-          data: { tierId: newTier.id },
-        });
-        this.eventEmitter.emit(LOYALTY_EVENTS.TIER_UPGRADED, orgId, accountId, newTier.slug);
-      }
-
-      await this.refreshHealthScore(tx, orgId, accountId);
-
-      const finalAccount = await tx.loyaltyAccount.findUniqueOrThrow({
-        where: { id: accountId },
-        include: { tier: true, customer: { select: { id: true, name: true } } },
-      });
-
-      return { finalAccount, type, points, delta, customerId: account.customerId };
-    });
+    if (result.tierUpgradeSlug) {
+      this.eventEmitter.emit(
+        LOYALTY_EVENTS.TIER_UPGRADED,
+        orgId,
+        accountId,
+        result.tierUpgradeSlug,
+      );
+    }
 
     if (
       result.type === LOYALTY_POINT_LEDGER_TYPES.EARN ||
@@ -346,8 +390,224 @@ export class LoyaltyAccountService {
         sourceId: opts.sourceId ?? null,
       });
     }
+  }
 
-    return result.finalAccount;
+  async applyPointsInTransaction(
+    tx: LoyaltyPointsTx,
+    orgId: string,
+    accountId: string,
+    points: number,
+    type: string,
+    opts: {
+      sourceType?: string;
+      sourceId?: string;
+      description?: string;
+      incrementVisit?: boolean;
+    },
+  ): Promise<ApplyPointsTxResult> {
+    if (isEarnSourceIdempotentType(type) && opts.sourceType && opts.sourceId) {
+      const existing = await this.findExistingEarnLedger(
+        tx,
+        orgId,
+        accountId,
+        type,
+        opts.sourceType,
+        opts.sourceId,
+      );
+      if (existing) {
+        const finalAccount = await tx.loyaltyAccount.findUniqueOrThrow({
+          where: { id: accountId },
+          include: { tier: true, customer: { select: { id: true, name: true } } },
+        });
+        return {
+          finalAccount,
+          type,
+          points: Math.abs(existing.points),
+          delta: 0,
+          customerId: finalAccount.customer.id,
+          idempotent: true,
+        };
+      }
+    }
+
+    const isBurn = type === LOYALTY_POINT_LEDGER_TYPES.BURN;
+    let delta: number;
+    let balanceAfter: number;
+    let lifetimeEarned: number;
+    let customerId: string;
+    let updatedTierId: string | null;
+
+    if (isBurn) {
+      const burned = await tx.loyaltyAccount.updateMany({
+        where: { id: accountId, orgId, pointsBalance: { gte: points } },
+        data: {
+          pointsBalance: { decrement: points },
+          lifetimePointsBurned: { increment: points },
+        },
+      });
+      if (burned.count === 0) {
+        throw new BadRequestException('Insufficient points balance');
+      }
+      const accountAfter = await tx.loyaltyAccount.findFirstOrThrow({
+        where: { id: accountId, orgId },
+        include: { tier: true },
+      });
+      delta = -points;
+      balanceAfter = accountAfter.pointsBalance;
+      lifetimeEarned = accountAfter.lifetimePointsEarned;
+      customerId = accountAfter.customerId;
+      updatedTierId = accountAfter.tierId;
+    } else {
+      const account = await tx.loyaltyAccount.findFirst({
+        where: { id: accountId, orgId },
+      });
+      if (!account) throw new NotFoundException('Loyalty account not found');
+
+      delta = points;
+      balanceAfter = account.pointsBalance + points;
+      lifetimeEarned =
+        type === LOYALTY_POINT_LEDGER_TYPES.EARN || type === LOYALTY_POINT_LEDGER_TYPES.BONUS
+          ? account.lifetimePointsEarned + points
+          : account.lifetimePointsEarned;
+      const lifetimeBurned = account.lifetimePointsBurned;
+
+      const updated = await tx.loyaltyAccount.update({
+        where: { id: accountId },
+        data: {
+          pointsBalance: balanceAfter,
+          lifetimePointsEarned: lifetimeEarned,
+          lifetimePointsBurned: lifetimeBurned,
+          totalVisits: opts.incrementVisit ? { increment: 1 } : undefined,
+        },
+        include: { tier: true },
+      });
+      customerId = account.customerId;
+      updatedTierId = updated.tierId;
+    }
+
+    await tx.loyaltyPointLedger.create({
+      data: {
+        orgId,
+        accountId,
+        type,
+        points: delta,
+        balanceAfter,
+        sourceType: opts.sourceType ?? null,
+        sourceId: opts.sourceId ?? null,
+        description: opts.description ?? null,
+      },
+    });
+
+    let tierUpgradeSlug: string | null = null;
+    const newTier = await this.resolveTierForPoints(tx, orgId, lifetimeEarned);
+    if (newTier && newTier.id !== updatedTierId) {
+      await tx.loyaltyAccount.update({
+        where: { id: accountId },
+        data: { tierId: newTier.id },
+      });
+      tierUpgradeSlug = newTier.slug;
+    }
+
+    await this.refreshHealthScore(tx, orgId, accountId);
+
+    const finalAccount = await tx.loyaltyAccount.findUniqueOrThrow({
+      where: { id: accountId },
+      include: { tier: true, customer: { select: { id: true, name: true } } },
+    });
+
+    return {
+      finalAccount,
+      type,
+      points,
+      delta,
+      customerId,
+      idempotent: false,
+      tierUpgradeSlug,
+    };
+  }
+
+  private async findExistingEarnLedger(
+    tx: Parameters<Parameters<PrismaService['withTenant']>[1]>[0],
+    orgId: string,
+    accountId: string,
+    type: string,
+    sourceType: string,
+    sourceId: string,
+  ) {
+    return tx.loyaltyPointLedger.findFirst({
+      where: { orgId, accountId, sourceType, sourceId, type },
+      select: { id: true, points: true },
+    });
+  }
+
+  private async loadIdempotentEarnResult(
+    orgId: string,
+    accountId: string,
+    type: string,
+    sourceType: string,
+    sourceId: string,
+  ): Promise<LoyaltyApplyPointsResult> {
+    return this.prisma.withTenant(orgId, async (tx) => {
+      const existing = await this.findExistingEarnLedger(
+        tx,
+        orgId,
+        accountId,
+        type,
+        sourceType,
+        sourceId,
+      );
+      if (!existing) {
+        throw new BadRequestException('Duplicate earn source could not be resolved');
+      }
+      const account = await tx.loyaltyAccount.findUniqueOrThrow({
+        where: { id: accountId },
+        include: { tier: true, customer: { select: { id: true, name: true } } },
+      });
+      return { account, idempotent: true };
+    });
+  }
+
+  private async applyPoints(
+    orgId: string,
+    accountId: string,
+    points: number,
+    type: string,
+    opts: {
+      sourceType?: string;
+      sourceId?: string;
+      description?: string;
+      incrementVisit?: boolean;
+    },
+  ): Promise<LoyaltyApplyPointsResult> {
+    try {
+      const result = await this.prisma.withTenant(orgId, (tx) =>
+        this.applyPointsInTransaction(tx, orgId, accountId, points, type, opts),
+      );
+
+      if (result.idempotent) {
+        return { account: result.finalAccount, idempotent: true };
+      }
+
+      this.dispatchApplyPointsSideEffects(orgId, accountId, result, opts);
+      return { account: result.finalAccount, idempotent: false };
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002' &&
+        isEarnSourceIdempotentType(type) &&
+        opts.sourceType &&
+        opts.sourceId
+      ) {
+        return this.loadIdempotentEarnResult(
+          orgId,
+          accountId,
+          type,
+          opts.sourceType,
+          opts.sourceId,
+        );
+      }
+      throw err;
+    }
   }
 
   private async resolveTierForPoints(
@@ -377,7 +637,7 @@ export class LoyaltyAccountService {
         orgId,
         OR: [
           { customerId: account.customerId },
-          ...(account.customer.phone ? [{ customerPhone: account.customer.phone }] : []),
+          ...(account.customer?.phone ? [{ customerPhone: account.customer.phone }] : []),
         ],
         status: 'completed',
       },
@@ -422,7 +682,7 @@ export class LoyaltyAccountService {
     ticketId: string,
     customerId: string | null,
     branchId: string,
-  ) {
+  ): Promise<LoyaltyApplyPointsResult | null> {
     return this.earnFromEvent(
       orgId,
       customerId,
@@ -442,7 +702,7 @@ export class LoyaltyAccountService {
     appointmentId: string,
     customerId: string | null,
     branchId?: string,
-  ) {
+  ): Promise<LoyaltyApplyPointsResult | null> {
     return this.earnFromEvent(
       orgId,
       customerId,
@@ -457,7 +717,11 @@ export class LoyaltyAccountService {
     );
   }
 
-  async handleReviewSubmitted(orgId: string, reviewId: string, customerId: string | null) {
+  async handleReviewSubmitted(
+    orgId: string,
+    reviewId: string,
+    customerId: string | null,
+  ): Promise<LoyaltyApplyPointsResult | null> {
     return this.earnFromEvent(orgId, customerId, LOYALTY_EARN_EVENT_TYPES.REVIEW_SUBMITTED, {
       sourceType: 'review',
       sourceId: reviewId,

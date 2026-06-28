@@ -6,6 +6,7 @@ import {
   type QlessqQueueIntegrationEvent,
 } from '@queueplatform/shared';
 import { PrismaService } from '../../prisma/prisma.service';
+import { customerPhoneOr } from '../customer/customer-contact.util';
 import { LoyaltyAccountService } from './loyalty-account.service';
 import { LoyaltyGamificationService } from './loyalty-gamification.service';
 import { LoyaltyCampaignAutomationService } from './loyalty-campaign-automation.service';
@@ -51,9 +52,14 @@ export class LoyaltyQueueEventsService {
   ) {}
 
   async processRemoteEvent(orgId: string, payload: LoyaltyQueueEventPayload) {
+    this.logger.log(
+      `Ingest queue-event event=${payload.event} sourceId=${payload.sourceId} orgId=${orgId}`,
+    );
+
+    let result: Record<string, unknown>;
     switch (payload.event) {
       case QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED:
-        return this.onTicketCompleted(
+        result = await this.onTicketCompleted(
           new LoyaltyTicketCompletedEvent(
             orgId,
             payload.sourceId,
@@ -62,8 +68,9 @@ export class LoyaltyQueueEventsService {
             payload.serviceId ?? null,
           ),
         );
+        break;
       case QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_NO_SHOW:
-        return this.onTicketNoShow(
+        result = await this.onTicketNoShow(
           new LoyaltyTicketNoShowEvent(
             orgId,
             payload.sourceId,
@@ -71,8 +78,9 @@ export class LoyaltyQueueEventsService {
             payload.branchId ?? '',
           ),
         );
+        break;
       case QLESSQ_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_COMPLETED:
-        return this.onAppointmentCompleted(
+        result = await this.onAppointmentCompleted(
           new LoyaltyAppointmentCompletedEvent(
             orgId,
             payload.sourceId,
@@ -82,8 +90,9 @@ export class LoyaltyQueueEventsService {
             payload.customerEmail,
           ),
         );
+        break;
       case QLESSQ_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_NO_SHOW:
-        return this.onAppointmentNoShow(
+        result = await this.onAppointmentNoShow(
           new LoyaltyAppointmentNoShowEvent(
             orgId,
             payload.sourceId,
@@ -93,8 +102,9 @@ export class LoyaltyQueueEventsService {
             payload.customerEmail,
           ),
         );
+        break;
       case QLESSQ_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED:
-        return this.onReviewSubmitted(
+        result = await this.onReviewSubmitted(
           new LoyaltyReviewSubmittedEvent(
             orgId,
             payload.sourceId,
@@ -102,29 +112,42 @@ export class LoyaltyQueueEventsService {
             payload.rating ?? 5,
           ),
         );
+        break;
       case QLESSQ_QUEUE_INTEGRATION_EVENTS.CUSTOMER_CREATED: {
         const customerId = await this.resolveCustomerId(orgId, payload);
-        if (!customerId) return { skipped: true, reason: 'no_customer' };
-        return this.onCustomerCreated(new LoyaltyCustomerCreatedEvent(orgId, customerId));
+        if (!customerId) {
+          result = { skipped: true, reason: 'no_customer' };
+          break;
+        }
+        result = await this.onCustomerCreated(new LoyaltyCustomerCreatedEvent(orgId, customerId));
+        break;
       }
       default: {
         const _exhaustive: never = payload.event;
         return _exhaustive;
       }
     }
+
+    this.logger.log(
+      `Processed queue-event event=${payload.event} sourceId=${payload.sourceId} orgId=${orgId} result=${JSON.stringify(result)}`,
+    );
+    return { ...result, event: payload.event, sourceId: payload.sourceId };
   }
 
   async onTicketCompleted(event: LoyaltyTicketCompletedEvent) {
     try {
       if (!event.customerId) return { skipped: true, reason: 'no_customer' };
-      await this.accounts.handleTicketCompleted(
+      const earned = await this.accounts.handleTicketCompleted(
         event.orgId,
         event.ticketId,
         event.customerId,
         event.branchId,
       );
-      await this.gamification.incrementChallengeProgress(event.orgId, event.customerId, 'VISITS');
-      await this.gamification.evaluateBadgesForAccount(event.orgId, event.customerId);
+      if (earned?.idempotent) return { ok: true, idempotent: true };
+      if (earned) {
+        await this.gamification.incrementChallengeProgress(event.orgId, event.customerId, 'VISITS');
+        await this.gamification.evaluateBadgesForAccount(event.orgId, event.customerId);
+      }
       return { ok: true };
     } catch (err) {
       this.logger.warn(`Loyalty ticket hook failed: ${(err as Error).message}`);
@@ -136,13 +159,16 @@ export class LoyaltyQueueEventsService {
     try {
       const customerId = await this.resolveCustomerIdFromEvent(event);
       if (!customerId) return { skipped: true, reason: 'no_customer' };
-      await this.accounts.handleAppointmentCompleted(
+      const earned = await this.accounts.handleAppointmentCompleted(
         event.orgId,
         event.appointmentId,
         customerId,
         event.branchId,
       );
-      await this.gamification.incrementChallengeProgress(event.orgId, customerId, 'VISITS');
+      if (earned?.idempotent) return { ok: true, idempotent: true };
+      if (earned) {
+        await this.gamification.incrementChallengeProgress(event.orgId, customerId, 'VISITS');
+      }
       return { ok: true };
     } catch (err) {
       this.logger.warn(`Loyalty appointment hook failed: ${(err as Error).message}`);
@@ -153,7 +179,12 @@ export class LoyaltyQueueEventsService {
   async onReviewSubmitted(event: LoyaltyReviewSubmittedEvent) {
     try {
       if (!event.customerId) return { skipped: true, reason: 'no_customer' };
-      await this.accounts.handleReviewSubmitted(event.orgId, event.reviewId, event.customerId);
+      const earned = await this.accounts.handleReviewSubmitted(
+        event.orgId,
+        event.reviewId,
+        event.customerId,
+      );
+      if (earned?.idempotent) return { ok: true, idempotent: true };
       return { ok: true };
     } catch (err) {
       this.logger.warn(`Loyalty review hook failed: ${(err as Error).message}`);
@@ -240,11 +271,12 @@ export class LoyaltyQueueEventsService {
     const email = payload.customerEmail ?? payload.customer?.email;
     if (!phone && !email) return null;
 
+    const phoneOr = phone ? customerPhoneOr(phone) : [];
     const customer = await this.prisma.withTenant(orgId, (tx) =>
       tx.customer.findFirst({
         where: {
           orgId,
-          OR: [...(phone ? [{ phone }] : []), ...(email ? [{ email }] : [])],
+          OR: [...phoneOr, ...(email ? [{ email }] : [])],
         },
         select: { id: true },
       }),
@@ -257,14 +289,12 @@ export class LoyaltyQueueEventsService {
   ): Promise<string | null> {
     if (event.customerId) return event.customerId;
     if (!event.customerPhone && !event.customerEmail) return null;
+    const phoneOr = event.customerPhone ? customerPhoneOr(event.customerPhone) : [];
     const customer = await this.prisma.withTenant(event.orgId, (tx) =>
       tx.customer.findFirst({
         where: {
           orgId: event.orgId,
-          OR: [
-            ...(event.customerPhone ? [{ phone: event.customerPhone }] : []),
-            ...(event.customerEmail ? [{ email: event.customerEmail }] : []),
-          ],
+          OR: [...phoneOr, ...(event.customerEmail ? [{ email: event.customerEmail }] : [])],
         },
         select: { id: true },
       }),
