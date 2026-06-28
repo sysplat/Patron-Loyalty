@@ -3,7 +3,9 @@ import { LOYALTY_WEBHOOK_EVENTS } from '@queueplatform/shared';
 import { LoyaltyWebhookService } from './loyalty-webhook.service';
 
 describe('LoyaltyWebhookService', () => {
-  const webhooks = { dispatchEvent: vi.fn().mockResolvedValue(undefined) };
+  const webhooks = {
+    dispatchEvent: vi.fn().mockResolvedValue(undefined),
+  };
   let service: LoyaltyWebhookService;
 
   beforeEach(() => {
@@ -11,8 +13,8 @@ describe('LoyaltyWebhookService', () => {
     service = new LoyaltyWebhookService(webhooks as never);
   });
 
-  it('dispatches loyalty webhook events via WebhookService', async () => {
-    const payload = { customerId: 'cust-1', points: 50 };
+  it('delegates loyalty events to WebhookService.dispatchEvent', async () => {
+    const payload = { accountId: 'acc-1', points: 25 };
     await service.dispatch('org-1', LOYALTY_WEBHOOK_EVENTS.POINTS_EARNED, payload);
 
     expect(webhooks.dispatchEvent).toHaveBeenCalledWith(

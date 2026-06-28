@@ -180,8 +180,8 @@ jobs:
           export INTEGRATION_DATABASE_URL="postgresql://qms_app:ci-qms-app-pass@localhost:5432/queueplatform_test"
           pnpm --filter @queueplatform/api test -- src/prisma/tenant-isolation.spec.ts
 
-  test-e2e-health:
-    name: E2E API health smoke
+  test-e2e-loyalty:
+    name: E2E loyalty + API health smoke
     runs-on: ubuntu-latest
     needs: test-api
     services:
@@ -216,8 +216,10 @@ jobs:
       STRIPE_WEBHOOK_SECRET: whsec_placeholder
       TWILIO_AUTH_TOKEN: twilio_test_token
       ENCRYPTION_KEY: ci-encryption-key-value
-      APP_URL: http://localhost:3001
+      APP_URL: http://localhost:3003
       NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
+      API_BASE_URL: http://localhost:4000
+      LOYALTY_BASE_URL: http://localhost:3003
       CENTRIFUGO_API_URL: http://localhost:8000/api
       CENTRIFUGO_API_KEY: ci-key
       CENTRIFUGO_SECRET: ci-secret
@@ -245,156 +247,25 @@ jobs:
       - name: Run migrations
         run: pnpm db:migrate:deploy
 
-      - name: Build API
-        run: pnpm --filter @queueplatform/api build
+      - name: Build API and loyalty app
+        run: pnpm --filter @queueplatform/shared build && pnpm --filter @queueplatform/frontend-core build && pnpm --filter @queueplatform/api build && pnpm --filter @queueplatform/loyalty build
 
       - name: Install Playwright browser
         run: pnpm --filter @queueplatform/e2e exec playwright install --with-deps chromium
 
-      - name: Run e2e health spec
+      - name: Run loyalty e2e smoke
         run: |
           pnpm --filter @queueplatform/api start &
+          PORT=3003 pnpm --filter @queueplatform/loyalty start &
           for i in {1..45}; do
-            if curl -fsS "http://localhost:4000/api/v1/health" >/dev/null; then
+            if curl -fsS "http://localhost:4000/api/v1/health" >/dev/null && curl -fsS "http://localhost:3003/login" >/dev/null; then
               break
             fi
             sleep 2
           done
           curl -fsS "http://localhost:4000/api/v1/health" >/dev/null
-          pnpm --filter @queueplatform/e2e test -- tests/api-health.spec.ts tests/api-contract.spec.ts
-
-  test-e2e-admin:
-    name: E2E admin smoke
-    runs-on: ubuntu-latest
-    needs: test-api
-    env:
-      APP_URL: http://localhost:3002
-      NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build admin app
-        run: pnpm --filter @queueplatform/shared build && pnpm --filter @queueplatform/frontend-core build && pnpm --filter @queueplatform/admin build
-
-      - name: Install Playwright browser
-        run: pnpm --filter @queueplatform/e2e exec playwright install --with-deps chromium
-
-      - name: Run e2e admin specs
-        run: |
-          PORT=3002 pnpm --filter @queueplatform/admin start &
-          for i in {1..45}; do
-            if curl -fsS "http://localhost:3002/login" >/dev/null; then
-              break
-            fi
-            sleep 2
-          done
-          curl -fsS "http://localhost:3002/login" >/dev/null
-          pnpm --filter @queueplatform/e2e test -- tests/admin-auth.spec.ts tests/admin-dashboard.spec.ts
-
-  test-e2e-realtime:
-    name: E2E tenant auth + realtime smoke
-    runs-on: ubuntu-latest
-    needs: test-api
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: queueplatform
-          POSTGRES_PASSWORD: queueplatform
-          POSTGRES_DB: queueplatform_test
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis:7-alpine
-        ports: ['6379:6379']
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    env:
-      DATABASE_URL: postgresql://queueplatform:queueplatform@localhost:5432/queueplatform_test
-      APP_DATABASE_URL: postgresql://queueplatform:queueplatform@localhost:5432/queueplatform_test
-      REDIS_URL: redis://localhost:6379
-      JWT_SECRET: ci-test-secret-key-32-chars-min!!
-      JWT_REFRESH_SECRET: ci-test-refresh-secret-key-32ch!
-      JWT_IMPERSONATION_TTL: '900'
-      STRIPE_SECRET_KEY: sk_test_placeholder
-      STRIPE_WEBHOOK_SECRET: whsec_placeholder
-      TWILIO_AUTH_TOKEN: twilio_test_token
-      ENCRYPTION_KEY: ci-encryption-key-value
-      APP_URL: http://localhost:3001
-      API_URL: http://localhost:4000
-      API_BASE: http://localhost:4000/api/v1
-      NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
-      NEXT_PUBLIC_CENTRIFUGO_WS_URL: ws://localhost:8000/connection/websocket
-      CENTRIFUGO_API_URL: http://localhost:8000/api
-      CENTRIFUGO_API_KEY: ci-key
-      CENTRIFUGO_SECRET: ci-secret
-      CENTRIFUGO_WEBHOOK_SECRET: ci-webhook-secret
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma Client
-        run: pnpm db:generate
-
-      - name: Run migrations
-        run: pnpm db:migrate:deploy
-
-      - name: Build API and web
-        run: pnpm --filter @queueplatform/shared build && pnpm --filter @queueplatform/frontend-core build && pnpm --filter @queueplatform/database build && pnpm --filter @queueplatform/api build && pnpm --filter @queueplatform/web build
-
-      - name: Install Playwright browser
-        run: pnpm --filter @queueplatform/e2e exec playwright install --with-deps chromium
-
-      - name: Run e2e tenant + realtime specs
-        run: |
-          bash scripts/start-centrifugo-ci.sh
-          pnpm --filter @queueplatform/api start &
-          PORT=3001 pnpm --filter @queueplatform/web start &
-          for i in {1..45}; do
-            if curl -fsS "http://localhost:4000/api/v1/health" >/dev/null && curl -fsS "http://localhost:3001/login" >/dev/null; then
-              break
-            fi
-            sleep 2
-          done
-          curl -fsS "http://localhost:4000/api/v1/health" >/dev/null
-          curl -fsS "http://localhost:3001/login" >/dev/null
-          curl -fsS "http://localhost:8000/health" >/dev/null
-          pnpm --filter @queueplatform/e2e test -- tests/tenant-auth.spec.ts tests/realtime-display.spec.ts
-          docker rm -f qp-centrifugo-ci >/dev/null 2>&1 || true
+          curl -fsS "http://localhost:3003/login" >/dev/null
+          pnpm --filter @queueplatform/e2e test -- tests/api-health.spec.ts tests/loyalty-login.spec.ts
 
   test-notifications-smoke:
     name: Notifications smoke

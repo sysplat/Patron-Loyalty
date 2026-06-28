@@ -2,14 +2,22 @@
 
 Release checklist before promoting `main` to production.
 
+> **Patron Loyalty (LMS) note:** Steps that reference `apps/web`, `apps/admin`, tenant queue E2E, or QMS-specific smoke scripts apply to the **QlessQ sibling repo** only. For LMS, use [TESTING.md](./TESTING.md), `pnpm test:ci`, and `pnpm audit:patron-loyalty` instead.
+
 ## 1. CI and builds
 
 ```bash
 pnpm validate
 pnpm format:check
+pnpm --filter @queueplatform/loyalty build   # LMS tenant UI
+pnpm check:bundle-budgets
+```
+
+**QMS sibling repo only:**
+
+```bash
 pnpm --filter @queueplatform/web build
 pnpm --filter @queueplatform/admin build
-pnpm check:bundle-budgets
 ```
 
 ## 2. Database
@@ -22,7 +30,12 @@ pnpm --filter @queueplatform/database audit:serve-surface
 ## 3. Security guards
 
 ```bash
-pnpm security:check:public-safeguards
+node scripts/security/check-public-safeguards.mjs
+```
+
+**QMS sibling repo only** (requires `apps/web` / `apps/admin`):
+
+```bash
 pnpm security:check:auth-remediation
 pnpm security:check:display-session
 pnpm security:check:tenant-isolation

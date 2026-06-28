@@ -68,6 +68,7 @@ describe('TicketService — isolated desk presence validation (Option E + F)', (
   const mockStaffGuards = {
     assertQueueNotClosedForStaffActions: vi.fn().mockResolvedValue(undefined),
     assertClassicDeskAssignmentForBranch: vi.fn().mockResolvedValue(undefined),
+    assertStaffQueueActionAllowed: vi.fn().mockResolvedValue(undefined),
   };
 
   let service: TicketService;

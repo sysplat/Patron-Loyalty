@@ -11,7 +11,7 @@ fi
 
 JSON="$(railway variables --service Postgres --json 2>/dev/null || true)"
 if [[ -z "$JSON" ]]; then
-  echo "Could not read Postgres variables. Run: railway link  (project QMS, service Postgres)"
+  echo "Could not read Postgres variables. Run: railway link  (QlessQ project, service Postgres)"
   exit 1
 fi
 

@@ -1,0 +1,90 @@
+# Testing guide (Patron Loyalty)
+
+Single reference for local development, CI, and pre-release gates.
+
+## Tiers
+
+| Tier                        | Command                                 | When                  | Needs prod / Railway               |
+| --------------------------- | --------------------------------------- | --------------------- | ---------------------------------- |
+| **Lint + types**            | `pnpm validate`                         | Every PR, local dev   | No                                 |
+| **Unit**                    | `pnpm test`                             | Every PR, local dev   | No (excludes `@queueplatform/e2e`) |
+| **Release gate (local/CI)** | `pnpm test:ci`                          | PR merge, clean clone | No                                 |
+| **E2E smoke**               | `pnpm --filter @queueplatform/e2e test` | CI + optional local   | No (local servers)                 |
+| **Prod audit**              | `pnpm audit:patron-loyalty`             | Pre-release manual    | Yes                                |
+
+## Root commands
+
+```bash
+pnpm validate              # lint + typecheck + legal placeholders (no tests)
+pnpm test                  # turbo: api, shared, notifications, loyalty
+pnpm test:ci               # validate + test + public-safeguards
+pnpm check:bundle-budgets  # loyalty .next size cap (skips if not built)
+pnpm audit:tests           # test:ci + Playwright (needs API + loyalty running for e2e half)
+pnpm audit:patron-loyalty  # full prod audit + report (Railway migration, prod smoke)
+```
+
+## Package breakdown
+
+| Package                        | Command                                           | Notes                                  |
+| ------------------------------ | ------------------------------------------------- | -------------------------------------- |
+| `@queueplatform/api`           | `pnpm --filter @queueplatform/api test`           | ~45 specs incl. loyalty + ticket       |
+| `@queueplatform/shared`        | `pnpm --filter @queueplatform/shared test`        | Validators                             |
+| `@queueplatform/notifications` | `pnpm --filter @queueplatform/notifications test` | SMS + dead-letter                      |
+| `@queueplatform/loyalty`       | `pnpm --filter @queueplatform/loyalty test`       | Auth-store + middleware static guards  |
+| `@queueplatform/e2e`           | `pnpm --filter @queueplatform/e2e test`           | Playwright: API health + loyalty login |
+
+## RLS integration (optional)
+
+Requires Postgres with app role configured:
+
+```bash
+export INTEGRATION_DATABASE_URL="postgresql://qms_app:<password>@localhost:5432/queueplatform_test"
+pnpm --filter @queueplatform/api test -- src/prisma/tenant-isolation.spec.ts
+```
+
+Without `INTEGRATION_DATABASE_URL`, the spec skips (expected locally).
+
+## E2E locally
+
+1. Migrate DB and start API on `:4000`, loyalty on `:3003`.
+2. Run:
+
+```bash
+API_BASE_URL=http://localhost:4000 LOYALTY_BASE_URL=http://localhost:3003 \
+  pnpm --filter @queueplatform/e2e test
+```
+
+Optional full login smoke (skipped in CI without secrets):
+
+```bash
+LOYALTY_SMOKE_EMAIL=... LOYALTY_SMOKE_PASSWORD=... \
+  pnpm --filter @queueplatform/e2e test -- tests/loyalty-login.spec.ts
+```
+
+## CI matrix (`.github/workflows/ci.yml`)
+
+| Job                        | Purpose                               |
+| -------------------------- | ------------------------------------- |
+| `validate`                 | `pnpm validate:ci`                    |
+| `lint-and-build`           | `pnpm build` + `check:bundle-budgets` |
+| `test-api`                 | migrate + `pnpm test`                 |
+| `test-rls-policy`          | tenant isolation spec                 |
+| `test-e2e-loyalty`         | API + loyalty Playwright smoke        |
+| `test-notifications-smoke` | notifications package                 |
+| `docker`                   | API image build on `main`             |
+
+QMS-only jobs (`test-e2e-admin`, `test-e2e-realtime`, `apps/web`, `apps/admin`) are **not** run in this repo — see QlessQ sibling repo.
+
+## Pre-release operator checklist
+
+```bash
+pnpm test:ci
+pnpm --filter @queueplatform/e2e test    # with local servers or rely on CI job
+pnpm audit:patron-loyalty                # Railway linked, prod smoke
+```
+
+See also:
+
+- [TEST_AUDIT_BASELINE.md](./TEST_AUDIT_BASELINE.md) — baseline inventory
+- [PATRON_LOYALTY_AUDIT_REPORT.md](./PATRON_LOYALTY_AUDIT_REPORT.md) — latest audit output
+- [FINAL_PRE_RELEASE_AUDIT.md](./FINAL_PRE_RELEASE_AUDIT.md) — legacy QMS checklist (partial applicability)

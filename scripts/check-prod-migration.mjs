@@ -22,13 +22,13 @@ if (!process.env.DATABASE_URL) {
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const schema = path.join(root, 'packages/database/prisma/schema.prisma');
+const dbPkg = path.join(root, 'packages/database');
 
-const status = spawnSync(
-  'npx',
-  ['prisma', 'migrate', 'status', '--schema', schema],
-  { cwd: root, encoding: 'utf8', env: process.env },
-);
+const status = spawnSync('pnpm', ['exec', 'prisma', 'migrate', 'status'], {
+  cwd: dbPkg,
+  encoding: 'utf8',
+  env: process.env,
+});
 
 process.stdout.write(status.stdout ?? '');
 process.stderr.write(status.stderr ?? '');
@@ -38,14 +38,24 @@ if (status.status !== 0) {
 }
 
 const combined = `${status.stdout ?? ''}\n${status.stderr ?? ''}`;
+
+if (/Database schema is up to date!/i.test(combined)) {
+  console.log(`\n✅ All migrations applied (schema up to date; includes ${migrationName})`);
+  process.exit(0);
+}
+
+if (
+  /following migrations? have not yet been applied/i.test(combined) &&
+  combined.includes(migrationName)
+) {
+  console.error(`\n❌ Migration NOT applied: ${migrationName}`);
+  process.exit(2);
+}
+
 if (combined.includes(migrationName)) {
-  if (/following migration have not yet been applied/i.test(combined) && combined.includes(migrationName)) {
-    console.error(`\n❌ Migration NOT applied: ${migrationName}`);
-    process.exit(2);
-  }
   console.log(`\n✅ Migration present in status output: ${migrationName}`);
   process.exit(0);
 }
 
-console.warn(`\n⚠ Could not find ${migrationName} in migrate status output — review manually above.`);
+console.warn(`\n⚠ Could not confirm ${migrationName} — review migrate status output above.`);
 process.exit(0);

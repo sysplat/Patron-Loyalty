@@ -109,10 +109,16 @@ export function validateGuidedMultiSteps(
 
   const queueIds = new Set<string>();
   const newPrefixes = new Set<string>();
+  const deskNumbers = new Set<string>();
 
   for (let i = 0; i < steps.length; i += 1) {
     const step = steps[i];
     if (!step.deskNumber) return `Step ${i + 1}: serving desk is required`;
+    const desk = step.deskNumber.trim();
+    if (deskNumbers.has(desk)) {
+      return `Step ${i + 1}: each step must use a different serving desk`;
+    }
+    deskNumbers.add(desk);
 
     if (step.mode === 'existing') {
       if (!step.selectedQueueId) return `Step ${i + 1}: select a queue`;

@@ -45,6 +45,8 @@ describe('TicketService — journey receipt (externalRef)', () => {
     },
     customer: { findFirst: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
     branch: { findUnique: vi.fn(), findFirst: vi.fn() },
+    branchDateOverride: { findUnique: vi.fn() },
+    workingHours: { findUnique: vi.fn() },
     service: { findUnique: vi.fn() },
     branchService: { findUnique: vi.fn() },
     branchFlowTemplate: { findFirst: vi.fn() },
@@ -99,6 +101,7 @@ describe('TicketService — journey receipt (externalRef)', () => {
   const mockStaffGuards = {
     assertQueueNotClosedForStaffActions: vi.fn().mockResolvedValue(undefined),
     assertClassicDeskAssignmentForBranch: vi.fn().mockResolvedValue(undefined),
+    assertStaffQueueActionAllowed: vi.fn().mockResolvedValue(undefined),
   };
 
   let service: TicketService;
@@ -186,7 +189,23 @@ describe('TicketService — journey receipt (externalRef)', () => {
         update: vi.fn(),
       },
       branch: {
-        findUnique: vi.fn().mockResolvedValue({ orgId, defaultJourneyMode: 'visit_multi_step' }),
+        findUnique: vi.fn().mockResolvedValue({
+          orgId,
+          defaultJourneyMode: 'visit_multi_step',
+          timezone: 'UTC',
+        }),
+      },
+      branchDateOverride: {
+        findUnique: vi.fn().mockResolvedValue(null),
+      },
+      workingHours: {
+        findUnique: vi.fn().mockResolvedValue({
+          openTime: '00:00',
+          closeTime: '23:59',
+          isClosed: false,
+          breakStart: null,
+          breakEnd: null,
+        }),
       },
       service: { findUnique: vi.fn().mockResolvedValue({ orgId, journeyModeOverride: null }) },
       branchService: { findUnique: vi.fn().mockResolvedValue({ journeyModeOverride: null }) },
@@ -317,6 +336,24 @@ describe('TicketService — journey receipt (externalRef)', () => {
           { queueId: 'q-pickup', stepIndex: 2 },
         ]),
       },
+      branch: {
+        findUnique: vi.fn().mockResolvedValue({ orgId, timezone: 'UTC' }),
+      },
+      service: {
+        findUnique: vi.fn().mockResolvedValue({ orgId }),
+      },
+      branchDateOverride: {
+        findUnique: vi.fn().mockResolvedValue(null),
+      },
+      workingHours: {
+        findUnique: vi.fn().mockResolvedValue({
+          openTime: '00:00',
+          closeTime: '23:59',
+          isClosed: false,
+          breakStart: null,
+          breakEnd: null,
+        }),
+      },
     };
   }
 
@@ -336,6 +373,14 @@ describe('TicketService — journey receipt (externalRef)', () => {
       limit: 1000,
       current: 0,
       feature: 'maxTicketsPerMonth',
+    });
+    mockPrisma.branchDateOverride.findUnique.mockResolvedValue(null);
+    mockPrisma.workingHours.findUnique.mockResolvedValue({
+      openTime: '00:00',
+      closeTime: '23:59',
+      isClosed: false,
+      breakStart: null,
+      breakEnd: null,
     });
 
     mockPrisma.ticket.count.mockResolvedValue(10);

@@ -2,6 +2,16 @@
 
 Use after engineering deploy; **do not treat as counsel-approved** until `COUNSEL_REVIEW_BRIEF_LOYALTY.md` is signed off.
 
+## Test tiers (engineering gate)
+
+| Tier        | Command                                                              | When                                               |
+| ----------- | -------------------------------------------------------------------- | -------------------------------------------------- |
+| PR / local  | `pnpm test:ci`                                                       | No prod; lint + 641 unit tests + public safeguards |
+| E2E smoke   | CI job `test-e2e-loyalty` or `pnpm --filter @queueplatform/e2e test` | API + loyalty Playwright                           |
+| Pre-release | `pnpm audit:patron-loyalty`                                          | Railway migration + prod smoke                     |
+
+See [TESTING.md](../operations/TESTING.md) for full matrix.
+
 ## 1. Counsel (required before marketing)
 
 - [ ] Send `docs/compliance/COUNSEL_REVIEW_BRIEF_LOYALTY.md` to qualified counsel

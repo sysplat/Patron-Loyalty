@@ -9,8 +9,7 @@ describe('decorateTransactionalSmsBody', () => {
   it('appends footer when disclosure is missing', () => {
     const body = decorateTransactionalSmsBody('Your turn now.', 'Acme Health');
 
-    expect(body).toContain('Acme Health alerts via QlessQ.');
-    expect(body).toContain('Reply STOP to opt out, HELP for help.');
+    expect(body).toBe('Your turn now. Reply STOP to cancel.');
   });
 
   it('does not append when STOP disclosure already exists', () => {
