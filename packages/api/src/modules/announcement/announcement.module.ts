@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
-import { RealtimeModule } from '../realtime/realtime.module';
 import { AnnouncementController } from './announcement.controller';
 import { AnnouncementService } from './announcement.service';
 import { DisplayModule } from '../display/display.module';
 
 @Module({
-  imports: [DisplayModule, RealtimeModule],
+  imports: [DisplayModule],
   controllers: [AnnouncementController],
   providers: [AnnouncementService],
   exports: [AnnouncementService],
