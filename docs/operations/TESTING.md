@@ -4,24 +4,36 @@ Single reference for local development, CI, and pre-release gates.
 
 ## Tiers
 
-| Tier                        | Command                                 | When                  | Needs prod / Railway               |
-| --------------------------- | --------------------------------------- | --------------------- | ---------------------------------- |
-| **Lint + types**            | `pnpm validate`                         | Every PR, local dev   | No                                 |
-| **Unit**                    | `pnpm test`                             | Every PR, local dev   | No (excludes `@queueplatform/e2e`) |
-| **Release gate (local/CI)** | `pnpm test:ci`                          | PR merge, clean clone | No                                 |
-| **E2E smoke**               | `pnpm --filter @queueplatform/e2e test` | CI + optional local   | No (local servers)                 |
-| **Prod audit**              | `pnpm audit:patron-loyalty`             | Pre-release manual    | Yes                                |
+| Tier                        | Command                                 | When                        | Needs prod / Railway                                |
+| --------------------------- | --------------------------------------- | --------------------------- | --------------------------------------------------- |
+| **Lint + types + gates**    | `pnpm validate`                         | Local quick check           | No                                                  |
+| **CI validate**             | `pnpm validate:ci`                      | Every PR, CI `validate` job | No — includes security + architecture static checks |
+| **Unit**                    | `pnpm test`                             | Every PR, local dev         | No (excludes `@queueplatform/e2e`)                  |
+| **Release gate (local/CI)** | `pnpm test:ci`                          | PR merge, clean clone       | No                                                  |
+| **E2E smoke**               | `pnpm --filter @queueplatform/e2e test` | CI + optional local         | No (local servers)                                  |
+| **Prod audit**              | `pnpm audit:patron-loyalty`             | Pre-release manual          | Yes                                                 |
 
 ## Root commands
 
 ```bash
-pnpm validate              # lint + typecheck + legal placeholders (no tests)
+pnpm validate              # lint + typecheck + legal placeholders (no security/architecture gates)
+pnpm validate:ci           # validate + public-safeguards + tenant-isolation + api-module-boundary
 pnpm test                  # turbo: api, shared, notifications, loyalty
-pnpm test:ci               # validate + test + public-safeguards
+pnpm test:ci               # validate:ci + test
 pnpm check:bundle-budgets  # loyalty .next size cap (skips if not built)
 pnpm audit:tests           # test:ci + Playwright (needs API + loyalty running for e2e half)
 pnpm audit:patron-loyalty  # full prod audit + report (Railway migration, prod smoke)
 ```
+
+### Static gates (`validate:ci`)
+
+| Script                                   | Purpose                                           |
+| ---------------------------------------- | ------------------------------------------------- |
+| `security:check:public-safeguards`       | Throttle + PII masking on public/ticket API paths |
+| `security:check:tenant-isolation`        | Baseline unsafe Prisma model access               |
+| `check:architecture:api-module-boundary` | Cross-module import baseline for `packages/api`   |
+
+QMS-only gate `check:architecture:web-admin-boundary` is **not** run here (requires `apps/web` in sibling QMS repo).
 
 ## Package breakdown
 
@@ -63,15 +75,15 @@ LOYALTY_SMOKE_EMAIL=... LOYALTY_SMOKE_PASSWORD=... \
 
 ## CI matrix (`.github/workflows/ci.yml`)
 
-| Job                        | Purpose                               |
-| -------------------------- | ------------------------------------- |
-| `validate`                 | `pnpm validate:ci`                    |
-| `lint-and-build`           | `pnpm build` + `check:bundle-budgets` |
-| `test-api`                 | migrate + `pnpm test`                 |
-| `test-rls-policy`          | tenant isolation spec                 |
-| `test-e2e-loyalty`         | API + loyalty Playwright smoke        |
-| `test-notifications-smoke` | notifications package                 |
-| `docker`                   | API image build on `main`             |
+| Job                        | Purpose                                                                |
+| -------------------------- | ---------------------------------------------------------------------- |
+| `validate`                 | `pnpm validate:ci` (lint, types, legal, security + architecture gates) |
+| `lint-and-build`           | `pnpm build` + `check:bundle-budgets`                                  |
+| `test-api`                 | migrate + `pnpm test`                                                  |
+| `test-rls-policy`          | tenant isolation spec                                                  |
+| `test-e2e-loyalty`         | API + loyalty Playwright smoke                                         |
+| `test-notifications-smoke` | notifications package                                                  |
+| `docker`                   | API image build on `main`                                              |
 
 QMS-only jobs (`test-e2e-admin`, `test-e2e-realtime`, `apps/web`, `apps/admin`) are **not** run in this repo — see QlessQ sibling repo.
 
@@ -81,6 +93,12 @@ QMS-only jobs (`test-e2e-admin`, `test-e2e-realtime`, `apps/web`, `apps/admin`) 
 pnpm test:ci
 pnpm --filter @queueplatform/e2e test    # with local servers or rely on CI job
 pnpm audit:patron-loyalty                # Railway linked, prod smoke
+```
+
+**QlessQ split-deploy connector** (requires `LOYALTY_API_URL` + `LOYALTY_INTEGRATION_API_KEY`):
+
+```bash
+pnpm audit:loyalty-queue-events-smoke
 ```
 
 See also:

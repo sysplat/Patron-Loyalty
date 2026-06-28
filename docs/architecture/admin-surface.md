@@ -1,5 +1,7 @@
 # Admin surface architecture
 
+> **QMS-only:** `apps/web` and `apps/admin` ship from sibling repo **`../QMS`**, not this Patron Loyalty workspace. This doc describes QlessQ frontends; LMS operators use **`apps/loyalty`** here. See [REPO_BOUNDARIES.md](./REPO_BOUNDARIES.md).
+
 QlessQ ships two Next.js frontends. This document is the ownership map for Phase 3 of the [architecture hardening plan](./10-10-plan.md) (phases 1–5 complete as of 2026-06-04).
 
 ## Apps and audiences

@@ -25,12 +25,12 @@ This document is the ownership map for building toward the [Loyalty Management S
 
 ## Design principle: thin kiosk, rich loyalty app
 
-| Surface                                                                   | Collects                                                                                                       | Purpose                               |
-| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| **Kiosk / public booking** (`apps/web` public routes)                     | Name, phone, email (optional), transactional SMS consent, marketing opt-in when CRM enabled                    | Issue ticket or book appointment fast |
-| **Queue ops** (`apps/web` serve, workbench)                               | Operational notes on tickets; optional link to `Customer`                                                      | Move the line                         |
-| **Patron Loyalty app** (`apps/loyalty`, port **3003**)                    | Birthday, gender, address, preferences, tier, points balance, campaign enrollment, referral codes, staff tasks | Retention, marketing, loyalty rules   |
-| **Patron self-service** (`apps/loyalty` `/portal/[code]`, `/card/[code]`) | Profile enrichment, reward redemption, digital card                                                            | End-customer loyalty UX               |
+| Surface                                                                      | Collects                                                                                                       | Purpose                               |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| **Kiosk / public booking** (`apps/web` in **QMS** repo — not `apps/loyalty`) | Name, phone, email (optional), transactional SMS consent, marketing opt-in when CRM enabled                    | Issue ticket or book appointment fast |
+| **Queue ops** (`apps/web` serve, workbench)                                  | Operational notes on tickets; optional link to `Customer`                                                      | Move the line                         |
+| **Patron Loyalty app** (`apps/loyalty`, port **3003**)                       | Birthday, gender, address, preferences, tier, points balance, campaign enrollment, referral codes, staff tasks | Retention, marketing, loyalty rules   |
+| **Patron self-service** (`apps/loyalty` `/portal/[code]`, `/card/[code]`)    | Profile enrichment, reward redemption, digital card                                                            | End-customer loyalty UX               |
 
 **Do not add SRS profile fields to kiosk** unless there is a hard operational reason. Loyalty-specific columns and forms belong in the loyalty service UI or staff CRM screens—not on the walk-in path.
 

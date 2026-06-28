@@ -7,7 +7,7 @@ Release checklist before promoting `main` to production.
 ## 1. CI and builds
 
 ```bash
-pnpm validate
+pnpm validate:ci
 pnpm format:check
 pnpm --filter @queueplatform/loyalty build   # LMS tenant UI
 pnpm check:bundle-budgets

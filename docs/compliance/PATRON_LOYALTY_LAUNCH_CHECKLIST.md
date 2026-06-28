@@ -4,11 +4,12 @@ Use after engineering deploy; **do not treat as counsel-approved** until `COUNSE
 
 ## Test tiers (engineering gate)
 
-| Tier        | Command                                                              | When                                               |
-| ----------- | -------------------------------------------------------------------- | -------------------------------------------------- |
-| PR / local  | `pnpm test:ci`                                                       | No prod; lint + 641 unit tests + public safeguards |
-| E2E smoke   | CI job `test-e2e-loyalty` or `pnpm --filter @queueplatform/e2e test` | API + loyalty Playwright                           |
-| Pre-release | `pnpm audit:patron-loyalty`                                          | Railway migration + prod smoke                     |
+| Tier        | Command                                                              | When                                                  |
+| ----------- | -------------------------------------------------------------------- | ----------------------------------------------------- |
+| PR / local  | `pnpm test:ci`                                                       | No prod; lint + types + static gates + unit tests     |
+| E2E smoke   | CI job `test-e2e-loyalty` or `pnpm --filter @queueplatform/e2e test` | API + loyalty Playwright                              |
+| Pre-release | `pnpm audit:patron-loyalty`                                          | Railway migration + prod smoke                        |
+| Connector   | `pnpm audit:loyalty-queue-events-smoke`                              | Split-deploy QlessQ → LMS idempotency (needs API key) |
 
 See [TESTING.md](../operations/TESTING.md) for full matrix.
 
@@ -36,9 +37,9 @@ NEXT_PUBLIC_API_URL=https://<pl-api-host>/api/v1
 NEXT_PUBLIC_CENTRIFUGO_WS_URL=wss://<centrifugo-host>/connection/websocket
 ```
 
-## 3. QlessQ Railway (queue product — link out to LMS)
+## 3. QlessQ Railway (queue product — **sibling `../QMS` repo**, not this workspace)
 
-Set on **web** and **admin** (rebuild required for `NEXT_PUBLIC_*`):
+Set on **QMS `apps/web` and `apps/admin`** (rebuild required for `NEXT_PUBLIC_*`):
 
 ```bash
 NEXT_PUBLIC_LOYALTY_URL=https://pl-loyalty-production.up.railway.app
@@ -58,7 +59,7 @@ Disable legacy **qms-loyalty** service if still deployed from QlessQ repo.
 
 - [ ] LMS: rotate Integration API key (`/integrations` in loyalty app)
 - [ ] QMS: `POST /api/v1/loyalty/connector` with `apiBaseUrl` + `apiKey`
-- [ ] Smoke: complete a ticket → points ledger entry in LMS
+- [ ] Smoke: `pnpm audit:loyalty-queue-events-smoke` (or complete a ticket in QMS → points ledger in LMS)
 
 ## 5. Prohibited businesses
 

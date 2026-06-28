@@ -23,10 +23,6 @@ const publicPaths = [
   '/reset-password',
 ];
 const publicPrefixes = ['/portal', '/card', '/refer'];
-const displayPath = '/display';
-const kioskPath = '/kiosk';
-const trackPath = '/track';
-const bookPath = '/book';
 
 const DASHBOARD_HOME = '/overview';
 
@@ -104,12 +100,6 @@ export async function middleware(request: NextRequest) {
   // Allow public paths (legal, auth recovery, pricing, etc.)
   if (publicPaths.includes(path)) return NextResponse.next();
   if (publicPrefixes.some((prefix) => pathname.startsWith(prefix))) return NextResponse.next();
-
-  // Allow display screen, kiosk, track, and booking routes
-  if (pathname.startsWith(displayPath)) return NextResponse.next();
-  if (pathname.startsWith(kioskPath)) return NextResponse.next();
-  if (pathname.startsWith(trackPath)) return NextResponse.next();
-  if (pathname.startsWith(bookPath)) return NextResponse.next();
 
   // Loyalty app routes live at `/`, `/patrons`, etc. (not under `/dashboard`).
   // Require the HttpOnly session cookie for every non-public path.

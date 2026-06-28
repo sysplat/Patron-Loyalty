@@ -166,8 +166,9 @@ ${table}
 
 - [ ] \`railway link\` → \`pnpm db:migrate:status:railway\` (migration \`20260627120000_srs_crm_gamification_locale\`)
 - [ ] Set \`LOYALTY_SMOKE_EMAIL\` / \`LOYALTY_SMOKE_PASSWORD\` for full auth smoke
+- [ ] Set \`LOYALTY_INTEGRATION_API_KEY\` and run \`pnpm audit:loyalty-queue-events-smoke\`
 - [ ] Counsel sign-off per \`docs/compliance/PATRON_LOYALTY_LAUNCH_CHECKLIST.md\`
-- [ ] QlessQ connector smoke: ticket complete → points ledger
+- [ ] QlessQ connector smoke: ticket complete → points ledger (or queue-events smoke script)
 - [ ] Webhook: create endpoint + rotate signing secret on prod
 - [ ] Set \`TWILIO_WHATSAPP_NUMBER\` if using WhatsApp campaigns
 
@@ -188,10 +189,9 @@ async function main() {
   console.log(`\n=== Patron Loyalty audit ===\nTarget: ${loyaltyUrl}\n`);
 
   gitHead();
-  runPnpm('validate', 'Code quality', 'validate');
+  runPnpm('validate-ci', 'Code quality', 'validate:ci');
   runPnpm('unit-tests', 'Tests', 'test');
   runScript('legal-placeholders', 'Compliance', 'scripts/compliance/check-legal-placeholders.mjs');
-  runScript('public-safeguards', 'Security', 'scripts/security/check-public-safeguards.mjs');
   checkLoyaltyAuthGuards();
   srsSnapshot();
 

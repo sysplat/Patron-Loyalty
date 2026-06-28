@@ -29,4 +29,12 @@ describe('loyalty middleware session cookies', () => {
     expect(source).toContain("'/portal'");
     expect(source).toContain("'/refer'");
   });
+
+  it('does not expose QMS-only public routes (kiosk, display, track, book)', () => {
+    const source = readFileSync(path.join(__dirname, '../middleware.ts'), 'utf8');
+    expect(source).not.toContain("'/kiosk'");
+    expect(source).not.toContain("'/display'");
+    expect(source).not.toContain("'/track'");
+    expect(source).not.toContain("'/book'");
+  });
 });
