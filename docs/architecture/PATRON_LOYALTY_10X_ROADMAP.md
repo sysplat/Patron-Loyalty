@@ -2,7 +2,7 @@
 
 Forward-looking plan to reach **10/10 across every rated dimension** for this repo (LMS split). Historical execution is tracked in [patron-loyalty-10-plan.md](./patron-loyalty-10-plan.md) (Phases 0–7, mostly complete as of 2026-06-28).
 
-**Current baseline (~9.8 / 10 overall)** — Coverage **71%**; prod on `8c734c6`. **Sentry prod** remains the manual blocker for operability 10.
+**Current baseline (~9.8 / 10 overall)** — Coverage **~74%** (integration + dispatch specs); prod on `9cc8692` (redeploy if behind). **Sentry prod** remains the manual blocker for operability 10.
 
 ## PR tagging convention
 
@@ -42,7 +42,7 @@ Prefix commits and PR titles with phase IDs for traceability:
 | API modularity & cohesion     | 10  | 10     | 1             |
 | Data layer                    | 9.5 | 10     | 1             |
 | Service sizing (1k-line rule) | 10  | 10     | 1             |
-| Test pyramid                  | 9.2 | 10     | 3             |
+| Test pyramid                  | 9.3 | 10     | 3             |
 | Docs ↔ repo truth             | 10  | 10     | 6             |
 | Operability & release         | 9   | 10     | 5             |
 

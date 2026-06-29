@@ -165,6 +165,50 @@ describe('LoyaltyIntegrationService lookupCustomer externalId', () => {
       }),
     );
   });
+
+  it('resolves patron by email when externalId missing', async () => {
+    customerFindFirst.mockImplementation((args: { where: Record<string, unknown> }) => {
+      if (args.where.email) {
+        return Promise.resolve({
+          id: 'cust-email',
+          name: 'Email Patron',
+          email: 'patron@example.com',
+          phone: null,
+        });
+      }
+      return Promise.resolve(null);
+    });
+    accounts.ensureAccount.mockResolvedValue({
+      id: 'acc-2',
+      pointsBalance: 50,
+      referralCode: 'REF2',
+    });
+
+    const result = await service.lookupCustomer('org-1', { email: 'patron@example.com' });
+    expect(result).toMatchObject({ customerId: 'cust-email', pointsBalance: 50 });
+  });
+
+  it('falls back to metadata externalId scan', async () => {
+    const queryRaw = vi.fn().mockResolvedValue([{ id: 'cust-meta' }]);
+    customerFindFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      id: 'cust-meta',
+      name: 'Meta Patron',
+      email: null,
+      phone: null,
+    });
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({ customer: { findFirst: customerFindFirst }, $queryRaw: queryRaw }),
+    );
+    accounts.ensureAccount.mockResolvedValue({
+      id: 'acc-meta',
+      pointsBalance: 10,
+      referralCode: null,
+    });
+
+    const result = await service.lookupCustomer('org-1', { externalId: 'legacy-ext' });
+    expect(queryRaw).toHaveBeenCalled();
+    expect(result).toMatchObject({ customerId: 'cust-meta' });
+  });
 });
 
 describe('LoyaltyIntegrationService upsertCustomer', () => {
@@ -206,5 +250,115 @@ describe('LoyaltyIntegrationService upsertCustomer', () => {
 
     expect(customers.create).toHaveBeenCalled();
     expect(result).toMatchObject({ customerId: 'cust-new', created: true, accountId: 'acct-1' });
+  });
+
+  it('updates existing customer on upsert match', async () => {
+    vi.spyOn(service, 'resolveCustomer' as never).mockResolvedValue({
+      id: 'cust-existing',
+      metadata: {},
+    } as never);
+
+    const result = await service.upsertCustomer('org-1', {
+      externalId: 'ext-1',
+      name: 'Updated Name',
+    });
+
+    expect(result).toMatchObject({ customerId: 'cust-existing', created: false });
+    expect(customers.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('LoyaltyIntegrationService connector routes', () => {
+  const patronCrmFeature = { requireEnabled: vi.fn().mockResolvedValue(undefined) };
+  const prisma = { withTenant: vi.fn() };
+  const customers = {};
+  const accounts = {
+    ensureAccount: vi.fn().mockResolvedValue({ id: 'acc-1', pointsBalance: 100 }),
+    getAccountByCustomerId: vi.fn().mockResolvedValue({ id: 'acc-1' }),
+    earnIntegrationPoints: vi.fn(),
+  };
+  const catalog = {
+    redeemReward: vi.fn().mockResolvedValue({ id: 'red-1' }),
+    validateCoupon: vi.fn().mockResolvedValue({ valid: true }),
+    redeemCoupon: vi.fn().mockResolvedValue({ ok: true }),
+  };
+  const program = { resolveEarnPoints: vi.fn() };
+  const wallet = { adjustWallet: vi.fn().mockResolvedValue({ balanceCents: 5000 }) };
+  let service: LoyaltyIntegrationService;
+  const customer = { id: 'cust-1', name: 'Patron', email: 'p@x.com', phone: '+1' };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({
+        loyaltyPointLedger: { findFirst: vi.fn().mockResolvedValue(null) },
+        customer: { findFirst: vi.fn().mockResolvedValue(customer) },
+      }),
+    );
+    service = new LoyaltyIntegrationService(
+      prisma as never,
+      customers as never,
+      accounts as never,
+      catalog as never,
+      program as never,
+      wallet as never,
+      patronCrmFeature as never,
+    );
+  });
+
+  it('redeems reward for resolved patron', async () => {
+    vi.spyOn(service, 'resolveCustomerOrThrow' as never).mockResolvedValue(customer as never);
+
+    const result = await service.redeemReward('org-1', {
+      customerId: 'cust-1',
+      rewardId: 'reward-1',
+    });
+
+    expect(catalog.redeemReward).toHaveBeenCalledWith('org-1', 'cust-1', 'reward-1');
+    expect(result).toMatchObject({ customerId: 'cust-1', redemption: { id: 'red-1' } });
+  });
+
+  it('validates coupon using customer account', async () => {
+    await service.validateCoupon('org-1', { code: 'SAVE10', customerId: 'cust-1' });
+    expect(accounts.getAccountByCustomerId).toHaveBeenCalledWith('org-1', 'cust-1');
+    expect(catalog.validateCoupon).toHaveBeenCalledWith('org-1', 'SAVE10', 'acc-1');
+  });
+
+  it('redeems coupon for patron account', async () => {
+    vi.spyOn(service, 'resolveCustomerOrThrow' as never).mockResolvedValue(customer as never);
+
+    await service.redeemCoupon('org-1', { code: 'SAVE10', externalId: 'ext-1' });
+    expect(catalog.redeemCoupon).toHaveBeenCalledWith('org-1', 'SAVE10', 'acc-1');
+  });
+
+  it('adjusts wallet for resolved patron', async () => {
+    vi.spyOn(service, 'resolveCustomerOrThrow' as never).mockResolvedValue(customer as never);
+
+    const result = await service.adjustWallet('org-1', {
+      customerId: 'cust-1',
+      type: 'CREDIT',
+      amountCents: 500,
+      description: 'POS',
+    });
+
+    expect(wallet.adjustWallet).toHaveBeenCalledWith('org-1', 'cust-1', 'CREDIT', 500, 'POS');
+    expect(result).toMatchObject({ balanceCents: 5000 });
+  });
+
+  it('throws when earn cannot resolve points', async () => {
+    vi.spyOn(service, 'resolveCustomerOrThrow' as never).mockResolvedValue(customer as never);
+    accounts.ensureAccount.mockResolvedValue({
+      id: 'acc-1',
+      tier: null,
+      lifetimePointsEarned: 0,
+    });
+
+    await expect(
+      service.earnPoints('org-1', {
+        customerId: 'cust-1',
+        eventType: LOYALTY_EARN_EVENT_TYPES.MANUAL,
+        externalTxnId: 'txn-bad',
+      }),
+    ).rejects.toThrow('Could not resolve points');
   });
 });
