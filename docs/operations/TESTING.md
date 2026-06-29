@@ -93,6 +93,10 @@ LOYALTY_SMOKE_EMAIL=... LOYALTY_SMOKE_PASSWORD=... \
 
 ## CI matrix (`.github/workflows/ci.yml`)
 
+> **2026-06-29:** GitHub Actions is **disabled** for June (free minutes exhausted).
+> Workflow preserved as `ci-patron-loyalty.yml.disabled`. Re-enable: `mv .github/workflows/ci-patron-loyalty.yml.disabled .github/workflows/ci.yml`
+> Use local gates until then: `pnpm validate:ci && pnpm test && pnpm audit:loyalty-coverage`
+
 | Job                        | Purpose                                                                |
 | -------------------------- | ---------------------------------------------------------------------- |
 | `validate`                 | `pnpm validate:ci` (lint, types, legal, security + architecture gates) |
