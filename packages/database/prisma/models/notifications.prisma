@@ -1,0 +1,54 @@
+// Layer: Notifications — templates, delivery, logs
+
+model Notification {
+  id                String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId             String                @map("org_id") @db.Uuid
+  recipientType     String                @map("recipient_type") @db.VarChar(20)
+  channel           String                @db.VarChar(10)
+  templateId        String?               @map("template_id") @db.Uuid
+  payload           Json
+  status            String                @default("pending") @db.VarChar(20)
+  sentAt            DateTime?             @map("sent_at")
+  errorMessage      String?               @map("error_message")
+  retryCount        Int                   @default(0) @map("retry_count")
+  createdAt         DateTime              @default(now()) @map("created_at")
+  providerMessageId String?               @map("provider_message_id") @db.VarChar(100)
+  logs              NotificationLog[]
+  organization      Organization          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  template          NotificationTemplate? @relation(fields: [templateId], references: [id])
+
+  @@index([orgId])
+  @@index([status])
+  @@index([providerMessageId])
+  @@map("notifications")
+}
+
+model NotificationTemplate {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId         String         @map("org_id") @db.Uuid
+  type          String         @db.VarChar(50)
+  channel       String         @db.VarChar(10)
+  subject       String?        @db.VarChar(255)
+  body          String
+  variables     Json           @default("[]")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  organization  Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  notifications Notification[]
+
+  @@unique([orgId, type, channel])
+  @@index([orgId])
+  @@map("notification_templates")
+}
+
+model NotificationLog {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notificationId String       @map("notification_id") @db.Uuid
+  event          String       @db.VarChar(30)
+  metadata       Json?
+  createdAt      DateTime     @default(now()) @map("created_at")
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([notificationId])
+  @@map("notification_logs")
+}
