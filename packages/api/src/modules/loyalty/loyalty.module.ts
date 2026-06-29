@@ -19,6 +19,9 @@ import { LoyaltyApiKeyController } from './controllers/loyalty-api-key.controlle
 import { LoyaltyPublicController } from './controllers/loyalty-public.controller';
 import { LoyaltyProgramService } from './loyalty-program.service';
 import { LoyaltyAccountService } from './loyalty-account.service';
+import { LoyaltyAccountLifecycleService } from './loyalty-account-lifecycle.service';
+import { LoyaltyAccountEarnService } from './loyalty-account-earn.service';
+import { LoyaltyAccountDsarService } from './loyalty-account-dsar.service';
 import { LoyaltyPointsService } from './loyalty-points.service';
 import { LoyaltyCatalogService } from './loyalty-catalog.service';
 import { LoyaltyWalletService } from './loyalty-wallet.service';
@@ -67,6 +70,9 @@ import { LoyaltyConnectorObservabilityService } from './loyalty-connector-observ
   providers: [
     LoyaltyProgramService,
     LoyaltyPointsService,
+    LoyaltyAccountLifecycleService,
+    LoyaltyAccountEarnService,
+    LoyaltyAccountDsarService,
     LoyaltyAccountService,
     LoyaltyCatalogService,
     LoyaltyWalletService,

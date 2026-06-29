@@ -42,7 +42,7 @@ API_DEPLOY_PROFILE=loyalty
 | Extract points transaction core          | `loyalty-points.service.ts` — ledger, tier, health score, idempotency                                                                                       |
 | Account service as lifecycle facade      | `loyalty-account.service.ts` — ensure/get, earn handlers, DSAR, delegates to points                                                                         |
 
-See conversation plan for Phases 4–7 (auth, tests, connector observability, ops).
+See [PATRON_LOYALTY_10X_ROADMAP.md](./PATRON_LOYALTY_10X_ROADMAP.md) for the forward 6-phase plan to 10/10.
 
 ## Phase 3 — Data & schema clarity (in progress)
 

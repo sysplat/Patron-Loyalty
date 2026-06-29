@@ -4,6 +4,9 @@
   "private": true,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "prisma": {
+    "schema": "prisma"
+  },
   "scripts": {
     "build": "prisma generate && tsc",
     "db:generate": "prisma generate",

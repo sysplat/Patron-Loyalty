@@ -2,7 +2,40 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BadRequestException } from '@nestjs/common';
 import { LOYALTY_EARN_EVENT_TYPES, LOYALTY_POINT_LEDGER_TYPES } from '@queueplatform/shared';
 import { LoyaltyAccountService } from './loyalty-account.service';
+import { LoyaltyAccountLifecycleService } from './loyalty-account-lifecycle.service';
+import { LoyaltyAccountEarnService } from './loyalty-account-earn.service';
+import { LoyaltyAccountDsarService } from './loyalty-account-dsar.service';
 import { LoyaltyPointsService } from './loyalty-points.service';
+
+function buildAccountService(deps: {
+  prisma: unknown;
+  patronCrmFeature: unknown;
+  programService: unknown;
+  loyaltyWebhook: unknown;
+  eventEmitter: unknown;
+}) {
+  const points = new LoyaltyPointsService(
+    deps.prisma as never,
+    deps.eventEmitter as never,
+    deps.loyaltyWebhook as never,
+  );
+  const lifecycle = new LoyaltyAccountLifecycleService(
+    deps.prisma as never,
+    deps.patronCrmFeature as never,
+    deps.programService as never,
+  );
+  const earn = new LoyaltyAccountEarnService(
+    deps.prisma as never,
+    deps.patronCrmFeature as never,
+    deps.programService as never,
+    deps.loyaltyWebhook as never,
+    lifecycle,
+    points,
+  );
+  const dsar = new LoyaltyAccountDsarService(deps.prisma as never, deps.patronCrmFeature as never);
+  const service = new LoyaltyAccountService(lifecycle, earn, dsar, points);
+  return { service, lifecycle };
+}
 
 const baseAccount = {
   id: 'acc-1',
@@ -36,18 +69,13 @@ describe('LoyaltyAccountService lookupPatronByPhone', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    const points = new LoyaltyPointsService(
-      prisma as never,
-      eventEmitter as never,
-      loyaltyWebhook as never,
-    );
-    service = new LoyaltyAccountService(
-      prisma as never,
-      patronCrmFeature as never,
-      programService as never,
-      loyaltyWebhook as never,
-      points,
-    );
+    service = buildAccountService({
+      prisma,
+      patronCrmFeature,
+      programService,
+      loyaltyWebhook,
+      eventEmitter,
+    }).service;
   });
 
   it('rejects phone numbers with fewer than 10 digits', async () => {
@@ -90,6 +118,7 @@ describe('LoyaltyAccountService earn idempotency', () => {
   const accountFindUniqueOrThrow = vi.fn();
 
   let service: LoyaltyAccountService;
+  let lifecycle: LoyaltyAccountLifecycleService;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -127,15 +156,17 @@ describe('LoyaltyAccountService earn idempotency', () => {
       }),
     );
 
-    service = new LoyaltyAccountService(
-      prisma as never,
-      patronCrmFeature as never,
-      programService as never,
-      loyaltyWebhook as never,
-      new LoyaltyPointsService(prisma as never, eventEmitter as never, loyaltyWebhook as never),
-    );
+    const built = buildAccountService({
+      prisma,
+      patronCrmFeature,
+      programService,
+      loyaltyWebhook,
+      eventEmitter,
+    });
+    service = built.service;
+    lifecycle = built.lifecycle;
 
-    vi.spyOn(service, 'ensureAccount').mockResolvedValue({
+    vi.spyOn(lifecycle, 'ensureAccount').mockResolvedValue({
       ...baseAccount,
       customer: { id: 'cust-1', name: 'Patron', email: null, phone: null },
     } as never);
