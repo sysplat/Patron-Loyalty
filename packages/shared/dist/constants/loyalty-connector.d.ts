@@ -1,4 +1,5 @@
-/** Integration row type: QlessQ org forwards queue events to external Patron Loyalty. */
+/** Current QlessQ → LMS connector payload version (forward-compatible evolution). */
+export declare const QLESSQ_CONNECTOR_VERSION: 1;
 export declare const PATRON_LOYALTY_INTEGRATION_TYPE: "patron_loyalty";
 /** Normalized queue → LMS event names (HTTP connector contract). */
 export declare const QLESSQ_QUEUE_INTEGRATION_EVENTS: {

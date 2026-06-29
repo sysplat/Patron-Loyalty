@@ -291,9 +291,11 @@ export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObjec
     customerEmail: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     rating: z.ZodOptional<z.ZodNumber>;
     occurredAt: z.ZodOptional<z.ZodString>;
+    connectorVersion: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
 }, "strip", z.ZodTypeAny, {
     event: import("../constants/loyalty-connector").QlessqQueueIntegrationEvent;
     sourceId: string;
+    connectorVersion: number;
     customer?: {
         externalId: string;
         email?: string | null | undefined;
@@ -323,9 +325,11 @@ export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObjec
     customerEmail?: string | null | undefined;
     rating?: number | undefined;
     occurredAt?: string | undefined;
+    connectorVersion?: number | undefined;
 }>, {
     event: import("../constants/loyalty-connector").QlessqQueueIntegrationEvent;
     sourceId: string;
+    connectorVersion: number;
     customer?: {
         externalId: string;
         email?: string | null | undefined;
@@ -355,6 +359,7 @@ export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObjec
     customerEmail?: string | null | undefined;
     rating?: number | undefined;
     occurredAt?: string | undefined;
+    connectorVersion?: number | undefined;
 }>;
 export declare const patronLoyaltyIntegrationConfigSchema: z.ZodObject<{
     lmsOrgId: z.ZodOptional<z.ZodString>;
