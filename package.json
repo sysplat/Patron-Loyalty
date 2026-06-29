@@ -43,6 +43,7 @@
     "audit:loyalty-integration-db": "pnpm --filter @queueplatform/api exec vitest run src/modules/loyalty/loyalty-integration.integration.spec.ts",
     "audit:prod-readiness": "pnpm db:migrate:status:railway && pnpm audit:loyalty-auth-smoke",
     "audit:patron-loyalty": "node scripts/audit-patron-loyalty.mjs --write-report",
+    "audit:pre-release": "pnpm validate:ci && pnpm audit:loyalty-coverage && pnpm audit:staging-soak && pnpm audit:patron-loyalty",
     "db:migrate:local": "bash scripts/ensure-env-local.sh && dotenv -e .env.local -e .env -- bash -c 'bash scripts/assert-local-db.sh && pnpm --filter @queueplatform/database db:migrate'",
     "db:seed": "turbo db:seed",
     "docker:up": "docker compose -f docker/docker-compose.yml up -d",

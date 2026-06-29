@@ -166,3 +166,45 @@ describe('LoyaltyIntegrationService lookupCustomer externalId', () => {
     );
   });
 });
+
+describe('LoyaltyIntegrationService upsertCustomer', () => {
+  const patronCrmFeature = { requireEnabled: vi.fn().mockResolvedValue(undefined) };
+  const prisma = { withTenant: vi.fn() };
+  const customers = {
+    create: vi.fn().mockResolvedValue({ id: 'cust-new', name: 'New Patron' }),
+  };
+  const accounts = { ensureAccount: vi.fn().mockResolvedValue({ id: 'acct-1' }) };
+  const catalog = {};
+  const program = {};
+  const wallet = {};
+  let service: LoyaltyIntegrationService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({ customer: { update: vi.fn().mockResolvedValue({}) } }),
+    );
+    service = new LoyaltyIntegrationService(
+      prisma as never,
+      customers as never,
+      accounts as never,
+      catalog as never,
+      program as never,
+      wallet as never,
+      patronCrmFeature as never,
+    );
+  });
+
+  it('creates new customer when no match exists', async () => {
+    vi.spyOn(service, 'resolveCustomer' as never).mockResolvedValue(null as never);
+
+    const result = await service.upsertCustomer('org-1', {
+      externalId: 'ext-new',
+      name: 'New Patron',
+      email: 'new@example.com',
+    });
+
+    expect(customers.create).toHaveBeenCalled();
+    expect(result).toMatchObject({ customerId: 'cust-new', created: true, accountId: 'acct-1' });
+  });
+});

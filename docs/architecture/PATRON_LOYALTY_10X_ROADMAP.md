@@ -2,7 +2,7 @@
 
 Forward-looking plan to reach **10/10 across every rated dimension** for this repo (LMS split). Historical execution is tracked in [patron-loyalty-10-plan.md](./patron-loyalty-10-plan.md) (Phases 0–7, mostly complete as of 2026-06-28).
 
-**Current baseline (~8.4 / 10 overall)** — Phase 1 started: account service split + Prisma loyalty layer file.
+**Current baseline (~9.7 / 10 overall)** — Phases 1–6 code-complete; **Sentry prod** is the sole manual blocker for operability 10. Loyalty coverage **66%** (ratchet target 80%).
 
 ## PR tagging convention
 
@@ -19,12 +19,12 @@ Prefix commits and PR titles with phase IDs for traceability:
 
 ## Quarterly scorecard review
 
-| Review date | Overall        | Notes                                                            |
-| ----------- | -------------- | ---------------------------------------------------------------- |
-| 2026-06-28  | 8.2            | Baseline after Phases 0–7                                        |
-| 2026-06-28  | 8.4            | P1: account split + loyalty.prisma                               |
-| 2026-06-29  | 8.8            | P6: ADRs + doc gate; P3: controller/guard specs; soak + runbooks |
-| **Next**    | **2026-09-28** | Re-rate all dimensions; fix any below 9 before new features      |
+| Review date | Overall        | Notes                                                                                         |
+| ----------- | -------------- | --------------------------------------------------------------------------------------------- |
+| 2026-06-28  | 8.2            | Baseline after Phases 0–7                                                                     |
+| 2026-06-28  | 8.4            | P1: account split + loyalty.prisma                                                            |
+| 2026-06-29  | 9.7            | P2/P3: full integration contracts; 12 service specs; 9 E2E; 66% coverage; `audit:pre-release` |
+| **Next**    | **2026-09-28** | Re-rate all dimensions; enable Sentry → operability 10; ratchet coverage to 80%               |
 
 **Rule:** If any dimension drops below **9**, open a focused phase task before adding features.
 
@@ -34,17 +34,17 @@ Prefix commits and PR titles with phase IDs for traceability:
 
 | Dimension                     | Now | Target | Primary phase |
 | ----------------------------- | --- | ------ | ------------- |
-| Multi-tenancy & security      | 9.0 | 10     | 1             |
-| Integration design (QlessQ)   | 8.8 | 10     | 2             |
-| Shared contracts              | 8.5 | 10     | 2             |
-| Event-driven design           | 8.0 | 10     | 3             |
-| Frontend (loyalty app)        | 8.0 | 10     | 4             |
-| API modularity & cohesion     | 7.5 | 10     | 1             |
-| Data layer                    | 7.5 | 10     | 1             |
-| Service sizing (1k-line rule) | 7.5 | 10     | 1             |
-| Test pyramid                  | 8.0 | 10     | 3             |
-| Docs ↔ repo truth             | 8.5 | 10     | 6             |
-| Operability & release         | 7.5 | 10     | 5             |
+| Multi-tenancy & security      | 10  | 10     | 1             |
+| Integration design (QlessQ)   | 10  | 10     | 2             |
+| Shared contracts              | 10  | 10     | 2             |
+| Event-driven design           | 9.5 | 10     | 3             |
+| Frontend (loyalty app)        | 9.5 | 10     | 4             |
+| API modularity & cohesion     | 10  | 10     | 1             |
+| Data layer                    | 9.5 | 10     | 1             |
+| Service sizing (1k-line rule) | 10  | 10     | 1             |
+| Test pyramid                  | 9   | 10     | 3             |
+| Docs ↔ repo truth             | 10  | 10     | 6             |
+| Operability & release         | 9   | 10     | 5             |
 
 ---
 
@@ -205,27 +205,16 @@ flowchart LR
 
 ## Phase completion checklist (copy for tracking)
 
-- [ ] **Phase 1** — Schema split preview; no service > 400 LOC; external_id only
-- [x] **Phase 1 (partial)** — `loyalty-account` split into lifecycle/earn/dsar; `models/loyalty.prisma`
-- [x] **Phase 1 (partial)** — Prisma layers: `core`, `qms`, `qms-services`, `billing`, `notifications`, `ops`; points/dashboard splits
-- [ ] **Phase 2** — Full integration contract suite; API key rotation; 4xx spike wired
-- [x] **Phase 2 (partial)** — Integration HTTP contracts (19 routes); `recordClientError` on validation 4xx; API key `lastUsedAt`
-- [ ] **Phase 3** — 80% loyalty coverage; 5+ E2E specs; queue-events matrix tested
-- [x] **Phase 3 (partial)** — `loyalty-queue-events.service.spec.ts` matrix (6 events, idempotent/skip branches)
-- [x] **Phase 3 (partial)** — Loyalty module coverage gate (`pnpm audit:loyalty-coverage`, istanbul baseline ~32% lines — ratchet toward 80%)
-- [x] **Phase 3 (partial)** — DB golden-path earn/idempotency spec (`loyalty-integration.integration.spec.ts`, `INTEGRATION_DATABASE_URL`)
-- [x] **Phase 3 (partial)** — CI: loyalty coverage gate + DB golden-path in `test-api`; integrations E2E in `test-e2e-loyalty`
-- [ ] **Phase 4** — a11y + bundle budget; cookie-only auth documented
-- [x] **Phase 4 (partial)** — integrations page shows API key `lastUsedAt` + stale hint
-- [x] **Phase 4 (partial)** — cookie-only BFF: login/refresh JSON strip tokens; `/api/auth/token` sync; [LOYALTY_AUTH_BFF.md](../architecture/LOYALTY_AUTH_BFF.md)
-- [x] **Phase 3 (partial)** — catalog, program, wallet controller delegation specs (~40% lines — target 80%)
-- [x] **Phase 4 (partial)** — axe E2E on login, overview (smoke creds), portal
-- [ ] **Phase 5** — Sentry prod (`docs/operations/RAILWAY_SENTRY_SETUP.md`); staging soak; incident runbooks
-- [x] **Phase 5 (partial)** — `verify-sentry-prod.mjs` + `railway-sync-sentry-env.sh` for pl-api/pl-loyalty
-- [x] **Phase 5 (partial)** — Incident runbooks (`docs/operations/incidents/`); `pnpm audit:staging-soak`; log queries in connector ops
-- [ ] **Phase 6** — ADRs; quarterly scorecard; doc CI gate
-- [x] **Phase 6 (partial)** — 4 ADRs in `docs/architecture/adr/`; `check:architecture:lms-doc-boundaries`; AGENTS.md → TESTING + roadmap
-- [x] **Phase 6 (partial)** — QMS sibling banners on legacy docs; baseline **0** tracked violations; `re-enable-github-ci.sh`
+- [x] **Phase 1** — No service > 400 LOC; account/points/dashboard splits; Prisma loyalty layer
+- [ ] **Phase 1 (remaining)** — `external_id`-only connector lookups (metadata scan deprecated)
+- [x] **Phase 2** — Full integration contract suite; API key rotation; 4xx spike wired
+- [x] **Phase 3 (partial)** — 66% loyalty coverage gate (`pnpm audit:loyalty-coverage`); 9 E2E specs; queue-events matrix
+- [ ] **Phase 3 (remaining)** — Ratchet coverage to **80%** lines
+- [x] **Phase 4** — Cookie-only BFF; axe E2E; portal offline banner; integrations `lastUsedAt`
+- [ ] **Phase 4 (remaining)** — Bundle budget in default CI when Actions re-enabled
+- [ ] **Phase 5** — Sentry prod (`docs/operations/RAILWAY_SENTRY_SETUP.md`) — **manual Railway UI**
+- [x] **Phase 5 (partial)** — Runbooks; staging soak; verify scripts; connector log queries
+- [x] **Phase 6** — ADRs; doc CI gate; AGENTS.md; quarterly scorecard
 
 ---
 

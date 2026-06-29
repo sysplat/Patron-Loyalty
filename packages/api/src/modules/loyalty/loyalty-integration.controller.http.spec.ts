@@ -201,6 +201,49 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
     expect(integration.upsertCustomer).not.toHaveBeenCalled();
   });
 
+  it('delegates upsert to integration service with org id', async () => {
+    integration.upsertCustomer.mockResolvedValue({
+      customerId: '00000000-0000-0000-0000-0000000000cc',
+      externalId: 'qlessq-cust-upsert',
+      created: true,
+    });
+
+    const body = {
+      externalId: 'qlessq-cust-upsert',
+      name: 'Upsert Patron',
+      email: 'upsert@example.com',
+    };
+
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/loyalty/integrations/v1/customers/upsert')
+      .set('X-Loyalty-Api-Key', 'loyalty_live_test')
+      .send(body)
+      .expect(200);
+
+    expect(integration.upsertCustomer).toHaveBeenCalledWith(ORG_ID, body);
+    expect(res.body).toMatchObject({
+      customerId: '00000000-0000-0000-0000-0000000000cc',
+      created: true,
+    });
+  });
+
+  it('returns 404 when lookup finds no patron', async () => {
+    const { NotFoundException } = await import('@nestjs/common');
+    integration.lookupCustomer.mockRejectedValue(new NotFoundException('Patron not found'));
+
+    await request(app.getHttpServer())
+      .get('/api/v1/loyalty/integrations/v1/customers/lookup')
+      .query({ externalId: 'missing-patron' })
+      .set('X-Loyalty-Api-Key', 'loyalty_live_test')
+      .expect(404);
+
+    expect(integration.lookupCustomer).toHaveBeenCalledWith(ORG_ID, {
+      customerId: undefined,
+      email: undefined,
+      phone: undefined,
+      externalId: 'missing-patron',
+    });
+  });
   it('returns lookup result from integration service', async () => {
     integration.lookupCustomer.mockResolvedValue({
       customerId: '00000000-0000-0000-0000-0000000000aa',
