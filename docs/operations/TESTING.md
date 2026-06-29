@@ -37,13 +37,13 @@ QMS-only gate `check:architecture:web-admin-boundary` is **not** run here (requi
 
 ## Package breakdown
 
-| Package                        | Command                                           | Notes                                                  |
-| ------------------------------ | ------------------------------------------------- | ------------------------------------------------------ |
-| `@queueplatform/api`           | `pnpm --filter @queueplatform/api test`           | ~45 specs incl. loyalty + ticket                       |
-| `@queueplatform/shared`        | `pnpm --filter @queueplatform/shared test`        | Validators                                             |
-| `@queueplatform/notifications` | `pnpm --filter @queueplatform/notifications test` | SMS + dead-letter                                      |
-| `@queueplatform/loyalty`       | `pnpm --filter @queueplatform/loyalty test`       | Auth-store + middleware static guards                  |
-| `@queueplatform/e2e`           | `pnpm --filter @queueplatform/e2e test`           | Playwright: API health, loyalty login, integrations UI |
+| Package                        | Command                                           | Notes                                                                        |
+| ------------------------------ | ------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `@queueplatform/api`           | `pnpm --filter @queueplatform/api test`           | ~45 specs incl. loyalty + ticket                                             |
+| `@queueplatform/shared`        | `pnpm --filter @queueplatform/shared test`        | Validators                                                                   |
+| `@queueplatform/notifications` | `pnpm --filter @queueplatform/notifications test` | SMS + dead-letter                                                            |
+| `@queueplatform/loyalty`       | `pnpm --filter @queueplatform/loyalty test`       | Auth-store + middleware static guards                                        |
+| `@queueplatform/e2e`           | `pnpm --filter @queueplatform/e2e test`           | Playwright: API health, loyalty login, integrations UI, a11y, portal offline |
 
 ### Loyalty coverage gate
 

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { loyaltyGet } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
+import { syncAccessTokenFromBff } from '@/lib/sync-access-token-from-bff';
 import { LoyaltyBootShell, LoyaltyDashboardShell } from '@/components/loyalty-dashboard-shell';
 import { LoyaltyActivationGate } from '@/components/loyalty-activation-gate';
 
@@ -13,7 +14,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const token = useAuthStore((s) => s.accessToken);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
-  const setTokensFromRefresh = useAuthStore((s) => s.setTokensFromRefresh);
   const [hydrated, setHydrated] = useState(false);
   const [authHydrated, setAuthHydrated] = useState(() =>
     typeof window !== 'undefined' ? useAuthStore.persist.hasHydrated() : false,
@@ -47,15 +47,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         });
         const refreshPayload = (await refreshRes.json().catch(() => null)) as {
           success?: boolean;
-          data?: { accessToken?: string };
         } | null;
-        if (
-          !cancelled &&
-          refreshRes.ok &&
-          refreshPayload?.success &&
-          refreshPayload?.data?.accessToken
-        ) {
-          setTokensFromRefresh(refreshPayload.data.accessToken);
+        if (!cancelled && refreshRes.ok && refreshPayload?.success) {
+          await syncAccessTokenFromBff();
         }
       } finally {
         if (!cancelled) setSessionChecked(true);
@@ -64,7 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => {
       cancelled = true;
     };
-  }, [hydrated, authHydrated, token, sessionChecked, setTokensFromRefresh]);
+  }, [hydrated, authHydrated, token, sessionChecked]);
 
   useEffect(() => {
     if (!hydrated || !authHydrated) return;

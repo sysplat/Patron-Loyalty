@@ -276,7 +276,7 @@ jobs:
           curl -fsS "http://localhost:4000/api/v1/health" >/dev/null
           curl -fsS "http://localhost:3003/login" >/dev/null
           node scripts/seed-ci-loyalty-staff.mjs
-          pnpm --filter @queueplatform/e2e test -- tests/api-health.spec.ts tests/loyalty-login.spec.ts tests/loyalty-integrations.spec.ts
+          pnpm --filter @queueplatform/e2e test -- tests/api-health.spec.ts tests/loyalty-login.spec.ts tests/loyalty-integrations.spec.ts tests/loyalty-login-a11y.spec.ts tests/loyalty-portal-offline.spec.ts
 
   test-notifications-smoke:
     name: Notifications smoke

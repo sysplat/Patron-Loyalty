@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/lib/auth-store';
+import { syncAccessTokenFromBff } from '@/lib/sync-access-token-from-bff';
 
 export type RefreshSessionResult = 'success' | 'invalid' | 'unavailable';
 
@@ -45,7 +46,7 @@ async function waitForPeerRefresh(maxMs = 15_000): Promise<void> {
   }
 }
 
-/** After another tab refreshed HttpOnly cookies, pull a fresh access JWT via BFF refresh. */
+/** After another tab refreshed HttpOnly cookies, pull a fresh access JWT via BFF token sync. */
 export async function syncAccessTokenAfterPeerRefresh(): Promise<RefreshSessionResult> {
   try {
     const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
@@ -53,13 +54,15 @@ export async function syncAccessTokenAfterPeerRefresh(): Promise<RefreshSessionR
     if (!res.ok) return 'unavailable';
     const payload = (await res.json().catch(() => null)) as {
       success?: boolean;
-      data?: { accessToken?: string };
+      data?: { platformOperator?: boolean };
     } | null;
-    if (payload?.success && payload.data?.accessToken) {
-      useAuthStore.getState().setTokensFromRefresh(payload.data.accessToken);
-      return 'success';
+    if (!payload?.success) return 'unavailable';
+    const synced = await syncAccessTokenFromBff();
+    if (!synced) return 'unavailable';
+    if (typeof payload.data?.platformOperator === 'boolean') {
+      useAuthStore.getState().updateUser({ platformOperator: payload.data.platformOperator });
     }
-    return 'unavailable';
+    return 'success';
   } catch {
     return 'unavailable';
   }

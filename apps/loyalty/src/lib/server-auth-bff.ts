@@ -49,6 +49,26 @@ function stripTokensFromLoginPayload(payload: Record<string, unknown>): Record<s
   return { ...payload, data: nextData };
 }
 
+/** Remove JWT material from refresh JSON — cookies + `/api/auth/token` sync carry the session. */
+function stripTokensFromRefreshPayload(payload: Record<string, unknown>): Record<string, unknown> {
+  const data = payload.data;
+  if (!data || typeof data !== 'object') return payload;
+  const nextData = { ...(data as Record<string, unknown>) };
+  delete nextData.accessToken;
+  delete nextData.refreshToken;
+  return { ...payload, data: nextData };
+}
+
+function refreshSuccessBody(
+  data: AuthTokens & { platformOperator?: boolean },
+): Record<string, unknown> {
+  const body: Record<string, unknown> = { success: true, data: {} };
+  if (typeof data.platformOperator === 'boolean') {
+    (body.data as Record<string, unknown>).platformOperator = data.platformOperator;
+  }
+  return body;
+}
+
 export async function proxyLogin(request: NextRequest, apiPath: '/auth/login' | '/auth/login/2fa') {
   try {
     const body = await request.json().catch(() => ({}));
@@ -105,14 +125,19 @@ export async function refreshFromCookie(request: NextRequest) {
   };
   if (!upstream.ok || !payload?.data?.accessToken || !payload?.data?.refreshToken) {
     const status = upstream.status || 401;
-    const res = NextResponse.json(payload, { status });
+    const res = NextResponse.json(
+      stripTokensFromRefreshPayload(payload as Record<string, unknown>),
+      {
+        status,
+      },
+    );
     // Only wipe cookies on explicit auth rejection — not API outages (5xx).
     if (status === 401 || status === 403) {
       clearAuthCookies(res);
     }
     return res;
   }
-  const res = NextResponse.json({ success: true, data: payload.data }, { status: 200 });
+  const res = NextResponse.json(refreshSuccessBody(payload.data), { status: 200 });
   setAuthCookies(res, payload.data);
   return res;
 }

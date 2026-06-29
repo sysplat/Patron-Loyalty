@@ -13,6 +13,7 @@ import {
   recordPatronLegalConsentOnServer,
   storePatronConsent,
 } from '@/lib/patron-legal-consent';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 
 interface PortalData {
   found: boolean;
@@ -113,6 +114,7 @@ export default function PatronPortalPage() {
   const [birthday, setBirthday] = useState('');
   const [acceptLegal, setAcceptLegal] = useState(false);
   const [legalModal, setLegalModal] = useState<'terms' | 'privacy' | null>(null);
+  const online = useOnlineStatus();
 
   const ensurePatronConsent = async (): Promise<boolean> => {
     if (!acceptLegal) {
@@ -243,6 +245,14 @@ export default function PatronPortalPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+      {!online ? (
+        <div
+          role="status"
+          className="border-b border-amber-500/40 bg-amber-950/90 px-4 py-2 text-center text-sm text-amber-100"
+        >
+          You appear to be offline. Redeem and profile changes will retry when connection returns.
+        </div>
+      ) : null}
       {legalModal && <PatronLegalModal type={legalModal} onClose={() => setLegalModal(null)} />}
       <div className="mx-auto max-w-lg px-4 py-8">
         <header className="mb-6 text-center">

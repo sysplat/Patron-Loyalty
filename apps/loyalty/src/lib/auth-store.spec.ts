@@ -58,6 +58,19 @@ describe('loyalty BFF session hardening', () => {
     expect(source).toContain('delete nextData.tokens');
   });
 
+  it('strips tokens from refresh BFF JSON while setting cookies', () => {
+    const source = readFileSync(path.join(__dirname, 'server-auth-bff.ts'), 'utf8');
+    expect(source).toContain('stripTokensFromRefreshPayload');
+    expect(source).toContain('delete nextData.accessToken');
+    expect(source).toContain('refreshSuccessBody');
+  });
+
+  it('syncs in-memory token via GET /api/auth/token (not login/session)', () => {
+    const source = readFileSync(path.join(__dirname, '../app/api/auth/token/route.ts'), 'utf8');
+    expect(source).toContain('WEB_SESSION_COOKIE');
+    expect(source).toContain('{ accessToken }');
+  });
+
   it('applies shared security headers via next.config', () => {
     const source = readFileSync(path.join(__dirname, '../../next.config.js'), 'utf8');
     expect(source).toContain('securityHeaders');

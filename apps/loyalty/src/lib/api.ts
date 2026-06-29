@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/lib/auth-store';
 import { coordinateRefresh, type RefreshSessionResult } from '@/lib/auth-refresh-coordination';
+import { syncAccessTokenFromBff } from '@/lib/sync-access-token-from-bff';
 import { captureApiError, syncSentryAuthContext } from '@/lib/sentry-client';
 import {
   extractErrorMessage,
@@ -116,14 +117,15 @@ export async function refreshAccessToken(): Promise<RefreshSessionResult> {
 
         const json = (await res.json().catch(() => null)) as {
           success?: boolean;
-          data?: { accessToken: string; refreshToken: string; platformOperator?: boolean };
+          data?: { platformOperator?: boolean };
         } | null;
-        const data = json?.data;
-        if (!data?.accessToken) return 'unavailable';
+        if (!json?.success) return 'unavailable';
 
-        useAuthStore.getState().setTokensFromRefresh(data.accessToken);
-        if (typeof data.platformOperator === 'boolean') {
-          useAuthStore.getState().updateUser({ platformOperator: data.platformOperator });
+        const synced = await syncAccessTokenFromBff();
+        if (!synced) return 'unavailable';
+
+        if (typeof json.data?.platformOperator === 'boolean') {
+          useAuthStore.getState().updateUser({ platformOperator: json.data.platformOperator });
         }
         return 'success';
       });

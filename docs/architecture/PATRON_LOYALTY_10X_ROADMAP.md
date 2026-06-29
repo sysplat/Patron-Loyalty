@@ -217,6 +217,8 @@ flowchart LR
 - [x] **Phase 3 (partial)** — CI: loyalty coverage gate + DB golden-path in `test-api`; integrations E2E in `test-e2e-loyalty`
 - [ ] **Phase 4** — a11y + bundle budget; cookie-only auth documented
 - [x] **Phase 4 (partial)** — integrations page shows API key `lastUsedAt` + stale hint
+- [x] **Phase 4 (partial)** — cookie-only BFF: login/refresh JSON strip tokens; `/api/auth/token` sync; [LOYALTY_AUTH_BFF.md](../architecture/LOYALTY_AUTH_BFF.md)
+- [x] **Phase 4 (partial)** — axe login E2E; patron portal offline banner + E2E
 - [ ] **Phase 5** — Sentry prod; staging soak; incident runbooks
 - [x] **Phase 5 (partial)** — `verify-sentry-prod.mjs` + `railway-sync-sentry-env.sh` for pl-api/pl-loyalty
 - [ ] **Phase 6** — ADRs; quarterly scorecard; doc CI gate
