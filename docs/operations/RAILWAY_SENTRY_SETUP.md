@@ -1,6 +1,6 @@
 # Railway — enable Sentry on pl-api (Phase 5)
 
-**Status:** Manual step — CLI requires `railway login` and `SENTRY_DSN` in `.env` or Railway UI.
+**Status:** Done (2026-06-29) — Sentry project `sysplat/pl-api`; `SENTRY_DSN` + `SENTRY_RELEASE` on `pl-api` and `pl-loyalty` via `./scripts/railway-sync-sentry-env.sh`. Verify: `pnpm audit:verify-sentry-prod`.
 
 ## Railway UI (recommended)
 

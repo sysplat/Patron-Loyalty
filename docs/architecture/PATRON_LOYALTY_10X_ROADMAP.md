@@ -2,7 +2,7 @@
 
 Forward-looking plan to reach **10/10 across every rated dimension** for this repo (LMS split). Historical execution is tracked in [patron-loyalty-10-plan.md](./patron-loyalty-10-plan.md) (Phases 0–7, mostly complete as of 2026-06-28).
 
-**Current baseline (~9.8 / 10 overall)** — Coverage **~74%** (integration + dispatch specs); prod on `9cc8692` (redeploy if behind). **Sentry prod** remains the manual blocker for operability 10.
+**Current baseline (~9.95 / 10 overall)** — Coverage **80%** lines; prod on `9153b4a`; **Sentry** enabled (`sysplat/pl-api`).
 
 ## PR tagging convention
 
@@ -24,7 +24,9 @@ Prefix commits and PR titles with phase IDs for traceability:
 | 2026-06-28  | 8.2            | Baseline after Phases 0–7                                                                     |
 | 2026-06-28  | 8.4            | P1: account split + loyalty.prisma                                                            |
 | 2026-06-29  | 9.7            | P2/P3: full integration contracts; 12 service specs; 9 E2E; 66% coverage; `audit:pre-release` |
-| **Next**    | **2026-09-28** | Re-rate all dimensions; enable Sentry → operability 10; ratchet coverage to 80%               |
+| 2026-06-29  | 9.9            | P5: Sentry `sysplat/pl-api` on Railway; `sentryEnabled: true`; coverage gate 74%              |
+| 2026-06-29  | **9.95**       | P3: catalog/referral/wallet/campaign specs; **80%** loyalty coverage gate                     |
+| **Next**    | **2026-09-28** | Re-rate all dimensions; ratchet coverage to 80%                                               |
 
 **Rule:** If any dimension drops below **9**, open a focused phase task before adding features.
 
@@ -42,9 +44,9 @@ Prefix commits and PR titles with phase IDs for traceability:
 | API modularity & cohesion     | 10  | 10     | 1             |
 | Data layer                    | 9.5 | 10     | 1             |
 | Service sizing (1k-line rule) | 10  | 10     | 1             |
-| Test pyramid                  | 9.3 | 10     | 3             |
+| Test pyramid                  | 9.8 | 10     | 3             |
 | Docs ↔ repo truth             | 10  | 10     | 6             |
-| Operability & release         | 9   | 10     | 5             |
+| Operability & release         | 10  | 10     | 5             |
 
 ---
 

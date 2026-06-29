@@ -53,6 +53,33 @@ describe('LoyaltyCampaignService', () => {
     });
   });
 
+  it('marks future scheduled campaigns as scheduled', async () => {
+    const create = vi.fn().mockResolvedValue({ id: CAMPAIGN_ID, status: 'scheduled' });
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({ loyaltyCampaign: { create } }),
+    );
+
+    await service.create(ORG_ID, {
+      name: 'Future',
+      scheduledAt: '2099-06-01T12:00:00.000Z',
+    });
+
+    expect(create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ status: 'scheduled' }),
+    });
+  });
+
+  it('updates campaign fields', async () => {
+    const update = vi.fn().mockResolvedValue({ id: CAMPAIGN_ID, name: 'Renamed' });
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({ loyaltyCampaign: { update } }),
+    );
+
+    const row = await service.update(ORG_ID, CAMPAIGN_ID, { name: 'Renamed' });
+
+    expect(row).toEqual({ id: CAMPAIGN_ID, name: 'Renamed' });
+  });
+
   it('throws when launching missing campaign', async () => {
     prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
       fn({
@@ -116,5 +143,69 @@ describe('LoyaltyCampaignService', () => {
     expect(createMany).toHaveBeenCalled();
     expect(dispatch.dispatchCampaign).toHaveBeenCalledWith(ORG_ID, CAMPAIGN_ID);
     expect(result).toMatchObject({ queued: 1, campaignId: CAMPAIGN_ID, sent: 3 });
+  });
+
+  it('filters launch audience by segment preset', async () => {
+    segments.resolvePresetCustomerIds.mockResolvedValue(['cust-1']);
+    const findMany = vi.fn().mockResolvedValue([{ id: 'acct-1' }]);
+    let callCount = 0;
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) => {
+      callCount += 1;
+      if (callCount === 1) {
+        return fn({
+          loyaltyCampaign: {
+            findFirst: vi.fn().mockResolvedValue({
+              id: CAMPAIGN_ID,
+              orgId: ORG_ID,
+              status: 'draft',
+              segmentPreset: 'vip',
+            }),
+          },
+        });
+      }
+      if (callCount === 2) {
+        return fn({ loyaltyAccount: { findMany } });
+      }
+      if (callCount === 3) {
+        return fn({
+          loyaltyCampaignSend: { createMany: vi.fn().mockResolvedValue({ count: 0 }) },
+          loyaltyCampaign: { update: vi.fn().mockResolvedValue({}) },
+        });
+      }
+      return fn({ loyaltyCampaign: { update: vi.fn().mockResolvedValue({}) } });
+    });
+
+    await service.launch(ORG_ID, CAMPAIGN_ID);
+
+    expect(segments.resolvePresetCustomerIds).toHaveBeenCalledWith(ORG_ID, 'vip');
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          customerId: { in: ['cust-1'] },
+        }),
+      }),
+    );
+  });
+
+  it('launches due scheduled campaigns', async () => {
+    const launchSpy = vi.spyOn(service, 'launch').mockResolvedValue({
+      queued: 1,
+      campaignId: CAMPAIGN_ID,
+      sent: 1,
+      skipped: 0,
+      failed: 0,
+    });
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({
+        loyaltyCampaign: {
+          findMany: vi.fn().mockResolvedValue([{ id: CAMPAIGN_ID }]),
+        },
+      }),
+    );
+
+    const launched = await service.processDueScheduled(ORG_ID);
+
+    expect(launched).toBe(1);
+    expect(launchSpy).toHaveBeenCalledWith(ORG_ID, CAMPAIGN_ID);
   });
 });

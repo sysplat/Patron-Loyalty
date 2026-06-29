@@ -2,6 +2,125 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LOYALTY_PATRON_GAME_TYPES } from '@queueplatform/shared';
 import { LoyaltyGamificationService } from './loyalty-gamification.service';
 
+describe('LoyaltyGamificationService catalog', () => {
+  const patronCrmFeature = { requireEnabled: vi.fn().mockResolvedValue(undefined) };
+  const prisma = { withTenant: vi.fn() };
+  const accounts = {};
+  let service: LoyaltyGamificationService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    service = new LoyaltyGamificationService(
+      prisma as never,
+      patronCrmFeature as never,
+      accounts as never,
+    );
+  });
+
+  it('lists and creates badges', async () => {
+    const findMany = vi.fn().mockResolvedValue([{ id: 'b1' }]);
+    const create = vi.fn().mockResolvedValue({ id: 'b-new' });
+    let call = 0;
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) => {
+      call += 1;
+      if (call === 1) return fn({ loyaltyBadge: { findMany } });
+      return fn({ loyaltyBadge: { create } });
+    });
+
+    const badges = await service.listBadges('org-1');
+    const created = await service.createBadge('org-1', { name: 'Regular', criteria: {} });
+
+    expect(badges).toEqual([{ id: 'b1' }]);
+    expect(created).toEqual({ id: 'b-new' });
+  });
+
+  it('lists and creates challenges', async () => {
+    const findMany = vi.fn().mockResolvedValue([{ id: 'c1' }]);
+    const create = vi.fn().mockResolvedValue({ id: 'c-new' });
+    let call = 0;
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) => {
+      call += 1;
+      if (call === 1) return fn({ loyaltyChallenge: { findMany } });
+      return fn({ loyaltyChallenge: { create } });
+    });
+
+    const challenges = await service.listChallenges('org-1');
+    const created = await service.createChallenge('org-1', { name: 'Visits', targetType: 'visit' });
+
+    expect(challenges).toEqual([{ id: 'c1' }]);
+    expect(created).toEqual({ id: 'c-new' });
+  });
+});
+
+describe('LoyaltyGamificationService evaluateBadgesForAccount', () => {
+  const patronCrmFeature = { requireEnabled: vi.fn().mockResolvedValue(undefined) };
+  const prisma = { withTenant: vi.fn() };
+  const accounts = {
+    ensureAccount: vi.fn().mockResolvedValue({
+      id: 'acc-1',
+      totalVisits: 10,
+      lifetimePointsEarned: 500,
+    }),
+  };
+  let service: LoyaltyGamificationService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    service = new LoyaltyGamificationService(
+      prisma as never,
+      patronCrmFeature as never,
+      accounts as never,
+    );
+    vi.spyOn(service, 'listBadges').mockResolvedValue([
+      {
+        id: 'badge-1',
+        name: 'Regular',
+        criteria: { minVisits: 5, minPoints: 100 },
+      },
+    ] as never);
+  });
+
+  it('awards badge when criteria met and not yet earned', async () => {
+    const create = vi.fn().mockResolvedValue({});
+    let call = 0;
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) => {
+      call += 1;
+      if (call === 1) {
+        return fn({
+          customerBadge: {
+            findUnique: vi.fn().mockResolvedValue(null),
+          },
+        });
+      }
+      return fn({ customerBadge: { create } });
+    });
+
+    const awarded = await service.evaluateBadgesForAccount('org-1', 'cust-1');
+
+    expect(awarded).toEqual(['Regular']);
+    expect(create).toHaveBeenCalled();
+  });
+
+  it('returns empty when account missing', async () => {
+    accounts.ensureAccount.mockResolvedValue(null);
+
+    const awarded = await service.evaluateBadgesForAccount('org-1', 'cust-1');
+
+    expect(awarded).toEqual([]);
+  });
+
+  it('skips badge when criteria not met', async () => {
+    vi.spyOn(service, 'listBadges').mockResolvedValue([
+      { id: 'badge-1', name: 'VIP', criteria: { minVisits: 100 } },
+    ] as never);
+
+    const awarded = await service.evaluateBadgesForAccount('org-1', 'cust-1');
+
+    expect(awarded).toEqual([]);
+    expect(prisma.withTenant).not.toHaveBeenCalled();
+  });
+});
+
 describe('LoyaltyGamificationService incrementChallengeProgress', () => {
   const patronCrmFeature = { requireEnabled: vi.fn() };
   const prisma = { withTenant: vi.fn() };

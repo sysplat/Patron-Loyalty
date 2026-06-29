@@ -168,4 +168,162 @@ describe('LoyaltyReferralService', () => {
 
     expect(landing).toEqual({ found: false });
   });
+
+  it('hides landing when patron CRM is disabled', async () => {
+    patronCrmFeature.isEnabled.mockResolvedValue(false);
+    prisma.withBypassRls.mockImplementation((fn: (tx: unknown) => unknown) =>
+      fn({
+        loyaltyAccount: {
+          findFirst: vi.fn().mockResolvedValue({
+            orgId: ORG_ID,
+            referralCode: REFERRAL_CODE,
+            customer: { name: 'Alice' },
+            organization: { name: 'Cafe', slug: 'cafe', loyaltyProgram: null },
+          }),
+        },
+      }),
+    );
+
+    const landing = await service.getPublicReferralLanding(REFERRAL_CODE);
+
+    expect(landing).toEqual({ found: false });
+  });
+
+  it('lists referrals for staff', async () => {
+    const findMany = vi.fn().mockResolvedValue([{ id: 'ref-1' }]);
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({ loyaltyReferral: { findMany } }),
+    );
+
+    const rows = await service.listReferrals(ORG_ID);
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ take: 100, orderBy: { createdAt: 'desc' } }),
+    );
+    expect(rows).toEqual([{ id: 'ref-1' }]);
+  });
+
+  it('joins via public referral and applies code for new patron', async () => {
+    vi.spyOn(service, 'getPublicReferralLanding').mockResolvedValue({
+      found: true,
+      orgName: 'Cafe',
+      orgSlug: 'cafe',
+      referrerFirstName: 'Alice',
+      referralCode: REFERRAL_CODE,
+      referredBonusPoints: 25,
+      referrerBonusPoints: 50,
+    });
+    const applySpy = vi.spyOn(service, 'applyReferral').mockResolvedValue({ id: 'ref-2' } as never);
+    prisma.withBypassRls.mockImplementation((fn: (tx: unknown) => unknown) =>
+      fn({
+        loyaltyAccount: {
+          findFirst: vi.fn().mockResolvedValue({
+            orgId: ORG_ID,
+            customerId: REFERRER_CUSTOMER_ID,
+          }),
+        },
+      }),
+    );
+    integration.upsertCustomer.mockResolvedValue({
+      customerId: REFERRED_CUSTOMER_ID,
+      created: true,
+    });
+    let tenantCalls = 0;
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) => {
+      tenantCalls += 1;
+      if (tenantCalls === 1) {
+        return fn({
+          loyaltyReferral: { findFirst: vi.fn().mockResolvedValue(null) },
+        });
+      }
+      return fn({
+        loyaltyAccount: {
+          findUnique: vi.fn().mockResolvedValue({ referralCode: 'NEWCODE', pointsBalance: 25 }),
+        },
+      });
+    });
+
+    const result = await service.joinViaPublicReferral(REFERRAL_CODE, {
+      name: 'Bob',
+      email: 'bob@example.com',
+    });
+
+    expect(applySpy).toHaveBeenCalledWith(ORG_ID, REFERRAL_CODE, REFERRED_CUSTOMER_ID);
+    expect(result).toEqual({
+      joined: true,
+      referralApplied: true,
+      portalCode: 'NEWCODE',
+      pointsBalance: 25,
+    });
+  });
+
+  it('joins without re-applying when referral already exists', async () => {
+    vi.spyOn(service, 'getPublicReferralLanding').mockResolvedValue({
+      found: true,
+      orgName: 'Cafe',
+      orgSlug: 'cafe',
+      referrerFirstName: 'Alice',
+      referralCode: REFERRAL_CODE,
+      referredBonusPoints: 25,
+      referrerBonusPoints: 50,
+    });
+    const applySpy = vi.spyOn(service, 'applyReferral');
+    prisma.withBypassRls.mockImplementation((fn: (tx: unknown) => unknown) =>
+      fn({
+        loyaltyAccount: {
+          findFirst: vi.fn().mockResolvedValue({
+            orgId: ORG_ID,
+            customerId: REFERRER_CUSTOMER_ID,
+          }),
+        },
+      }),
+    );
+    integration.upsertCustomer.mockResolvedValue({ customerId: REFERRED_CUSTOMER_ID });
+    let tenantCalls = 0;
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) => {
+      tenantCalls += 1;
+      if (tenantCalls === 1) {
+        return fn({
+          loyaltyReferral: { findFirst: vi.fn().mockResolvedValue({ id: 'existing' }) },
+        });
+      }
+      return fn({
+        loyaltyAccount: {
+          findUnique: vi.fn().mockResolvedValue({ referralCode: 'CODE', pointsBalance: 10 }),
+        },
+      });
+    });
+
+    const result = await service.joinViaPublicReferral(REFERRAL_CODE, { name: 'Bob' });
+
+    expect(applySpy).not.toHaveBeenCalled();
+    expect(result.referralApplied).toBe(false);
+  });
+
+  it('rejects self-join via public referral', async () => {
+    vi.spyOn(service, 'getPublicReferralLanding').mockResolvedValue({
+      found: true,
+      orgName: 'Cafe',
+      orgSlug: 'cafe',
+      referrerFirstName: 'Alice',
+      referralCode: REFERRAL_CODE,
+      referredBonusPoints: 25,
+      referrerBonusPoints: 50,
+    });
+    prisma.withBypassRls.mockImplementation((fn: (tx: unknown) => unknown) =>
+      fn({
+        loyaltyAccount: {
+          findFirst: vi.fn().mockResolvedValue({
+            orgId: ORG_ID,
+            customerId: REFERRER_CUSTOMER_ID,
+          }),
+        },
+      }),
+    );
+    integration.upsertCustomer.mockResolvedValue({ customerId: REFERRER_CUSTOMER_ID });
+
+    await expect(
+      service.joinViaPublicReferral(REFERRAL_CODE, { name: 'Alice' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
 });

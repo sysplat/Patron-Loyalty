@@ -8,12 +8,12 @@
 
 | Result | Count |
 | ------ | ----: |
-| Pass   |    13 |
-| Fail   |     1 |
+| Pass   |    14 |
+| Fail   |     0 |
 | Skip   |     1 |
 | Warn   |     1 |
 
-**Verdict:** **FAIL** (resolve blocking items before release)
+**Verdict:** **PASS** (no blocking failures)
 
 **Unit tests:** Full `pnpm test` (api + shared + notifications + loyalty) is included in the `unit-tests` check.
 
@@ -23,7 +23,7 @@
 
 | Check                  | Category     | Status | Detail                                                                                                                                                 |
 | ---------------------- | ------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| git-head               | Deploy       | PASS   | 8c734c6 P2/P3/P6: 66% loyalty coverage, full integration contracts, roadmap 9.7                                                                        |
+| git-head               | Deploy       | PASS   | 9153b4a P3: expand integration and dispatch specs; coverage gate 74%                                                                                   |
 | validate-ci            | Code quality | PASS   | • turbo 2.9.16                                                                                                                                         |
 | loyalty-coverage       | Tests        | PASS   | [33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m |
 | loyalty-integration-db | Tests        | SKIP   | set INTEGRATION_DATABASE_URL for earn/idempotency golden-path spec                                                                                     |
@@ -32,7 +32,7 @@
 | loyalty-auth-guards    | Security     | PASS   | HttpOnly cookies, token not persisted, refresh fallback                                                                                                |
 | srs-completion-doc     | SRS          | PASS   | Overall SRS ~88% (see srs-completion.md)                                                                                                               |
 | staging-soak           | Prod smoke   | PASS   | boundary curls OK                                                                                                                                      |
-| prod-migration         | Database     | FAIL   | Could not read Postgres variables. Run: railway link (QlessQ project, service Postgres)  ELIFECYCLE  Command failed with exit code 1.                  |
+| prod-migration         | Database     | PASS   | Environment variables loaded from .env                                                                                                                 |
 | loyalty-auth-smoke     | Prod smoke   | PASS   | All smoke checks passed.                                                                                                                               |
 | sentry-prod            | Operability  | WARN   | }                                                                                                                                                      |
 | prod-login             | Prod smoke   | PASS   | HTTP 200 /login                                                                                                                                        |

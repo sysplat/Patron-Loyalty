@@ -19,10 +19,10 @@ export default defineConfig({
       ],
       // Ratchet +1–2% when adding loyalty unit specs (istanbul provider).
       thresholds: {
-        lines: 73,
-        functions: 69,
-        branches: 52,
-        statements: 73,
+        lines: 80,
+        functions: 77,
+        branches: 58,
+        statements: 80,
       },
     },
   },
