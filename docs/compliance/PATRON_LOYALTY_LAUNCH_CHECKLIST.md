@@ -4,12 +4,14 @@ Use after engineering deploy; **do not treat as counsel-approved** until `COUNSE
 
 ## Test tiers (engineering gate)
 
-| Tier        | Command                                                              | When                                                  |
-| ----------- | -------------------------------------------------------------------- | ----------------------------------------------------- |
-| PR / local  | `pnpm test:ci`                                                       | No prod; lint + types + static gates + unit tests     |
-| E2E smoke   | CI job `test-e2e-loyalty` or `pnpm --filter @queueplatform/e2e test` | API + loyalty Playwright                              |
-| Pre-release | `pnpm audit:patron-loyalty`                                          | Railway migration + prod smoke                        |
-| Connector   | `pnpm audit:loyalty-queue-events-smoke`                              | Split-deploy QlessQ → LMS idempotency (needs API key) |
+| Tier        | Command                                                        | When                                                  |
+| ----------- | -------------------------------------------------------------- | ----------------------------------------------------- |
+| PR / local  | `pnpm validate:ci`                                             | No prod; lint + types + static gates + unit tests     |
+| E2E smoke   | `pnpm --filter @queueplatform/e2e test` (CI disabled Jun 2026) | API + loyalty Playwright locally                      |
+| Pre-release | `pnpm audit:patron-loyalty`                                    | Railway migration + prod smoke                        |
+| Boundary    | `pnpm audit:staging-soak`                                      | Prod health + loyalty deploy profile curls            |
+| Sentry      | `pnpm audit:verify-sentry-prod`                                | `sentryEnabled: true` on pl-api                       |
+| Connector   | `pnpm audit:loyalty-queue-events-smoke`                        | Split-deploy QlessQ → LMS idempotency (needs API key) |
 
 See [TESTING.md](../operations/TESTING.md) for full matrix.
 
@@ -76,4 +78,10 @@ Patron Loyalty uses the **same prohibited-industry list** as QlessQ (`packages/s
 - [ ] `loyalty-subprocessors.ts` matches production vendors (Railway, Twilio, Stripe, Postgres, Redis, Centrifugo, Sentry if enabled)
 - [ ] Sync `docs/compliance/SUBPROCESSORS.md` after any vendor change
 
-**Last updated:** 2026-06-17
+**Last updated:** 2026-06-29
+
+## 8. Observability (Phase 5)
+
+- [ ] `SENTRY_DSN` + `SENTRY_RELEASE=${{RAILWAY_GIT_COMMIT_SHA}}` on **pl-api** (Railway UI)
+- [ ] `pnpm audit:verify-sentry-prod` → `sentryEnabled: true`
+- [ ] Optional: `NEXT_PUBLIC_SENTRY_DSN` on **pl-loyalty**

@@ -34,6 +34,7 @@ See [qlessq-integration.md](./qlessq-integration.md) for the HTTP connector (`PO
 - `security:check:public-safeguards`
 - `security:check:tenant-isolation`
 - `check:architecture:api-module-boundary`
+- `check:architecture:lms-doc-boundaries` — no new `apps/web` / `apps/admin` refs without QMS sibling qualifier
 
 QMS-only checks (`check:architecture:web-admin-boundary`, service-size budgets for ticket/workbench) run in the **QMS** repo.
 

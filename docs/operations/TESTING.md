@@ -27,11 +27,12 @@ pnpm audit:patron-loyalty  # full prod audit + report (Railway migration, prod s
 
 ### Static gates (`validate:ci`)
 
-| Script                                   | Purpose                                           |
-| ---------------------------------------- | ------------------------------------------------- |
-| `security:check:public-safeguards`       | Throttle + PII masking on public/ticket API paths |
-| `security:check:tenant-isolation`        | Baseline unsafe Prisma model access               |
-| `check:architecture:api-module-boundary` | Cross-module import baseline for `packages/api`   |
+| Script                                   | Purpose                                            |
+| ---------------------------------------- | -------------------------------------------------- |
+| `security:check:public-safeguards`       | Throttle + PII masking on public/ticket API paths  |
+| `security:check:tenant-isolation`        | Baseline unsafe Prisma model access                |
+| `check:architecture:api-module-boundary` | Cross-module import baseline for `packages/api`    |
+| `check:architecture:lms-doc-boundaries`  | No new QMS app paths in LMS docs without qualifier |
 
 QMS-only gate `check:architecture:web-admin-boundary` is **not** run here (requires `apps/web` in sibling QMS repo).
 
