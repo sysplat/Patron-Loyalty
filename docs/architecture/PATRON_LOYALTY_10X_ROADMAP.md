@@ -2,7 +2,7 @@
 
 Forward-looking plan to reach **10/10 across every rated dimension** for this repo (LMS split). Historical execution is tracked in [patron-loyalty-10-plan.md](./patron-loyalty-10-plan.md) (Phases 0–7, mostly complete as of 2026-06-28).
 
-**Current baseline (~9.7 / 10 overall)** — Phases 1–6 code-complete; **Sentry prod** is the sole manual blocker for operability 10. Loyalty coverage **66%** (ratchet target 80%).
+**Current baseline (~9.8 / 10 overall)** — Coverage **71%**; prod on `8c734c6`. **Sentry prod** remains the manual blocker for operability 10.
 
 ## PR tagging convention
 
@@ -42,7 +42,7 @@ Prefix commits and PR titles with phase IDs for traceability:
 | API modularity & cohesion     | 10  | 10     | 1             |
 | Data layer                    | 9.5 | 10     | 1             |
 | Service sizing (1k-line rule) | 10  | 10     | 1             |
-| Test pyramid                  | 9   | 10     | 3             |
+| Test pyramid                  | 9.2 | 10     | 3             |
 | Docs ↔ repo truth             | 10  | 10     | 6             |
 | Operability & release         | 9   | 10     | 5             |
 
@@ -208,7 +208,7 @@ flowchart LR
 - [x] **Phase 1** — No service > 400 LOC; account/points/dashboard splits; Prisma loyalty layer
 - [ ] **Phase 1 (remaining)** — `external_id`-only connector lookups (metadata scan deprecated)
 - [x] **Phase 2** — Full integration contract suite; API key rotation; 4xx spike wired
-- [x] **Phase 3 (partial)** — 66% loyalty coverage gate (`pnpm audit:loyalty-coverage`); 9 E2E specs; queue-events matrix
+- [x] **Phase 3 (partial)** — **71%** loyalty coverage gate; 9 E2E specs; queue-events matrix
 - [ ] **Phase 3 (remaining)** — Ratchet coverage to **80%** lines
 - [x] **Phase 4** — Cookie-only BFF; axe E2E; portal offline banner; integrations `lastUsedAt`
 - [ ] **Phase 4 (remaining)** — Bundle budget in default CI when Actions re-enabled
