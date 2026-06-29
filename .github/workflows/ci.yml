@@ -130,6 +130,14 @@ jobs:
       - name: Run unit tests
         run: pnpm test
 
+      - name: Loyalty module coverage gate
+        run: pnpm audit:loyalty-coverage
+
+      - name: Loyalty integration golden-path (DB)
+        run: |
+          export INTEGRATION_DATABASE_URL="$DATABASE_URL"
+          pnpm audit:loyalty-integration-db
+
   test-rls-policy:
     name: Test RLS policy isolation
     runs-on: ubuntu-latest
@@ -220,6 +228,8 @@ jobs:
       NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
       API_BASE_URL: http://localhost:4000
       LOYALTY_BASE_URL: http://localhost:3003
+      LOYALTY_SMOKE_EMAIL: ${{ secrets.LOYALTY_SMOKE_EMAIL || 'ci-loyalty-staff@queueplatform.test' }}
+      LOYALTY_SMOKE_PASSWORD: ${{ secrets.LOYALTY_SMOKE_PASSWORD || 'CiLoyalty1!' }}
       CENTRIFUGO_API_URL: http://localhost:8000/api
       CENTRIFUGO_API_KEY: ci-key
       CENTRIFUGO_SECRET: ci-secret
@@ -265,7 +275,8 @@ jobs:
           done
           curl -fsS "http://localhost:4000/api/v1/health" >/dev/null
           curl -fsS "http://localhost:3003/login" >/dev/null
-          pnpm --filter @queueplatform/e2e test -- tests/api-health.spec.ts tests/loyalty-login.spec.ts
+          node scripts/seed-ci-loyalty-staff.mjs
+          pnpm --filter @queueplatform/e2e test -- tests/api-health.spec.ts tests/loyalty-login.spec.ts tests/loyalty-integrations.spec.ts
 
   test-notifications-smoke:
     name: Notifications smoke

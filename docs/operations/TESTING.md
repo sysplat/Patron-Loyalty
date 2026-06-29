@@ -37,13 +37,29 @@ QMS-only gate `check:architecture:web-admin-boundary` is **not** run here (requi
 
 ## Package breakdown
 
-| Package                        | Command                                           | Notes                                  |
-| ------------------------------ | ------------------------------------------------- | -------------------------------------- |
-| `@queueplatform/api`           | `pnpm --filter @queueplatform/api test`           | ~45 specs incl. loyalty + ticket       |
-| `@queueplatform/shared`        | `pnpm --filter @queueplatform/shared test`        | Validators                             |
-| `@queueplatform/notifications` | `pnpm --filter @queueplatform/notifications test` | SMS + dead-letter                      |
-| `@queueplatform/loyalty`       | `pnpm --filter @queueplatform/loyalty test`       | Auth-store + middleware static guards  |
-| `@queueplatform/e2e`           | `pnpm --filter @queueplatform/e2e test`           | Playwright: API health + loyalty login |
+| Package                        | Command                                           | Notes                                                  |
+| ------------------------------ | ------------------------------------------------- | ------------------------------------------------------ |
+| `@queueplatform/api`           | `pnpm --filter @queueplatform/api test`           | ~45 specs incl. loyalty + ticket                       |
+| `@queueplatform/shared`        | `pnpm --filter @queueplatform/shared test`        | Validators                                             |
+| `@queueplatform/notifications` | `pnpm --filter @queueplatform/notifications test` | SMS + dead-letter                                      |
+| `@queueplatform/loyalty`       | `pnpm --filter @queueplatform/loyalty test`       | Auth-store + middleware static guards                  |
+| `@queueplatform/e2e`           | `pnpm --filter @queueplatform/e2e test`           | Playwright: API health, loyalty login, integrations UI |
+
+### Loyalty coverage gate
+
+```bash
+pnpm audit:loyalty-coverage   # istanbul thresholds in vitest.loyalty.config.ts — ratchet as specs grow
+```
+
+### Loyalty DB golden-path (earn idempotency + external_id lookup)
+
+```bash
+export INTEGRATION_DATABASE_URL="postgresql://queueplatform:queueplatform@localhost:5432/queueplatform_test"
+pnpm db:migrate:deploy
+pnpm audit:loyalty-integration-db
+```
+
+Without `INTEGRATION_DATABASE_URL`, `loyalty-integration.integration.spec.ts` skips (expected locally).
 
 ## RLS integration (optional)
 
@@ -66,12 +82,14 @@ API_BASE_URL=http://localhost:4000 LOYALTY_BASE_URL=http://localhost:3003 \
   pnpm --filter @queueplatform/e2e test
 ```
 
-Optional full login smoke (skipped in CI without secrets):
+Optional full login + integrations UI smoke (CI seeds a default user; override with secrets):
 
 ```bash
 LOYALTY_SMOKE_EMAIL=... LOYALTY_SMOKE_PASSWORD=... \
-  pnpm --filter @queueplatform/e2e test -- tests/loyalty-login.spec.ts
+  pnpm --filter @queueplatform/e2e test -- tests/loyalty-login.spec.ts tests/loyalty-integrations.spec.ts
 ```
+
+**GitHub secrets (optional):** `LOYALTY_SMOKE_EMAIL`, `LOYALTY_SMOKE_PASSWORD` — when unset, CI uses `ci-loyalty-staff@queueplatform.test` / `CiLoyalty1!` via `scripts/seed-ci-loyalty-staff.mjs`.
 
 ## CI matrix (`.github/workflows/ci.yml`)
 
@@ -79,9 +97,9 @@ LOYALTY_SMOKE_EMAIL=... LOYALTY_SMOKE_PASSWORD=... \
 | -------------------------- | ---------------------------------------------------------------------- |
 | `validate`                 | `pnpm validate:ci` (lint, types, legal, security + architecture gates) |
 | `lint-and-build`           | `pnpm build` + `check:bundle-budgets`                                  |
-| `test-api`                 | migrate + `pnpm test`                                                  |
+| `test-api`                 | migrate + `pnpm test` + loyalty coverage + DB golden-path spec         |
 | `test-rls-policy`          | tenant isolation spec                                                  |
-| `test-e2e-loyalty`         | API + loyalty Playwright smoke                                         |
+| `test-e2e-loyalty`         | API + loyalty Playwright (login + integrations stale-key UI)           |
 | `test-notifications-smoke` | notifications package                                                  |
 | `docker`                   | API image build on `main`                                              |
 

@@ -89,4 +89,8 @@ Requires `SENTRY_DSN` on the same service. After deploy, confirm `/api/v1/health
 | `SENTRY_DSN`     | Sentry project DSN (Settings → Client Keys) |
 | `SENTRY_RELEASE` | `${{RAILWAY_GIT_COMMIT_SHA}}`               |
 
-Verify: `curl -sS $API/api/v1/health/meta | jq '{release, sentryEnabled}'` — expect `sentryEnabled: true`.
+Verify: `pnpm audit:verify-sentry-prod` — expect `sentryEnabled: true`.
+
+**Railway UI checklist (pl-loyalty → Redeploy):** after API key `lastUsedAt` changes, redeploy `pl-loyalty` so staff see “Last used” on `/integrations`. Optional: `NEXT_PUBLIC_SENTRY_DSN` for client error reporting.
+
+Automate (after `railway login` and `SENTRY_DSN` in `.env`): `./scripts/railway-sync-sentry-env.sh`

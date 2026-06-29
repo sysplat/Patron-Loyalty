@@ -165,7 +165,8 @@ ${table}
 ## Manual follow-ups
 
 - [ ] \`railway link\` → \`pnpm db:migrate:status:railway\` (migration \`20260627120000_srs_crm_gamification_locale\`)
-- [ ] Set \`LOYALTY_SMOKE_EMAIL\` / \`LOYALTY_SMOKE_PASSWORD\` for full auth smoke
+- [ ] Set \`LOYALTY_SMOKE_EMAIL\` / \`LOYALTY_SMOKE_PASSWORD\` GitHub secrets (optional — CI seeds \`ci-loyalty-staff@queueplatform.test\`)
+- [ ] Set \`INTEGRATION_DATABASE_URL\` for pre-release DB golden-path spec (\`pnpm audit:loyalty-integration-db\`)
 - [ ] Set \`LOYALTY_INTEGRATION_API_KEY\` and run \`pnpm audit:loyalty-queue-events-smoke\`
 - [ ] Counsel sign-off per \`docs/compliance/PATRON_LOYALTY_LAUNCH_CHECKLIST.md\`
 - [ ] QlessQ connector smoke: ticket complete → points ledger (or queue-events smoke script)
@@ -185,12 +186,37 @@ ${table}
   console.log(`\n📄 Report written: docs/operations/PATRON_LOYALTY_AUDIT_REPORT.md`);
 }
 
+function runLoyaltyIntegrationDb() {
+  const dbUrl = process.env.INTEGRATION_DATABASE_URL;
+  if (!dbUrl) {
+    record(
+      'loyalty-integration-db',
+      'Tests',
+      'skip',
+      'set INTEGRATION_DATABASE_URL for earn/idempotency golden-path spec',
+    );
+    return;
+  }
+  const res = run(
+    'pnpm',
+    ['audit:loyalty-integration-db'],
+    { shell: true, env: { ...process.env, INTEGRATION_DATABASE_URL: dbUrl } },
+  );
+  const out = `${res.stdout ?? ''}${res.stderr ?? ''}`.trim();
+  if (res.status === 0) {
+    record('loyalty-integration-db', 'Tests', 'pass', out.split('\n').filter(Boolean).at(-1) ?? 'ok');
+  } else {
+    record('loyalty-integration-db', 'Tests', 'fail', out.split('\n').slice(-2).join(' ') || `exit ${res.status}`);
+  }
+}
+
 async function main() {
   console.log(`\n=== Patron Loyalty audit ===\nTarget: ${loyaltyUrl}\n`);
 
   gitHead();
   runPnpm('validate-ci', 'Code quality', 'validate:ci');
   runPnpm('loyalty-coverage', 'Tests', 'audit:loyalty-coverage');
+  runLoyaltyIntegrationDb();
   runPnpm('unit-tests', 'Tests', 'test');
   runScript('legal-placeholders', 'Compliance', 'scripts/compliance/check-legal-placeholders.mjs');
   checkLoyaltyAuthGuards();

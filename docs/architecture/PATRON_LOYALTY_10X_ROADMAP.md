@@ -214,7 +214,7 @@ flowchart LR
 - [x] **Phase 3 (partial)** — `loyalty-queue-events.service.spec.ts` matrix (6 events, idempotent/skip branches)
 - [x] **Phase 3 (partial)** — Loyalty module coverage gate (`pnpm audit:loyalty-coverage`, istanbul baseline ~32% lines — ratchet toward 80%)
 - [x] **Phase 3 (partial)** — DB golden-path earn/idempotency spec (`loyalty-integration.integration.spec.ts`, `INTEGRATION_DATABASE_URL`)
-- [x] **Phase 3 (partial)** — Playwright integrations stale-key + never-used UI (`loyalty-integrations.spec.ts`)
+- [x] **Phase 3 (partial)** — CI: loyalty coverage gate + DB golden-path in `test-api`; integrations E2E in `test-e2e-loyalty`
 - [ ] **Phase 4** — a11y + bundle budget; cookie-only auth documented
 - [x] **Phase 4 (partial)** — integrations page shows API key `lastUsedAt` + stale hint
 - [ ] **Phase 5** — Sentry prod; staging soak; incident runbooks

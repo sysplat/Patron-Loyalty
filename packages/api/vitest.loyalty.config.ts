@@ -17,6 +17,7 @@ export default defineConfig({
         'src/modules/loyalty/**/*.module.ts',
         'src/modules/loyalty/loyalty.events.ts',
       ],
+      // Ratchet +1–2% when adding loyalty unit specs (istanbul provider).
       thresholds: {
         lines: 32,
         functions: 24,
