@@ -299,6 +299,10 @@ export class LoyaltyIntegrationService {
         });
         if (byColumn) return byColumn;
 
+        const legacyMetadataLookup =
+          process.env.LOYALTY_CONNECTOR_LEGACY_METADATA_EXTERNAL_ID_LOOKUP !== 'false';
+        if (!legacyMetadataLookup) return null;
+
         const rows = await tx.$queryRaw<{ id: string }[]>`
           SELECT id FROM customers
           WHERE org_id = ${orgId}::uuid
@@ -306,7 +310,14 @@ export class LoyaltyIntegrationService {
           LIMIT 1
         `;
         if (rows[0]) {
-          return tx.customer.findFirst({ where: { id: rows[0].id, orgId } });
+          const legacy = await tx.customer.findFirst({ where: { id: rows[0].id, orgId } });
+          if (legacy && !legacy.externalId) {
+            await tx.customer.update({
+              where: { id: legacy.id },
+              data: { externalId: trimmed },
+            });
+          }
+          return legacy;
         }
       }
       return null;

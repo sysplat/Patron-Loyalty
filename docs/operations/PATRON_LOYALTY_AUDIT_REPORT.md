@@ -8,10 +8,10 @@
 
 | Result | Count |
 | ------ | ----: |
-| Pass   |    14 |
+| Pass   |    15 |
 | Fail   |     0 |
 | Skip   |     1 |
-| Warn   |     1 |
+| Warn   |     0 |
 
 **Verdict:** **PASS** (no blocking failures)
 
@@ -23,7 +23,7 @@
 
 | Check                  | Category     | Status | Detail                                                                                                                                                 |
 | ---------------------- | ------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| git-head               | Deploy       | PASS   | 9153b4a P3: expand integration and dispatch specs; coverage gate 74%                                                                                   |
+| git-head               | Deploy       | PASS   | 1db5f68 P3/P5: 80% loyalty coverage gate; Sentry scorecard 9.95                                                                                        |
 | validate-ci            | Code quality | PASS   | • turbo 2.9.16                                                                                                                                         |
 | loyalty-coverage       | Tests        | PASS   | [33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m |
 | loyalty-integration-db | Tests        | SKIP   | set INTEGRATION_DATABASE_URL for earn/idempotency golden-path spec                                                                                     |
@@ -32,9 +32,9 @@
 | loyalty-auth-guards    | Security     | PASS   | HttpOnly cookies, token not persisted, refresh fallback                                                                                                |
 | srs-completion-doc     | SRS          | PASS   | Overall SRS ~88% (see srs-completion.md)                                                                                                               |
 | staging-soak           | Prod smoke   | PASS   | boundary curls OK                                                                                                                                      |
-| prod-migration         | Database     | PASS   | Environment variables loaded from .env                                                                                                                 |
+| prod-migration         | Database     | PASS   | └─────────────────────────────────────────────────────────┘                                                                                            |
 | loyalty-auth-smoke     | Prod smoke   | PASS   | All smoke checks passed.                                                                                                                               |
-| sentry-prod            | Operability  | WARN   | }                                                                                                                                                      |
+| sentry-prod            | Operability  | PASS   | health/meta sentryEnabled                                                                                                                              |
 | prod-login             | Prod smoke   | PASS   | HTTP 200 /login                                                                                                                                        |
 | prod-manifest          | Prod smoke   | PASS   | HTTP 200 /manifest.webmanifest                                                                                                                         |
 | prod-icon-192          | Prod smoke   | PASS   | HTTP 200 /brand/icon-192.png                                                                                                                           |

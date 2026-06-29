@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { NotFoundException } from '@nestjs/common';
 import { LOYALTY_EARN_EVENT_TYPES, LOYALTY_POINT_LEDGER_TYPES } from '@queueplatform/shared';
 import { LoyaltyIntegrationService } from './loyalty-integration.service';
 
@@ -190,14 +191,16 @@ describe('LoyaltyIntegrationService lookupCustomer externalId', () => {
 
   it('falls back to metadata externalId scan', async () => {
     const queryRaw = vi.fn().mockResolvedValue([{ id: 'cust-meta' }]);
+    const update = vi.fn().mockResolvedValue({});
     customerFindFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({
       id: 'cust-meta',
       name: 'Meta Patron',
       email: null,
       phone: null,
+      externalId: null,
     });
     prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
-      fn({ customer: { findFirst: customerFindFirst }, $queryRaw: queryRaw }),
+      fn({ customer: { findFirst: customerFindFirst, update }, $queryRaw: queryRaw }),
     );
     accounts.ensureAccount.mockResolvedValue({
       id: 'acc-meta',
@@ -207,7 +210,26 @@ describe('LoyaltyIntegrationService lookupCustomer externalId', () => {
 
     const result = await service.lookupCustomer('org-1', { externalId: 'legacy-ext' });
     expect(queryRaw).toHaveBeenCalled();
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'cust-meta' },
+      data: { externalId: 'legacy-ext' },
+    });
     expect(result).toMatchObject({ customerId: 'cust-meta' });
+  });
+
+  it('skips metadata scan when legacy lookup disabled', async () => {
+    const queryRaw = vi.fn();
+    vi.stubEnv('LOYALTY_CONNECTOR_LEGACY_METADATA_EXTERNAL_ID_LOOKUP', 'false');
+    customerFindFirst.mockResolvedValue(null);
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({ customer: { findFirst: customerFindFirst }, $queryRaw: queryRaw }),
+    );
+
+    await expect(
+      service.lookupCustomer('org-1', { externalId: 'legacy-ext' }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(queryRaw).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
   });
 });
 

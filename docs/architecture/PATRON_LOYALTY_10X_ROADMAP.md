@@ -2,7 +2,7 @@
 
 Forward-looking plan to reach **10/10 across every rated dimension** for this repo (LMS split). Historical execution is tracked in [patron-loyalty-10-plan.md](./patron-loyalty-10-plan.md) (Phases 0–7, mostly complete as of 2026-06-28).
 
-**Current baseline (~9.95 / 10 overall)** — Coverage **80%** lines; prod on `9153b4a`; **Sentry** enabled (`sysplat/pl-api`).
+**Current baseline (~9.97 / 10 overall)** — Coverage **80%**; prod on `1db5f68`; **Sentry** enabled; **external_id** column live, legacy metadata scan disabled on prod.
 
 ## PR tagging convention
 
@@ -42,7 +42,7 @@ Prefix commits and PR titles with phase IDs for traceability:
 | Event-driven design           | 9.5 | 10     | 3             |
 | Frontend (loyalty app)        | 9.5 | 10     | 4             |
 | API modularity & cohesion     | 10  | 10     | 1             |
-| Data layer                    | 9.5 | 10     | 1             |
+| Data layer                    | 9.9 | 10     | 1             |
 | Service sizing (1k-line rule) | 10  | 10     | 1             |
 | Test pyramid                  | 9.8 | 10     | 3             |
 | Docs ↔ repo truth             | 10  | 10     | 6             |
