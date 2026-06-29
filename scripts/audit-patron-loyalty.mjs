@@ -222,6 +222,14 @@ async function main() {
   checkLoyaltyAuthGuards();
   srsSnapshot();
 
+  const soakRes = run('node', ['scripts/staging-soak-patron-loyalty.mjs']);
+  if (soakRes.status === 0) {
+    record('staging-soak', 'Prod smoke', 'pass', 'boundary curls OK');
+  } else {
+    const detail = `${soakRes.stderr ?? ''}${soakRes.stdout ?? ''}`.trim().split('\n').at(-1);
+    record('staging-soak', 'Prod smoke', 'warn', detail ?? 'soak failed');
+  }
+
   runPnpm('prod-migration', 'Database', 'db:migrate:status:railway');
   runPnpm('loyalty-auth-smoke', 'Prod smoke', 'audit:loyalty-auth-smoke');
 

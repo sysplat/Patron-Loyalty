@@ -1,0 +1,18 @@
+# DISABLED — GitHub Actions minutes; run locally: pnpm audit:staging-soak
+# Re-enable with ci-patron-loyalty.yml.disabled in July 2026.
+name: Staging soak (Patron Loyalty)
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  soak:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Boundary + health soak
+        env:
+          API_URL: ${{ secrets.STAGING_API_URL || 'https://pl-api-production-a528.up.railway.app' }}
+        run: node scripts/staging-soak-patron-loyalty.mjs

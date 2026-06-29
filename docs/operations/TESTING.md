@@ -115,6 +115,7 @@ QMS-only jobs (`test-e2e-admin`, `test-e2e-realtime`, `apps/web`, `apps/admin`) 
 pnpm test:ci
 pnpm --filter @queueplatform/e2e test    # with local servers or rely on CI job
 pnpm audit:patron-loyalty                # Railway linked, prod smoke
+pnpm audit:staging-soak                  # boundary curls (no Actions minutes)
 ```
 
 **QlessQ split-deploy connector** (requires `LOYALTY_API_URL` + `LOYALTY_INTEGRATION_API_KEY`):

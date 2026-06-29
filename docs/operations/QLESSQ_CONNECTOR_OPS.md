@@ -29,6 +29,26 @@ Example ingest line:
 
 **Outcomes:** `ok` · `idempotent` · `skipped` · `validation_error` · `error`
 
+## Log drain queries (copy-paste)
+
+Railway → pl-api → Logs (or your drain). Adjust time window as needed.
+
+| Goal               | Query / filter                                |
+| ------------------ | --------------------------------------------- |
+| Ingest volume      | `"type":"loyalty_connector_ingest"`           |
+| Idempotent replays | `"outcome":"idempotent"`                      |
+| Skipped events     | `"outcome":"skipped"`                         |
+| Slow ingests       | `"durationMs":` then sort > 500ms in drain UI |
+| 4xx spikes         | `"type":"loyalty_connector_4xx_spike"`        |
+| Per-org traffic    | `"orgId":"<uuid>"` AND `loyalty_connector`    |
+
+**Manual soak (no GitHub Actions):**
+
+```bash
+pnpm audit:staging-soak
+# or: node scripts/staging-soak-patron-loyalty.mjs
+```
+
 ## Deploy verification
 
 ```bash
