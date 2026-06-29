@@ -82,6 +82,6 @@ Patron Loyalty uses the **same prohibited-industry list** as QlessQ (`packages/s
 
 ## 8. Observability (Phase 5)
 
-- [ ] `SENTRY_DSN` + `SENTRY_RELEASE=${{RAILWAY_GIT_COMMIT_SHA}}` on **pl-api** (Railway UI)
+- [ ] Set `SENTRY_DSN` + `SENTRY_RELEASE=${{RAILWAY_GIT_COMMIT_SHA}}` on **pl-api** — see [RAILWAY_SENTRY_SETUP.md](../operations/RAILWAY_SENTRY_SETUP.md)
 - [ ] `pnpm audit:verify-sentry-prod` → `sentryEnabled: true`
 - [ ] Optional: `NEXT_PUBLIC_SENTRY_DSN` on **pl-loyalty**

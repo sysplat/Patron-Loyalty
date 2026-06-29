@@ -218,9 +218,9 @@ flowchart LR
 - [ ] **Phase 4** — a11y + bundle budget; cookie-only auth documented
 - [x] **Phase 4 (partial)** — integrations page shows API key `lastUsedAt` + stale hint
 - [x] **Phase 4 (partial)** — cookie-only BFF: login/refresh JSON strip tokens; `/api/auth/token` sync; [LOYALTY_AUTH_BFF.md](../architecture/LOYALTY_AUTH_BFF.md)
-- [x] **Phase 3 (partial)** — `loyalty-integration.controller` delegation + ingest observability unit spec
+- [x] **Phase 3 (partial)** — catalog, program, wallet controller delegation specs (~40% lines — target 80%)
 - [x] **Phase 4 (partial)** — axe E2E on login, overview (smoke creds), portal
-- [ ] **Phase 5** — Sentry prod; staging soak; incident runbooks
+- [ ] **Phase 5** — Sentry prod (`docs/operations/RAILWAY_SENTRY_SETUP.md`); staging soak; incident runbooks
 - [x] **Phase 5 (partial)** — `verify-sentry-prod.mjs` + `railway-sync-sentry-env.sh` for pl-api/pl-loyalty
 - [x] **Phase 5 (partial)** — Incident runbooks (`docs/operations/incidents/`); `pnpm audit:staging-soak`; log queries in connector ops
 - [ ] **Phase 6** — ADRs; quarterly scorecard; doc CI gate
