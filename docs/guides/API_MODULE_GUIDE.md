@@ -1,5 +1,7 @@
 # API Module Development Guide
 
+> **QMS sibling repo:** References to `apps/web` or `apps/admin` describe the **QlessQ** queue product in the sibling `../QMS` repository — not Patron Loyalty (`apps/loyalty`). See [REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md).
+
 This guide covers how to create, extend, and modify NestJS API modules in this project.
 Follow every section exactly — inconsistency between modules creates maintenance debt.
 

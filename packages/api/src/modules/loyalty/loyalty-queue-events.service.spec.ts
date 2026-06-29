@@ -4,6 +4,7 @@ import {
   LOYALTY_WEBHOOK_EVENTS,
   QLESSQ_QUEUE_INTEGRATION_EVENTS,
 } from '@queueplatform/shared';
+import { LoyaltyTicketCompletedEvent } from './loyalty.events';
 import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
 
 const ORG_ID = 'org-1';
@@ -326,5 +327,43 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
       });
       expect(accounts.ensureAccount).not.toHaveBeenCalled();
     });
+  });
+
+  it('resolves customer by customerId without upsert', async () => {
+    const result = await service.processRemoteEvent(ORG_ID, {
+      event: QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
+      sourceId: 'ticket-direct',
+      customerId: CUSTOMER_ID,
+      branchId: BRANCH_ID,
+    });
+
+    expect(integration.upsertCustomer).not.toHaveBeenCalled();
+    expect(accounts.handleTicketCompleted).toHaveBeenCalledWith(
+      ORG_ID,
+      'ticket-direct',
+      CUSTOMER_ID,
+      BRANCH_ID,
+    );
+    expect(result).toMatchObject({ ok: true, sourceId: 'ticket-direct' });
+  });
+
+  it('does not run gamification when ticket handler returns no earn row', async () => {
+    accounts.handleTicketCompleted.mockResolvedValue(null);
+
+    const result = await service.onTicketCompleted(
+      new LoyaltyTicketCompletedEvent(ORG_ID, 'ticket-empty', CUSTOMER_ID, BRANCH_ID, null),
+    );
+
+    expect(result).toEqual({ ok: true });
+    expect(gamification.incrementChallengeProgress).not.toHaveBeenCalled();
+  });
+
+  it('rethrows when ticket handler fails', async () => {
+    accounts.handleTicketCompleted.mockRejectedValue(new Error('db down'));
+    await expect(
+      service.onTicketCompleted(
+        new LoyaltyTicketCompletedEvent(ORG_ID, 'ticket-err', CUSTOMER_ID, BRANCH_ID, null),
+      ),
+    ).rejects.toThrow('db down');
   });
 });

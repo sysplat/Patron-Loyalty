@@ -1,5 +1,7 @@
 # Test audit baseline
 
+> **QMS sibling repo:** References to `apps/web` or `apps/admin` describe the **QlessQ** queue product in the sibling `../QMS` repository — not Patron Loyalty (`apps/loyalty`). See [REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md).
+
 **Date:** 2026-06-27  
 **Repo:** Patron Loyalty (`sysplatLMS`)  
 **Purpose:** Pre-fix inventory before test audit implementation.

@@ -1,5 +1,7 @@
 # Serve console quality bar
 
+> **QMS sibling repo:** References to `apps/web` or `apps/admin` describe the **QlessQ** queue product in the sibling `../QMS` repository — not Patron Loyalty (`apps/loyalty`). See [REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md).
+
 Target scores for **single-step** (`/dashboard/single-step`) and **multi-step** (`/dashboard/multi-step`) staff serve UIs.
 
 Legacy URLs redirect: `/dashboard/agent` → single-step, `/dashboard/journey` and `/dashboard/workbench` → multi-step.

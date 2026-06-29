@@ -19,12 +19,12 @@ Prefix commits and PR titles with phase IDs for traceability:
 
 ## Quarterly scorecard review
 
-| Review date | Overall        | Notes                                                                |
-| ----------- | -------------- | -------------------------------------------------------------------- |
-| 2026-06-28  | 8.2            | Baseline after Phases 0–7                                            |
-| 2026-06-28  | 8.4            | P1: account split + loyalty.prisma                                   |
-| 2026-06-29  | 8.7            | P4: BFF auth + axe; P5: runbooks + soak; P6: ADRs + doc gate started |
-| **Next**    | **2026-09-28** | Re-rate all dimensions; fix any below 9 before new features          |
+| Review date | Overall        | Notes                                                            |
+| ----------- | -------------- | ---------------------------------------------------------------- |
+| 2026-06-28  | 8.2            | Baseline after Phases 0–7                                        |
+| 2026-06-28  | 8.4            | P1: account split + loyalty.prisma                               |
+| 2026-06-29  | 8.8            | P6: ADRs + doc gate; P3: controller/guard specs; soak + runbooks |
+| **Next**    | **2026-09-28** | Re-rate all dimensions; fix any below 9 before new features      |
 
 **Rule:** If any dimension drops below **9**, open a focused phase task before adding features.
 
@@ -225,6 +225,7 @@ flowchart LR
 - [x] **Phase 5 (partial)** — Incident runbooks (`docs/operations/incidents/`); `pnpm audit:staging-soak`; log queries in connector ops
 - [ ] **Phase 6** — ADRs; quarterly scorecard; doc CI gate
 - [x] **Phase 6 (partial)** — 4 ADRs in `docs/architecture/adr/`; `check:architecture:lms-doc-boundaries`; AGENTS.md → TESTING + roadmap
+- [x] **Phase 6 (partial)** — QMS sibling banners on legacy docs; baseline **0** tracked violations; `re-enable-github-ci.sh`
 
 ---
 

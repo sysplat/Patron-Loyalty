@@ -1,19 +1,4 @@
 {
-  "files": [
-    "docs/CONTRIBUTING.md",
-    "docs/architecture/10-10-plan.md",
-    "docs/architecture/srs-completion.md",
-    "docs/architecture/superadmin.md",
-    "docs/compliance/ADMIN_DASHBOARD_COMPLIANCE.md",
-    "docs/compliance/AUDIT_EVIDENCE_PACK.md",
-    "docs/compliance/COUNSEL_REVIEW_BRIEF.md",
-    "docs/compliance/GLOBAL_COMPLIANCE_PROGRAM.md",
-    "docs/deployment/DEPLOYMENT_CI_AND_DOCKER.md",
-    "docs/deployment/DEPLOYMENT_GUIDE.md",
-    "docs/guides/API_MODULE_GUIDE.md",
-    "docs/operations/TEST_AUDIT_BASELINE.md",
-    "docs/qa/ENTERPRISE_ACCEPTANCE_MATRIX.md",
-    "docs/qa/SERVE_CONSOLE_QUALITY.md"
-  ],
+  "files": [],
   "updatedAt": "2026-06-29"
 }

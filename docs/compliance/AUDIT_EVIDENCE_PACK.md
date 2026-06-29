@@ -1,5 +1,7 @@
 # Audit Evidence Pack Checklist
 
+> **QMS sibling repo:** References to `apps/web` or `apps/admin` describe the **QlessQ** queue product in the sibling `../QMS` repository — not Patron Loyalty (`apps/loyalty`). See [REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md).
+
 This checklist defines the minimum evidence package for external audits and enterprise security reviews.
 
 **Legend:** **In repo** = artifact exists or is produced routinely by CI/scripts. **To produce** = required for a full pack but not yet stored as a standing document; gather at audit time.

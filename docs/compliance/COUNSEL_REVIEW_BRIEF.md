@@ -1,5 +1,7 @@
 # Counsel Review Brief — QlessQ (QMS)
 
+> **QMS sibling repo:** References to `apps/web` or `apps/admin` describe the **QlessQ** queue product in the sibling `../QMS` repository — not Patron Loyalty (`apps/loyalty`). See [REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md).
+
 **Internal — for qualified legal counsel only.** This brief helps an attorney review our published legal artifacts and internal ops policies. It is not legal advice.
 
 ## Product summary

@@ -1,5 +1,7 @@
 # QlessQ Admin Dashboard: Transactional Compliance Architecture Plan
 
+> **QMS sibling repo:** References to `apps/web` or `apps/admin` describe the **QlessQ** queue product in the sibling `../QMS` repository — not Patron Loyalty (`apps/loyalty`). See [REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md).
+
 This document outlines the Super-Admin compliance controls, routing, schema expansions, and UI/UX guidelines required to govern multi-tenant transactional SMS, email, and privacy behaviors across all markets (US, Canada, International). It is designed as a direct handoff specification for implementation.
 
 ---

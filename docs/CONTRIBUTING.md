@@ -1,5 +1,7 @@
 # Contributing to QlessQ
 
+> **QMS sibling repo:** References to `apps/web` or `apps/admin` describe the **QlessQ** queue product in the sibling `../QMS` repository — not Patron Loyalty (`apps/loyalty`). See [REPO_BOUNDARIES.md](architecture/REPO_BOUNDARIES.md).
+
 This repository uses project-specific standards designed for a multi-tenant monorepo that ships to Railway. The goal is consistency without unnecessary rigidity.
 
 ## Development Workflow

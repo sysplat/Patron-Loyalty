@@ -1,5 +1,7 @@
 # QMS Global Compliance Program: Consolidated Master Plan
 
+> **QMS sibling repo:** References to `apps/web` or `apps/admin` describe the **QlessQ** queue product in the sibling `../QMS` repository — not Patron Loyalty (`apps/loyalty`). See [REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md).
+
 This document serves as the absolute, production-grade technical specification for the implementation of the **QlessQ (QMS) Global Compliance Program**. It weaves core compliance objectives with advanced architectural enhancements and super-admin dashboard integrations, making default behavior legally conservative across US, Canada, and international markets while preserving tenant flexibility behind strict guardrails.
 
 ---

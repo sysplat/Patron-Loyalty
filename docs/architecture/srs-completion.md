@@ -1,5 +1,7 @@
 # SRS completion map
 
+> **QMS sibling repo:** References to `apps/web` or `apps/admin` describe the **QlessQ** queue product in the sibling `../QMS` repository — not Patron Loyalty (`apps/loyalty`). See [REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md).
+
 Source document: [`Complete_Loyalty_Management_System_SRS.pdf`](../Complete_Loyalty_Management_System_SRS.pdf)
 
 This tracks implementation in **Patron Loyalty** (`sysplatLMS`) against the SRS modules and MVP roadmap (§28).
