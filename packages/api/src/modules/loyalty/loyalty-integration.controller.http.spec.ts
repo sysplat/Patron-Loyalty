@@ -84,7 +84,11 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
       defaultVersion: '1',
       prefix: 'api/v',
     });
-    app.useGlobalFilters(new GlobalExceptionFilter(requestContext as RequestContextService));
+    app.useGlobalFilters(
+      new GlobalExceptionFilter(requestContext as RequestContextService, (orgId, route, status) => {
+        void connectorObs.recordClientError(orgId, route, status);
+      }),
+    );
     app.useGlobalPipes(new ZodValidationPipe());
     await app.init();
   });
@@ -149,6 +153,7 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
   });
 
   it('returns 400 for earn payload missing externalTxnId', async () => {
+    connectorObs.recordClientError.mockClear();
     await request(app.getHttpServer())
       .post('/api/v1/loyalty/integrations/v1/points/earn')
       .set('X-Loyalty-Api-Key', 'loyalty_live_test')
@@ -160,6 +165,7 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
       .expect(400);
 
     expect(integration.earnPoints).not.toHaveBeenCalled();
+    expect(connectorObs.recordClientError).toHaveBeenCalledWith(ORG_ID, 'points/earn', 400);
   });
 
   it('delegates earn to integration service with org id', async () => {
@@ -293,5 +299,116 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
     expect(connectorObs.logIngest).toHaveBeenCalledWith(
       expect.objectContaining({ outcome: 'idempotent' }),
     );
+  });
+
+  it('returns 400 for redeem payload missing rewardId', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/loyalty/integrations/v1/rewards/redeem')
+      .set('X-Loyalty-Api-Key', 'loyalty_live_test')
+      .send({ customerId: '00000000-0000-0000-0000-000000000001' })
+      .expect(400);
+
+    expect(integration.redeemReward).not.toHaveBeenCalled();
+  });
+
+  it('delegates redeem to integration service with org id', async () => {
+    integration.redeemReward.mockResolvedValue({ redemptionId: 'red-1', pointsCost: 100 });
+
+    const body = {
+      customerId: '00000000-0000-0000-0000-000000000001',
+      rewardId: '00000000-0000-0000-0000-0000000000bb',
+      externalTxnId: 'redeem-contract-1',
+    };
+
+    await request(app.getHttpServer())
+      .post('/api/v1/loyalty/integrations/v1/rewards/redeem')
+      .set('X-Loyalty-Api-Key', 'loyalty_live_test')
+      .send(body)
+      .expect(200);
+
+    expect(integration.redeemReward).toHaveBeenCalledWith(ORG_ID, body);
+  });
+
+  it('returns 400 for coupon validate payload missing code', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/loyalty/integrations/v1/coupons/validate')
+      .set('X-Loyalty-Api-Key', 'loyalty_live_test')
+      .send({ customerId: '00000000-0000-0000-0000-000000000001' })
+      .expect(400);
+
+    expect(integration.validateCoupon).not.toHaveBeenCalled();
+  });
+
+  it('delegates coupon validate to integration service', async () => {
+    integration.validateCoupon.mockResolvedValue({ valid: true, code: 'SAVE10' });
+
+    const body = { code: 'SAVE10', customerId: '00000000-0000-0000-0000-000000000001' };
+
+    await request(app.getHttpServer())
+      .post('/api/v1/loyalty/integrations/v1/coupons/validate')
+      .set('X-Loyalty-Api-Key', 'loyalty_live_test')
+      .send(body)
+      .expect(200);
+
+    expect(integration.validateCoupon).toHaveBeenCalledWith(ORG_ID, body);
+  });
+
+  it('returns 400 for coupon redeem without patron reference', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/loyalty/integrations/v1/coupons/redeem')
+      .set('X-Loyalty-Api-Key', 'loyalty_live_test')
+      .send({ code: 'SAVE10' })
+      .expect(400);
+
+    expect(integration.redeemCoupon).not.toHaveBeenCalled();
+  });
+
+  it('delegates coupon redeem to integration service', async () => {
+    integration.redeemCoupon.mockResolvedValue({ ok: true });
+
+    const body = {
+      code: 'SAVE10',
+      externalId: 'qlessq-cust-coupon',
+    };
+
+    await request(app.getHttpServer())
+      .post('/api/v1/loyalty/integrations/v1/coupons/redeem')
+      .set('X-Loyalty-Api-Key', 'loyalty_live_test')
+      .send(body)
+      .expect(200);
+
+    expect(integration.redeemCoupon).toHaveBeenCalledWith(ORG_ID, body);
+  });
+
+  it('returns 400 for wallet adjust missing amountCents', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/loyalty/integrations/v1/wallet/adjust')
+      .set('X-Loyalty-Api-Key', 'loyalty_live_test')
+      .send({
+        customerId: '00000000-0000-0000-0000-000000000001',
+        type: 'CREDIT',
+      })
+      .expect(400);
+
+    expect(integration.adjustWallet).not.toHaveBeenCalled();
+  });
+
+  it('delegates wallet adjust to integration service', async () => {
+    integration.adjustWallet.mockResolvedValue({ balanceCents: 5000 });
+
+    const body = {
+      customerId: '00000000-0000-0000-0000-000000000001',
+      type: 'CREDIT',
+      amountCents: 500,
+      description: 'POS credit',
+    };
+
+    await request(app.getHttpServer())
+      .post('/api/v1/loyalty/integrations/v1/wallet/adjust')
+      .set('X-Loyalty-Api-Key', 'loyalty_live_test')
+      .send(body)
+      .expect(200);
+
+    expect(integration.adjustWallet).toHaveBeenCalledWith(ORG_ID, body);
   });
 });

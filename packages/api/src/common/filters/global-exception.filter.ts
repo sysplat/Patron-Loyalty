@@ -10,6 +10,23 @@ import { Response, Request } from 'express';
 import { RequestContextService } from '../request-context/request-context.service';
 import { captureServerException } from '../observability/sentry';
 
+const LOYALTY_ORG_ID_REQUEST_KEY = 'loyaltyOrgId';
+const LOYALTY_INTEGRATIONS_PREFIX = '/loyalty/integrations/v1/';
+
+export type IntegrationClientErrorRecorder = (
+  orgId: string,
+  route: string,
+  statusCode: number,
+) => void | Promise<void>;
+
+function loyaltyIntegrationRoute(url: string): string | null {
+  const path = url.split('?')[0] ?? url;
+  const idx = path.indexOf(LOYALTY_INTEGRATIONS_PREFIX);
+  if (idx === -1) return null;
+  const route = path.slice(idx + LOYALTY_INTEGRATIONS_PREFIX.length).replace(/^\/+|\/+$/g, '');
+  return route || null;
+}
+
 // Minimal type guard for Prisma errors — avoids importing the full PrismaClient
 function isPrismaError(
   err: unknown,
@@ -27,7 +44,10 @@ function isPrismaError(
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
 
-  constructor(private readonly requestContext: RequestContextService) {}
+  constructor(
+    private readonly requestContext: RequestContextService,
+    private readonly integrationClientErrorRecorder?: IntegrationClientErrorRecorder,
+  ) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
@@ -161,6 +181,21 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (status === HttpStatus.UNPROCESSABLE_ENTITY) code = 'UNPROCESSABLE_ENTITY';
     if (status === HttpStatus.SERVICE_UNAVAILABLE) code = 'SERVICE_UNAVAILABLE';
     if (status === HttpStatus.TOO_MANY_REQUESTS) code = 'RATE_LIMITED';
+
+    if (
+      this.integrationClientErrorRecorder &&
+      status >= 400 &&
+      status < 500 &&
+      request.url.includes(LOYALTY_INTEGRATIONS_PREFIX)
+    ) {
+      const orgId = (request as Request & { [LOYALTY_ORG_ID_REQUEST_KEY]?: string })[
+        LOYALTY_ORG_ID_REQUEST_KEY
+      ];
+      const route = loyaltyIntegrationRoute(request.url);
+      if (orgId && route) {
+        void this.integrationClientErrorRecorder(orgId, route, status);
+      }
+    }
 
     const body: Record<string, unknown> = {
       success: false,

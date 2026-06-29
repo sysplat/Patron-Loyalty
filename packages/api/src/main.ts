@@ -9,10 +9,12 @@ import helmet from 'helmet';
 import { isLoyaltyOnlyApiDeploy, resolveApiDeployProfile } from '@queueplatform/shared';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import type { IntegrationClientErrorRecorder } from './common/filters/global-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { SentryContextInterceptor } from './common/interceptors/sentry-context.interceptor';
 import { RequestContextService } from './common/request-context/request-context.service';
 import { captureUnhandledProcessError, initSentry } from './common/observability/sentry';
+import { LoyaltyConnectorObservabilityService } from './modules/loyalty/loyalty-connector-observability.service';
 
 const bootstrapLogger = new Logger('Bootstrap');
 
@@ -169,7 +171,14 @@ async function bootstrap() {
     });
 
     // Global Exception Filter
-    app.useGlobalFilters(new GlobalExceptionFilter(requestContext));
+    let integrationClientErrorRecorder: IntegrationClientErrorRecorder | undefined;
+    const connectorObs = app.get(LoyaltyConnectorObservabilityService, { strict: false });
+    if (connectorObs) {
+      integrationClientErrorRecorder = (orgId, route, statusCode) => {
+        void connectorObs.recordClientError(orgId, route, statusCode);
+      };
+    }
+    app.useGlobalFilters(new GlobalExceptionFilter(requestContext, integrationClientErrorRecorder));
     app.useGlobalInterceptors(app.get(SentryContextInterceptor), app.get(LoggingInterceptor));
 
     // Global Validation Pipe (nestjs-zod)

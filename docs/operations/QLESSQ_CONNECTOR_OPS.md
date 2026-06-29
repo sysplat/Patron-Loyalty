@@ -67,4 +67,17 @@ Payload field `connectorVersion` (default **1**) allows schema evolution without
 
 ## Sentry release tags
 
-API Sentry and `/api/v1/health/meta` use `getObservabilityRelease()` (`SENTRY_RELEASE` or `RAILWAY_GIT_COMMIT_SHA`). Set `SENTRY_RELEASE` on Railway `pl-api` to match git SHA for error ↔ deploy correlation.
+API Sentry and `/api/v1/health/meta` use `getObservabilityRelease()`:
+
+1. `SENTRY_RELEASE` (explicit — preferred for Sentry ↔ deploy correlation)
+2. `RAILWAY_GIT_COMMIT_SHA` (Railway injects this automatically)
+3. `VERCEL_GIT_COMMIT_SHA` / `development`
+
+**Railway `pl-api` (when CLI quota allows or via Railway UI → Variables):**
+
+```bash
+# Optional explicit tag; otherwise RAILWAY_GIT_COMMIT_SHA is used automatically
+SENTRY_RELEASE=${{RAILWAY_GIT_COMMIT_SHA}}
+```
+
+Requires `SENTRY_DSN` on the same service. After deploy, confirm `/api/v1/health/meta` `release` matches the deployed commit prefix.

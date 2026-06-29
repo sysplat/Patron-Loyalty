@@ -87,28 +87,43 @@ export class LoyaltyIntegrationController {
   @Post('rewards/redeem')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Redeem a catalog reward for a patron' })
-  redeemReward(@LoyaltyOrgId() orgId: string, @Body() body: LoyaltyIntegrationRedeemDto) {
+  redeemReward(
+    @LoyaltyOrgId() orgId: string,
+    @Body(new ZodValidationPipe(LoyaltyIntegrationRedeemDto)) body: LoyaltyIntegrationRedeemDto,
+  ) {
     return this.integration.redeemReward(orgId, body);
   }
 
   @Post('coupons/validate')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Validate a coupon code' })
-  validateCoupon(@LoyaltyOrgId() orgId: string, @Body() body: LoyaltyIntegrationValidateCouponDto) {
+  validateCoupon(
+    @LoyaltyOrgId() orgId: string,
+    @Body(new ZodValidationPipe(LoyaltyIntegrationValidateCouponDto))
+    body: LoyaltyIntegrationValidateCouponDto,
+  ) {
     return this.integration.validateCoupon(orgId, body);
   }
 
   @Post('coupons/redeem')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Redeem a coupon for a patron' })
-  redeemCoupon(@LoyaltyOrgId() orgId: string, @Body() body: LoyaltyIntegrationCouponRedeemDto) {
+  redeemCoupon(
+    @LoyaltyOrgId() orgId: string,
+    @Body(new ZodValidationPipe(LoyaltyIntegrationCouponRedeemDto))
+    body: LoyaltyIntegrationCouponRedeemDto,
+  ) {
     return this.integration.redeemCoupon(orgId, body);
   }
 
   @Post('wallet/adjust')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Credit or debit patron wallet balance' })
-  adjustWallet(@LoyaltyOrgId() orgId: string, @Body() body: LoyaltyIntegrationWalletAdjustDto) {
+  adjustWallet(
+    @LoyaltyOrgId() orgId: string,
+    @Body(new ZodValidationPipe(LoyaltyIntegrationWalletAdjustDto))
+    body: LoyaltyIntegrationWalletAdjustDto,
+  ) {
     return this.integration.adjustWallet(orgId, body);
   }
 
