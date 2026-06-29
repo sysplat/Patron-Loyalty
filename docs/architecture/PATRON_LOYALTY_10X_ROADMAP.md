@@ -212,8 +212,13 @@ flowchart LR
 - [x] **Phase 2 (partial)** — Integration HTTP contracts (19 routes); `recordClientError` on validation 4xx; API key `lastUsedAt`
 - [ ] **Phase 3** — 80% loyalty coverage; 5+ E2E specs; queue-events matrix tested
 - [x] **Phase 3 (partial)** — `loyalty-queue-events.service.spec.ts` matrix (6 events, idempotent/skip branches)
+- [x] **Phase 3 (partial)** — Loyalty module coverage gate (`pnpm audit:loyalty-coverage`, istanbul baseline ~32% lines — ratchet toward 80%)
+- [x] **Phase 3 (partial)** — DB golden-path earn/idempotency spec (`loyalty-integration.integration.spec.ts`, `INTEGRATION_DATABASE_URL`)
+- [x] **Phase 3 (partial)** — Playwright integrations stale-key + never-used UI (`loyalty-integrations.spec.ts`)
 - [ ] **Phase 4** — a11y + bundle budget; cookie-only auth documented
+- [x] **Phase 4 (partial)** — integrations page shows API key `lastUsedAt` + stale hint
 - [ ] **Phase 5** — Sentry prod; staging soak; incident runbooks
+- [x] **Phase 5 (partial)** — `verify-sentry-prod.mjs` + `railway-sync-sentry-env.sh` for pl-api/pl-loyalty
 - [ ] **Phase 6** — ADRs; quarterly scorecard; doc CI gate
 
 ---

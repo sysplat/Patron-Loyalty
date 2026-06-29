@@ -6,6 +6,8 @@ import { LoyaltyAccountLifecycleService } from './loyalty-account-lifecycle.serv
 import { LoyaltyAccountEarnService } from './loyalty-account-earn.service';
 import { LoyaltyAccountDsarService } from './loyalty-account-dsar.service';
 import { LoyaltyPointsService } from './loyalty-points.service';
+import { LoyaltyPointsLedgerService } from './loyalty-points-ledger.service';
+import { LoyaltyPointsMetricsService } from './loyalty-points-metrics.service';
 
 function buildAccountService(deps: {
   prisma: unknown;
@@ -14,8 +16,12 @@ function buildAccountService(deps: {
   loyaltyWebhook: unknown;
   eventEmitter: unknown;
 }) {
-  const points = new LoyaltyPointsService(
+  const ledger = new LoyaltyPointsLedgerService(
     deps.prisma as never,
+    new LoyaltyPointsMetricsService(),
+  );
+  const points = new LoyaltyPointsService(
+    ledger,
     deps.eventEmitter as never,
     deps.loyaltyWebhook as never,
   );

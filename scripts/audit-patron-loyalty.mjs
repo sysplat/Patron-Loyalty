@@ -190,6 +190,7 @@ async function main() {
 
   gitHead();
   runPnpm('validate-ci', 'Code quality', 'validate:ci');
+  runPnpm('loyalty-coverage', 'Tests', 'audit:loyalty-coverage');
   runPnpm('unit-tests', 'Tests', 'test');
   runScript('legal-placeholders', 'Compliance', 'scripts/compliance/check-legal-placeholders.mjs');
   checkLoyaltyAuthGuards();
@@ -197,6 +198,14 @@ async function main() {
 
   runPnpm('prod-migration', 'Database', 'db:migrate:status:railway');
   runPnpm('loyalty-auth-smoke', 'Prod smoke', 'audit:loyalty-auth-smoke');
+
+  const sentryRes = run('node', ['scripts/verify-sentry-prod.mjs']);
+  if (sentryRes.status === 0) {
+    record('sentry-prod', 'Operability', 'pass', 'health/meta sentryEnabled');
+  } else {
+    const detail = `${sentryRes.stderr ?? ''}${sentryRes.stdout ?? ''}`.trim().split('\n').at(-1);
+    record('sentry-prod', 'Operability', 'warn', detail ?? 'sentry not enabled on pl-api');
+  }
 
   await fetchStatus('prod-login', 'Prod smoke', '/login');
   await fetchStatus('prod-manifest', 'Prod smoke', '/manifest.webmanifest');
