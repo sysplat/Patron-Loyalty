@@ -347,6 +347,25 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     expect(result).toMatchObject({ ok: true, sourceId: 'ticket-direct' });
   });
 
+  it('resolves customer by email on queue payload', async () => {
+    customerFindFirst.mockResolvedValue({ id: CUSTOMER_ID });
+
+    const result = await service.processRemoteEvent(ORG_ID, {
+      event: QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
+      sourceId: 'ticket-email',
+      branchId: BRANCH_ID,
+      customerEmail: 'patron@example.com',
+    });
+
+    expect(accounts.handleTicketCompleted).toHaveBeenCalledWith(
+      ORG_ID,
+      'ticket-email',
+      CUSTOMER_ID,
+      BRANCH_ID,
+    );
+    expect(result).toMatchObject({ ok: true, sourceId: 'ticket-email' });
+  });
+
   it('does not run gamification when ticket handler returns no earn row', async () => {
     accounts.handleTicketCompleted.mockResolvedValue(null);
 

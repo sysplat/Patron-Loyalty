@@ -164,9 +164,8 @@ ${table}
 
 ## Manual follow-ups
 
-- [ ] \`railway link\` → \`pnpm db:migrate:status:railway\` (migration \`20260627120000_srs_crm_gamification_locale\`)
-- [ ] Set \`LOYALTY_SMOKE_EMAIL\` / \`LOYALTY_SMOKE_PASSWORD\` GitHub secrets (optional — CI seeds \`ci-loyalty-staff@queueplatform.test\`)
-- [ ] Set \`INTEGRATION_DATABASE_URL\` for pre-release DB golden-path spec (\`pnpm audit:loyalty-integration-db\`)
+- [x] \`customers.external_id\` migration + legacy metadata scan disabled on prod
+- [ ] Set \`INTEGRATION_DATABASE_URL\` to a **non-prod** DB for golden-path spec (\`pnpm audit:loyalty-integration-db\`) — optional
 - [ ] Set \`LOYALTY_INTEGRATION_API_KEY\` and run \`pnpm audit:loyalty-queue-events-smoke\`
 - [ ] Counsel sign-off per \`docs/compliance/PATRON_LOYALTY_LAUNCH_CHECKLIST.md\`
 - [ ] QlessQ connector smoke: ticket complete → points ledger (or queue-events smoke script)
@@ -231,6 +230,9 @@ async function main() {
   }
 
   runPnpm('prod-migration', 'Database', 'db:migrate:status:railway');
+  runPnpm('customer-external-id', 'Database', 'audit:customer-external-id');
+  runScript('loyalty-e2e-count', 'Tests', 'scripts/audit-loyalty-e2e-count.mjs');
+  runPnpm('bundle-budgets', 'Frontend', 'check:bundle-budgets');
   runPnpm('loyalty-auth-smoke', 'Prod smoke', 'audit:loyalty-auth-smoke');
 
   const sentryRes = run('node', ['scripts/verify-sentry-prod.mjs']);

@@ -71,4 +71,39 @@ test.describe('Loyalty integrations API key UI', () => {
     await expect(page.getByText('Never used')).toBeVisible();
     await expect(page.getByText(/No connector traffic in 30\+ days/)).toBeVisible();
   });
+
+  test('reveals new API key after rotate', async ({ page }) => {
+    const newKey = 'lms_e2e_rotate_key_01';
+
+    await page.route('**/loyalty/integrations/api-key**', async (route) => {
+      const url = route.request().url();
+      if (route.request().method() === 'GET' && !url.includes('rotate')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            configured: false,
+            prefix: null,
+            createdAt: null,
+            lastUsedAt: null,
+          }),
+        });
+        return;
+      }
+      if (route.request().method() === 'POST' && url.includes('rotate')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ apiKey: newKey, prefix: 'lms_e2e01' }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+
+    await signIn(page);
+    await page.goto('/integrations');
+    await page.getByRole('button', { name: /Generate key|Rotate key/i }).click();
+    await expect(page.getByText(newKey)).toBeVisible();
+  });
 });

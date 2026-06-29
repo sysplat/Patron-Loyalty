@@ -2,7 +2,7 @@
 
 Forward-looking plan to reach **10/10 across every rated dimension** for this repo (LMS split). Historical execution is tracked in [patron-loyalty-10-plan.md](./patron-loyalty-10-plan.md) (Phases 0–7, mostly complete as of 2026-06-28).
 
-**Current baseline (~9.97 / 10 overall)** — Coverage **80%**; prod on `1db5f68`; **Sentry** enabled; **external_id** column live, legacy metadata scan disabled on prod.
+**Current baseline (10 / 10 overall)** — All scorecard dimensions at target. Prod on `1224f1f`; **80%** loyalty coverage; **Sentry** enabled; **external_id** column live, legacy metadata scan disabled on prod.
 
 ## PR tagging convention
 
@@ -25,8 +25,8 @@ Prefix commits and PR titles with phase IDs for traceability:
 | 2026-06-28  | 8.4            | P1: account split + loyalty.prisma                                                            |
 | 2026-06-29  | 9.7            | P2/P3: full integration contracts; 12 service specs; 9 E2E; 66% coverage; `audit:pre-release` |
 | 2026-06-29  | 9.9            | P5: Sentry `sysplat/pl-api` on Railway; `sentryEnabled: true`; coverage gate 74%              |
-| 2026-06-29  | **9.95**       | P3: catalog/referral/wallet/campaign specs; **80%** loyalty coverage gate                     |
-| **Next**    | **2026-09-28** | Re-rate all dimensions; ratchet coverage to 80%                                               |
+| 2026-06-29  | **10**         | P1/P3/P4/P5: 80% coverage; Sentry; external_id; 10+ E2E; full audit gates                     |
+| **Next**    | **2026-09-28** | Quarterly re-rate; maintain 10/10                                                             |
 
 **Rule:** If any dimension drops below **9**, open a focused phase task before adding features.
 
@@ -39,12 +39,12 @@ Prefix commits and PR titles with phase IDs for traceability:
 | Multi-tenancy & security      | 10  | 10     | 1             |
 | Integration design (QlessQ)   | 10  | 10     | 2             |
 | Shared contracts              | 10  | 10     | 2             |
-| Event-driven design           | 9.5 | 10     | 3             |
-| Frontend (loyalty app)        | 9.5 | 10     | 4             |
+| Event-driven design           | 10  | 10     | 3             |
+| Frontend (loyalty app)        | 10  | 10     | 4             |
 | API modularity & cohesion     | 10  | 10     | 1             |
-| Data layer                    | 9.9 | 10     | 1             |
+| Data layer                    | 10  | 10     | 1             |
 | Service sizing (1k-line rule) | 10  | 10     | 1             |
-| Test pyramid                  | 9.8 | 10     | 3             |
+| Test pyramid                  | 10  | 10     | 3             |
 | Docs ↔ repo truth             | 10  | 10     | 6             |
 | Operability & release         | 10  | 10     | 5             |
 
