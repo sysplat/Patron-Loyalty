@@ -23,12 +23,16 @@ import { LoyaltyAccountLifecycleService } from './loyalty-account-lifecycle.serv
 import { LoyaltyAccountEarnService } from './loyalty-account-earn.service';
 import { LoyaltyAccountDsarService } from './loyalty-account-dsar.service';
 import { LoyaltyPointsService } from './loyalty-points.service';
+import { LoyaltyPointsLedgerService } from './loyalty-points-ledger.service';
+import { LoyaltyPointsMetricsService } from './loyalty-points-metrics.service';
 import { LoyaltyCatalogService } from './loyalty-catalog.service';
 import { LoyaltyWalletService } from './loyalty-wallet.service';
 import { LoyaltyReferralService } from './loyalty-referral.service';
 import { LoyaltyCampaignService } from './loyalty-campaign.service';
 import { LoyaltyCampaignDispatchService } from './loyalty-campaign-dispatch.service';
 import { LoyaltyDashboardService } from './loyalty-dashboard.service';
+import { LoyaltyDashboardKpisService } from './loyalty-dashboard-kpis.service';
+import { LoyaltyDashboardReportsService } from './loyalty-dashboard-reports.service';
 import { LoyaltyGamificationService } from './loyalty-gamification.service';
 import { LoyaltyCrmTaskService } from './loyalty-crm-task.service';
 import { LoyaltyCrmExtendedService } from './loyalty-crm-extended.service';
@@ -69,6 +73,8 @@ import { LoyaltyConnectorObservabilityService } from './loyalty-connector-observ
   ],
   providers: [
     LoyaltyProgramService,
+    LoyaltyPointsMetricsService,
+    LoyaltyPointsLedgerService,
     LoyaltyPointsService,
     LoyaltyAccountLifecycleService,
     LoyaltyAccountEarnService,
@@ -79,6 +85,8 @@ import { LoyaltyConnectorObservabilityService } from './loyalty-connector-observ
     LoyaltyReferralService,
     LoyaltyCampaignService,
     LoyaltyCampaignDispatchService,
+    LoyaltyDashboardKpisService,
+    LoyaltyDashboardReportsService,
     LoyaltyDashboardService,
     LoyaltyGamificationService,
     LoyaltyCrmTaskService,

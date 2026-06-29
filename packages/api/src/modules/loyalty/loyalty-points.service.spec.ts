@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LOYALTY_POINT_LEDGER_TYPES } from '@queueplatform/shared';
 import { LoyaltyPointsService } from './loyalty-points.service';
+import { LoyaltyPointsLedgerService } from './loyalty-points-ledger.service';
+import { LoyaltyPointsMetricsService } from './loyalty-points-metrics.service';
 
 const baseAccount = {
   id: 'acc-1',
@@ -63,7 +65,7 @@ describe('LoyaltyPointsService applyPoints idempotency', () => {
     );
 
     service = new LoyaltyPointsService(
-      prisma as never,
+      new LoyaltyPointsLedgerService(prisma as never, new LoyaltyPointsMetricsService()),
       eventEmitter as never,
       loyaltyWebhook as never,
     );
