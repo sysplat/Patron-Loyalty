@@ -16,6 +16,20 @@ interface ApiKeyStatus {
   configured: boolean;
   prefix: string | null;
   createdAt: string | null;
+  lastUsedAt: string | null;
+}
+
+const STALE_KEY_DAYS = 30;
+
+function formatApiKeyLastUsed(lastUsedAt: string | null | undefined): string {
+  if (!lastUsedAt) return 'Never used';
+  return new Date(lastUsedAt).toLocaleString();
+}
+
+function isApiKeyStale(lastUsedAt: string | null | undefined): boolean {
+  if (!lastUsedAt) return true;
+  const ageMs = Date.now() - new Date(lastUsedAt).getTime();
+  return ageMs > STALE_KEY_DAYS * 24 * 60 * 60 * 1000;
 }
 
 interface WebhookEndpoint {
@@ -155,6 +169,26 @@ export default function IntegrationsPage() {
                   </span>
                 ) : null}
               </p>
+              {status?.configured ? (
+                <p className="text-sm">
+                  Last used:{' '}
+                  <span
+                    className={
+                      isApiKeyStale(status.lastUsedAt)
+                        ? 'font-medium text-amber-600'
+                        : 'font-medium'
+                    }
+                  >
+                    {formatApiKeyLastUsed(status.lastUsedAt)}
+                  </span>
+                  {isApiKeyStale(status.lastUsedAt) ? (
+                    <span className="text-muted-foreground">
+                      {' '}
+                      · No connector traffic in {STALE_KEY_DAYS}+ days — verify QlessQ or POS config
+                    </span>
+                  ) : null}
+                </p>
+              ) : null}
               {revealedKey && (
                 <div className="bg-muted break-all rounded-lg p-3 font-mono text-xs">
                   {revealedKey}

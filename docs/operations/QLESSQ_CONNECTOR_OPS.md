@@ -81,3 +81,12 @@ SENTRY_RELEASE=${{RAILWAY_GIT_COMMIT_SHA}}
 ```
 
 Requires `SENTRY_DSN` on the same service. After deploy, confirm `/api/v1/health/meta` `release` matches the deployed commit prefix.
+
+**Railway UI checklist (pl-api → Variables → Redeploy):**
+
+| Variable         | Value                                       |
+| ---------------- | ------------------------------------------- |
+| `SENTRY_DSN`     | Sentry project DSN (Settings → Client Keys) |
+| `SENTRY_RELEASE` | `${{RAILWAY_GIT_COMMIT_SHA}}`               |
+
+Verify: `curl -sS $API/api/v1/health/meta | jq '{release, sentryEnabled}'` — expect `sentryEnabled: true`.

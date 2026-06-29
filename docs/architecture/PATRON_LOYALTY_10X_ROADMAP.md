@@ -211,6 +211,7 @@ flowchart LR
 - [ ] **Phase 2** — Full integration contract suite; API key rotation; 4xx spike wired
 - [x] **Phase 2 (partial)** — Integration HTTP contracts (19 routes); `recordClientError` on validation 4xx; API key `lastUsedAt`
 - [ ] **Phase 3** — 80% loyalty coverage; 5+ E2E specs; queue-events matrix tested
+- [x] **Phase 3 (partial)** — `loyalty-queue-events.service.spec.ts` matrix (6 events, idempotent/skip branches)
 - [ ] **Phase 4** — a11y + bundle budget; cookie-only auth documented
 - [ ] **Phase 5** — Sentry prod; staging soak; incident runbooks
 - [ ] **Phase 6** — ADRs; quarterly scorecard; doc CI gate
