@@ -8,6 +8,7 @@ type StoredApiKey = {
   hash: string;
   prefix: string;
   createdAt: string;
+  lastUsedAt?: string;
 };
 
 @Injectable()
@@ -25,14 +26,22 @@ export class LoyaltyApiKeyService {
     return `lms_${randomBytes(32).toString('hex')}`;
   }
 
-  async getStatus(
-    orgId: string,
-  ): Promise<{ configured: boolean; prefix: string | null; createdAt: string | null }> {
+  async getStatus(orgId: string): Promise<{
+    configured: boolean;
+    prefix: string | null;
+    createdAt: string | null;
+    lastUsedAt: string | null;
+  }> {
     const stored = await this.readStored(orgId);
     if (!stored) {
-      return { configured: false, prefix: null, createdAt: null };
+      return { configured: false, prefix: null, createdAt: null, lastUsedAt: null };
     }
-    return { configured: true, prefix: stored.prefix, createdAt: stored.createdAt };
+    return {
+      configured: true,
+      prefix: stored.prefix,
+      createdAt: stored.createdAt,
+      lastUsedAt: stored.lastUsedAt ?? null,
+    };
   }
 
   async rotateKey(orgId: string): Promise<{ apiKey: string; prefix: string; createdAt: string }> {
@@ -99,7 +108,33 @@ export class LoyaltyApiKeyService {
     if (!match) return null;
 
     const enabled = await this.patronCrmFeature.isEnabled(match.orgId);
-    return enabled ? match.orgId : null;
+    if (!enabled) return null;
+
+    void this.touchLastUsedAt(match.orgId);
+    return match.orgId;
+  }
+
+  private async touchLastUsedAt(orgId: string): Promise<void> {
+    const stored = await this.readStored(orgId);
+    if (!stored) return;
+
+    const lastUsedAt = new Date().toISOString();
+    const payload: StoredApiKey = { ...stored, lastUsedAt };
+
+    try {
+      await this.prisma.withTenant(orgId, async (tx) => {
+        const existing = await tx.setting.findFirst({
+          where: { orgId, key: LOYALTY_INTEGRATION_API_KEY_SETTING, scope: 'org', scopeId: null },
+        });
+        if (!existing) return;
+        await tx.setting.update({
+          where: { id: existing.id },
+          data: { value: payload },
+        });
+      });
+    } catch {
+      // Best-effort observability — never block integration auth.
+    }
   }
 
   private async readStored(orgId: string): Promise<StoredApiKey | null> {

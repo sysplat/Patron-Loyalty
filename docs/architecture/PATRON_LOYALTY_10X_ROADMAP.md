@@ -23,6 +23,7 @@ Prefix commits and PR titles with phase IDs for traceability:
 | ----------- | -------------- | ----------------------------------------------------------- |
 | 2026-06-28  | 8.2            | Baseline after Phases 0–7                                   |
 | 2026-06-28  | 8.4            | P1: account split + loyalty.prisma                          |
+| 2026-06-29  | 8.6            | P1: full Prisma layer split; P2: contracts + lastUsedAt     |
 | **Next**    | **2026-09-28** | Re-rate all dimensions; fix any below 9 before new features |
 
 **Rule:** If any dimension drops below **9**, open a focused phase task before adding features.
@@ -206,7 +207,9 @@ flowchart LR
 
 - [ ] **Phase 1** — Schema split preview; no service > 400 LOC; external_id only
 - [x] **Phase 1 (partial)** — `loyalty-account` split into lifecycle/earn/dsar; `models/loyalty.prisma`
+- [x] **Phase 1 (partial)** — Prisma layers: `core`, `qms`, `qms-services`, `billing`, `notifications`, `ops`; points/dashboard splits
 - [ ] **Phase 2** — Full integration contract suite; API key rotation; 4xx spike wired
+- [x] **Phase 2 (partial)** — Integration HTTP contracts (19 routes); `recordClientError` on validation 4xx; API key `lastUsedAt`
 - [ ] **Phase 3** — 80% loyalty coverage; 5+ E2E specs; queue-events matrix tested
 - [ ] **Phase 4** — a11y + bundle budget; cookie-only auth documented
 - [ ] **Phase 5** — Sentry prod; staging soak; incident runbooks
