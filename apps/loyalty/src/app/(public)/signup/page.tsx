@@ -91,7 +91,7 @@ export default function LoyaltySignupPage() {
           <div>
             <h1 className="text-2xl font-bold">Start Patron Loyalty</h1>
             <p className="text-muted-foreground mt-2 text-sm">
-              CRM, points, rewards, and campaigns — no queue management required
+              CRM, points, rewards, and campaigns
             </p>
           </div>
         </div>
