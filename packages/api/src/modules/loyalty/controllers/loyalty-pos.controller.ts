@@ -8,11 +8,14 @@ import {
   Logger,
   Param,
   Post,
+  Query,
   RawBodyRequest,
   Req,
+  Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { Request } from 'express';
@@ -34,7 +37,79 @@ export class LoyaltyPosController {
     private readonly connections: LoyaltyPosConnectionService,
     private readonly square: LoyaltyPosSquareService,
     private readonly clover: LoyaltyPosCloverService,
+    private readonly config: ConfigService,
   ) {}
+
+  // ─── OAuth Flows ────────────────────────────────────────────────────────────
+
+  @Get('square/oauth/url')
+  @ApiOperation({ summary: 'Get Square OAuth authorize URL' })
+  getSquareOauthUrl(@LoyaltyOrgId() orgId: string) {
+    return { url: this.square.getOAuthUrl(orgId) };
+  }
+
+  @Get('square/oauth/callback')
+  @Public()
+  @ApiOperation({ summary: 'Square OAuth callback handler' })
+  async handleSquareOauthCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Req() req: Request,
+    @Res() res: any,
+  ) {
+    if (!code || !state) throw new UnauthorizedException('Missing code or state');
+    const orgId = state;
+    // req.app.get is for Express settings. We need ConfigService from Nest app context.
+    // However, since we can't easily get Nest DI from req in this context without req.app.get(ConfigService),
+    // wait, we can just inject ConfigService in the constructor!
+    let redirectUrl = this.config.get<string>('app.loyaltyUrl') + '/integrations';
+    try {
+      const data = await this.square.exchangeOAuthCode(code);
+      await this.connections.updateSquareOAuth(orgId, {
+        accessToken: data.access_token,
+        locationId: data.merchant_id, // Square returns merchant_id in the token response which we can use
+        refreshToken: data.refresh_token,
+      });
+      redirectUrl += '?status=success&provider=square';
+    } catch (e) {
+      this.logger.error('Square OAuth failed', e);
+      redirectUrl += '?status=error&provider=square';
+    }
+    return res.redirect(redirectUrl);
+  }
+
+  @Get('clover/oauth/url')
+  @ApiOperation({ summary: 'Get Clover OAuth authorize URL' })
+  getCloverOauthUrl(@LoyaltyOrgId() orgId: string) {
+    return { url: this.clover.getOAuthUrl(orgId) };
+  }
+
+  @Get('clover/oauth/callback')
+  @Public()
+  @ApiOperation({ summary: 'Clover OAuth callback handler' })
+  async handleCloverOauthCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Query('merchant_id') merchantId: string,
+    @Req() req: Request,
+    @Res() res: any,
+  ) {
+    if (!code || !state) throw new UnauthorizedException('Missing code or state');
+    const orgId = state;
+    let redirectUrl = this.config.get<string>('app.loyaltyUrl') + '/integrations';
+    try {
+      const data = await this.clover.exchangeOAuthCode(code);
+      await this.connections.updateCloverOAuth(orgId, {
+        accessToken: data.access_token,
+        merchantId: merchantId || 'pending',
+      });
+      redirectUrl += '?status=success&provider=clover';
+    } catch (e) {
+      this.logger.error('Clover OAuth failed', e);
+      redirectUrl += '?status=error&provider=clover';
+    }
+    return res.redirect(redirectUrl);
+  }
 
   // ─── Staff CRUD (JWT-guarded via global guard) ────────────────────────────
 
@@ -138,7 +213,8 @@ export class LoyaltyPosController {
     }
 
     const payload = JSON.parse(rawBody.toString('utf8'));
-    return this.square.processEvent(orgId, payload);
+    const accessToken = this.connections.decryptAccessToken(connection);
+    return this.square.processEvent(orgId, payload, accessToken);
   }
 
   // ─── Clover inbound webhook ───────────────────────────────────────────────

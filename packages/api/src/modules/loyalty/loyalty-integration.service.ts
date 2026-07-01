@@ -113,6 +113,14 @@ export class LoyaltyIntegrationService {
       externalId?: string;
       points?: number;
       purchaseAmountCents?: number;
+      lineItems?: Array<{
+        id: string;
+        name: string;
+        categoryId?: string;
+        sku?: string;
+        priceCents: number;
+        quantity: number;
+      }>;
       eventType: LoyaltyEarnEventType;
       externalTxnId: string;
       description?: string;
@@ -149,6 +157,7 @@ export class LoyaltyIntegrationService {
         purchaseAmountCents: data.purchaseAmountCents,
         tierSlug: account.tier?.slug ?? null,
         lifetimePointsEarned: account.lifetimePointsEarned,
+        lineItems: data.lineItems,
       });
     }
     if (!points || points <= 0) {

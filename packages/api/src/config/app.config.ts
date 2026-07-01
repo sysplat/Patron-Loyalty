@@ -95,6 +95,24 @@ export const appConfig = registerAs('app', () => ({
     publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
   },
 
+  twilio: {
+    accountSid: process.env.TWILIO_ACCOUNT_SID,
+    authToken: process.env.TWILIO_AUTH_TOKEN,
+  },
+
+  posOauth: {
+    square: {
+      clientId: process.env.SQUARE_CLIENT_ID,
+      clientSecret: process.env.SQUARE_CLIENT_SECRET,
+      environment: process.env.SQUARE_ENVIRONMENT || 'sandbox',
+    },
+    clover: {
+      clientId: process.env.CLOVER_CLIENT_ID,
+      clientSecret: process.env.CLOVER_CLIENT_SECRET,
+      environment: process.env.CLOVER_ENVIRONMENT || 'sandbox',
+    },
+  },
+
   /** When true, user invite responses include inviteToken — only for scripted smoke/E2E. Never enable in real production tenants. */
   exposeInviteTokens: process.env.EXPOSE_INVITE_TOKENS === 'true',
 

@@ -19,6 +19,7 @@ import { LoyaltyApiKeyController } from './controllers/loyalty-api-key.controlle
 import { LoyaltyPublicController } from './controllers/loyalty-public.controller';
 import { LoyaltyPosController } from './controllers/loyalty-pos.controller';
 import { LoyaltyMarketingController } from './controllers/loyalty-marketing.controller';
+import { LoyaltyMarketingWebhookController } from './controllers/loyalty-marketing-webhook.controller';
 import { LoyaltyProgramService } from './loyalty-program.service';
 import { LoyaltyAccountService } from './loyalty-account.service';
 import { LoyaltyAccountLifecycleService } from './loyalty-account-lifecycle.service';
@@ -83,6 +84,7 @@ import { LoyaltyMarketingSyncService } from './loyalty-marketing-sync.service';
     LoyaltyIntegrationController,
     LoyaltyPosController,
     LoyaltyMarketingController,
+    LoyaltyMarketingWebhookController,
   ],
   providers: [
     LoyaltyProgramService,

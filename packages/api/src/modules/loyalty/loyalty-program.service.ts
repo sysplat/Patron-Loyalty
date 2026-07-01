@@ -208,6 +208,14 @@ export class LoyaltyProgramService {
       branchId?: string;
       tierSlug?: string | null;
       lifetimePointsEarned?: number;
+      lineItems?: Array<{
+        id: string;
+        name: string;
+        categoryId?: string;
+        sku?: string;
+        priceCents: number;
+        quantity: number;
+      }>;
     } = {},
   ): Promise<number> {
     const enabled = await this.patronCrmFeature.isEnabled(orgId);
@@ -227,12 +235,56 @@ export class LoyaltyProgramService {
     for (const rule of program.earnRules) {
       const conditions = (rule.conditions ?? {}) as Record<string, unknown>;
       if (!this.ruleMatchesConditions(conditions, ctx)) continue;
+
+      let eligibleAmountCents = ctx.purchaseAmountCents ?? 0;
+
+      // If rule has category/sku filtering and line items are provided
+      if (
+        ctx.lineItems &&
+        ctx.lineItems.length > 0 &&
+        (conditions.includedCategories ||
+          conditions.excludedCategories ||
+          conditions.includedSkus ||
+          conditions.excludedSkus)
+      ) {
+        const incCats = conditions.includedCategories as string[] | undefined;
+        const excCats = conditions.excludedCategories as string[] | undefined;
+        const incSkus = conditions.includedSkus as string[] | undefined;
+        const excSkus = conditions.excludedSkus as string[] | undefined;
+
+        eligibleAmountCents = ctx.lineItems.reduce((acc, item) => {
+          let eligible = true;
+
+          if (
+            incCats &&
+            incCats.length > 0 &&
+            (!item.categoryId || !incCats.includes(item.categoryId))
+          )
+            eligible = false;
+          if (excCats && excCats.length > 0 && item.categoryId && excCats.includes(item.categoryId))
+            eligible = false;
+          if (incSkus && incSkus.length > 0 && (!item.sku || !incSkus.includes(item.sku)))
+            eligible = false;
+          if (excSkus && excSkus.length > 0 && item.sku && excSkus.includes(item.sku))
+            eligible = false;
+
+          return acc + (eligible ? item.priceCents * item.quantity : 0);
+        }, 0);
+      }
+
       if (
         eventType === LOYALTY_EARN_EVENT_TYPES.PURCHASE &&
         rule.points === 1 &&
+        eligibleAmountCents > 0
+      ) {
+        return Math.floor(eligibleAmountCents / 100);
+      } else if (
+        eventType === LOYALTY_EARN_EVENT_TYPES.PURCHASE &&
+        eligibleAmountCents === 0 &&
         (ctx.purchaseAmountCents ?? 0) > 0
       ) {
-        return Math.floor((ctx.purchaseAmountCents ?? 0) / 100);
+        // Line item filtering resulted in $0 eligible, skip this rule
+        continue;
       }
       return rule.points;
     }

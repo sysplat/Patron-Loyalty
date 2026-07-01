@@ -151,6 +151,66 @@ export class LoyaltyPosConnectionService {
     return rows.map((r) => this.toView(r));
   }
 
+  async updateSquareOAuth(
+    orgId: string,
+    data: { accessToken: string; locationId?: string; refreshToken?: string },
+  ) {
+    const existing = await this.prisma.withBypassRls((tx) =>
+      tx.loyaltyPosConnection.findUnique({
+        where: { orgId_provider: { orgId, provider: LOYALTY_POS_PROVIDERS.SQUARE } },
+      }),
+    );
+    const config = (existing?.config as Record<string, any>) || {};
+    config.encryptedAccessToken = this.encrypt(data.accessToken);
+    if (data.refreshToken) {
+      config.encryptedRefreshToken = this.encrypt(data.refreshToken);
+    }
+    if (data.locationId) {
+      config.locationId = data.locationId;
+    }
+
+    await this.prisma.withTenant(orgId, (tx) =>
+      tx.loyaltyPosConnection.upsert({
+        where: { orgId_provider: { orgId, provider: LOYALTY_POS_PROVIDERS.SQUARE } },
+        create: {
+          orgId,
+          provider: LOYALTY_POS_PROVIDERS.SQUARE,
+          config,
+          status: 'active',
+          webhookSignatureKey: 'pending_setup',
+        },
+        update: { config, status: 'active' },
+      }),
+    );
+  }
+
+  async updateCloverOAuth(orgId: string, data: { accessToken: string; merchantId?: string }) {
+    const existing = await this.prisma.withBypassRls((tx) =>
+      tx.loyaltyPosConnection.findUnique({
+        where: { orgId_provider: { orgId, provider: LOYALTY_POS_PROVIDERS.CLOVER } },
+      }),
+    );
+    const config = (existing?.config as Record<string, any>) || {};
+    config.encryptedAccessToken = this.encrypt(data.accessToken);
+    if (data.merchantId) {
+      config.merchantId = data.merchantId;
+    }
+
+    await this.prisma.withTenant(orgId, (tx) =>
+      tx.loyaltyPosConnection.upsert({
+        where: { orgId_provider: { orgId, provider: LOYALTY_POS_PROVIDERS.CLOVER } },
+        create: {
+          orgId,
+          provider: LOYALTY_POS_PROVIDERS.CLOVER,
+          config,
+          status: 'active',
+          webhookSignatureKey: 'pending_setup',
+        },
+        update: { config, status: 'active' },
+      }),
+    );
+  }
+
   async deleteConnection(orgId: string, provider: LoyaltyPosProvider): Promise<void> {
     const deleted = await this.prisma.withTenant(orgId, (tx) =>
       tx.loyaltyPosConnection.deleteMany({ where: { orgId, provider } }),

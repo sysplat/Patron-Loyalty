@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { LOYALTY_EARN_EVENT_TYPES, CLOVER_WEBHOOK_EVENTS } from '@queueplatform/shared';
 import { LoyaltyIntegrationService } from './loyalty-integration.service';
 
@@ -38,7 +39,49 @@ interface CloverOrder {
 export class LoyaltyPosCloverService {
   private readonly logger = new Logger(LoyaltyPosCloverService.name);
 
-  constructor(private readonly integration: LoyaltyIntegrationService) {}
+  constructor(
+    private readonly integration: LoyaltyIntegrationService,
+    private readonly config: ConfigService,
+  ) {}
+
+  getOAuthUrl(orgId: string): string {
+    const clientId = this.config.get<string>('app.posOauth.clover.clientId');
+    const env = this.config.get<string>('app.posOauth.clover.environment') || 'sandbox';
+    if (!clientId) throw new Error('Clover OAuth not configured');
+
+    const baseUrl =
+      env === 'production'
+        ? 'https://www.clover.com/oauth/authorize'
+        : 'https://sandbox.dev.clover.com/oauth/authorize';
+
+    return `${baseUrl}?client_id=${clientId}&state=${orgId}`;
+  }
+
+  async exchangeOAuthCode(code: string): Promise<{ access_token: string }> {
+    const clientId = this.config.get<string>('app.posOauth.clover.clientId');
+    const clientSecret = this.config.get<string>('app.posOauth.clover.clientSecret');
+    const env = this.config.get<string>('app.posOauth.clover.environment') || 'sandbox';
+
+    const baseUrl =
+      env === 'production'
+        ? 'https://www.clover.com/oauth/token'
+        : 'https://sandbox.dev.clover.com/oauth/token';
+
+    const res = await fetch(
+      `${baseUrl}?client_id=${clientId}&client_secret=${clientSecret}&code=${code}`,
+      {
+        method: 'GET',
+      },
+    );
+
+    if (!res.ok) {
+      const err = await res.text();
+      this.logger.error(`Clover OAuth failed: ${err}`);
+      throw new Error(`Clover OAuth failed`);
+    }
+
+    return res.json() as Promise<{ access_token: string }>;
+  }
 
   async processEvent(
     orgId: string,
@@ -111,11 +154,31 @@ export class LoyaltyPosCloverService {
         });
       }
 
+      let lineItems:
+        | Array<{
+            id: string;
+            name: string;
+            categoryId?: string;
+            priceCents: number;
+            quantity: number;
+          }>
+        | undefined = undefined;
+      const orderLineItems = (order as any).lineItems?.elements;
+      if (orderLineItems && Array.isArray(orderLineItems)) {
+        lineItems = orderLineItems.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          priceCents: item.price ?? 0,
+          quantity: 1, // Clover line items might not have a direct quantity unless it's an expanded item, assume 1 for basic items or extract from qty
+        }));
+      }
+
       await this.integration.earnPoints(orgId, {
         externalId,
         email,
         phone,
         purchaseAmountCents: totalCents,
+        lineItems,
         eventType: LOYALTY_EARN_EVENT_TYPES.PURCHASE,
         externalTxnId: `clv_${orderId}`,
         description: `Clover order (${(totalCents / 100).toFixed(2)})`,
@@ -170,7 +233,7 @@ export class LoyaltyPosCloverService {
   ): Promise<CloverOrder | null> {
     try {
       const res = await fetch(
-        `https://api.clover.com/v3/merchants/${merchantId}/orders/${orderId}?expand=customers`,
+        `https://api.clover.com/v3/merchants/${merchantId}/orders/${orderId}?expand=customers,lineItems`,
         { headers: { Authorization: `Bearer ${accessToken}` } },
       );
       if (!res.ok) {

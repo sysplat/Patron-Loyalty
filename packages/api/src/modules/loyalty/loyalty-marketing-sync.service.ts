@@ -146,4 +146,66 @@ export class LoyaltyMarketingSyncService {
       );
     }
   }
+
+  /**
+   * Processes an incoming webhook from a marketing provider (e.g. an unsubscribe event).
+   * Finds the customer by email and updates their consent ledger if they unsubscribed.
+   */
+  async processWebhook(provider: string, payload: any): Promise<void> {
+    try {
+      let email: string | undefined;
+      let action: string | undefined;
+
+      // Determine email and action based on provider
+      if (provider === LOYALTY_MARKETING_PROVIDERS.KLAVIYO) {
+        // e.g. Klaviyo unsubscribe event
+        if (payload?.type === 'unsubscribe') {
+          email = payload.data?.email;
+          action = 'REVOKED';
+        }
+      } else if (provider === LOYALTY_MARKETING_PROVIDERS.MAILCHIMP) {
+        // Mailchimp unsubscribe webhook
+        if (payload?.type === 'unsubscribe') {
+          email = payload.data?.email;
+          action = 'REVOKED';
+        }
+      }
+
+      if (!email || !action) return;
+
+      const customers = await this.prisma.customer.findMany({
+        where: { email },
+        select: { id: true, orgId: true },
+      });
+
+      for (const customer of customers) {
+        await this.prisma.withTenant(customer.orgId, async (tx) => {
+          // Update customer record
+          await tx.customer.update({
+            where: { id: customer.id },
+            data: {
+              marketingEmailConsent: action,
+              marketingConsentSource: provider,
+            },
+          });
+          // Add ledger entry
+          await tx.consentLedgerEntry.create({
+            data: {
+              orgId: customer.orgId,
+              customerId: customer.id,
+              channel: 'email',
+              purpose: 'marketing',
+              action: action,
+              source: provider,
+            },
+          });
+        });
+        this.logger.log(
+          `Updated marketing consent to ${action} for customer ${customer.id} in org ${customer.orgId} from ${provider} webhook`,
+        );
+      }
+    } catch (err) {
+      this.logger.error(`Error processing ${provider} webhook: ${(err as Error).message}`);
+    }
+  }
 }
