@@ -15,15 +15,18 @@ function buildAccountService(deps: {
   programService: unknown;
   loyaltyWebhook: unknown;
   eventEmitter: unknown;
+  marketingSync?: unknown;
 }) {
   const ledger = new LoyaltyPointsLedgerService(
     deps.prisma as never,
     new LoyaltyPointsMetricsService(),
   );
+  const marketingSync = deps.marketingSync || { syncProfile: vi.fn() };
   const points = new LoyaltyPointsService(
     ledger,
     deps.eventEmitter as never,
     deps.loyaltyWebhook as never,
+    marketingSync as never,
   );
   const lifecycle = new LoyaltyAccountLifecycleService(
     deps.prisma as never,

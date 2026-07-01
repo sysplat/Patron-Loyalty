@@ -50,6 +50,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     integration.upsertCustomer.mockResolvedValue({ customerId: CUSTOMER_ID });
     customerFindFirst.mockResolvedValue(null);
 
+    const marketingSync = { syncProfile: vi.fn() };
     service = new LoyaltyQueueEventsService(
       accounts as never,
       gamification as never,
@@ -57,6 +58,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
       campaignAutomation as never,
       loyaltyWebhook as never,
       integration as never,
+      marketingSync as never,
     );
   });
 

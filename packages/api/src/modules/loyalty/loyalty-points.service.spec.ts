@@ -64,10 +64,12 @@ describe('LoyaltyPointsService applyPoints idempotency', () => {
       }),
     );
 
+    const marketingSync = { syncProfile: vi.fn() };
     service = new LoyaltyPointsService(
       new LoyaltyPointsLedgerService(prisma as never, new LoyaltyPointsMetricsService()),
       eventEmitter as never,
       loyaltyWebhook as never,
+      marketingSync as never,
     );
   });
 
