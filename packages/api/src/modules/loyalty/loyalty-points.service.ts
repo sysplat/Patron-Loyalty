@@ -7,6 +7,7 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { LoyaltyWebhookService } from './loyalty-webhook.service';
 import { LoyaltyPointsLedgerService } from './loyalty-points-ledger.service';
+import { LoyaltyMarketingSyncService } from './loyalty-marketing-sync.service';
 import {
   type ApplyPointsTxResult,
   type LoyaltyApplyPointsResult,
@@ -21,6 +22,7 @@ export class LoyaltyPointsService {
     private readonly ledger: LoyaltyPointsLedgerService,
     private readonly eventEmitter: EventEmitter2,
     private readonly loyaltyWebhook: LoyaltyWebhookService,
+    private readonly marketingSync: LoyaltyMarketingSyncService,
   ) {}
 
   async burnPoints(
@@ -97,6 +99,8 @@ export class LoyaltyPointsService {
         sourceType: opts.sourceType ?? null,
         sourceId: opts.sourceId ?? null,
       });
+      // Fire-and-forget marketing sync on every earn
+      void this.marketingSync.syncProfile(orgId, result.customerId);
     }
     if (result.type === LOYALTY_POINT_LEDGER_TYPES.BURN) {
       void this.loyaltyWebhook.dispatch(orgId, LOYALTY_WEBHOOK_EVENTS.POINTS_REDEEMED, {

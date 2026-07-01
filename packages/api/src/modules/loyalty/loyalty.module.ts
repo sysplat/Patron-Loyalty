@@ -17,6 +17,8 @@ import { LoyaltyGamificationController } from './controllers/loyalty-gamificatio
 import { LoyaltyCrmController } from './controllers/loyalty-crm.controller';
 import { LoyaltyApiKeyController } from './controllers/loyalty-api-key.controller';
 import { LoyaltyPublicController } from './controllers/loyalty-public.controller';
+import { LoyaltyPosController } from './controllers/loyalty-pos.controller';
+import { LoyaltyMarketingController } from './controllers/loyalty-marketing.controller';
 import { LoyaltyProgramService } from './loyalty-program.service';
 import { LoyaltyAccountService } from './loyalty-account.service';
 import { LoyaltyAccountLifecycleService } from './loyalty-account-lifecycle.service';
@@ -47,6 +49,15 @@ import { LoyaltyWebhookService } from './loyalty-webhook.service';
 import { LoyaltyApiKeyGuard } from './guards/loyalty-api-key.guard';
 import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
 import { LoyaltyConnectorObservabilityService } from './loyalty-connector-observability.service';
+// POS integrations
+import { LoyaltyPosConnectionService } from './loyalty-pos-connection.service';
+import { LoyaltyPosSquareService } from './loyalty-pos-square.service';
+import { LoyaltyPosCloverService } from './loyalty-pos-clover.service';
+// Marketing sync
+import { LoyaltyMarketingConnectionService } from './loyalty-marketing-connection.service';
+import { LoyaltyMarketingKlaviyoProvider } from './loyalty-marketing-klaviyo.provider';
+import { LoyaltyMarketingMailchimpProvider } from './loyalty-marketing-mailchimp.provider';
+import { LoyaltyMarketingSyncService } from './loyalty-marketing-sync.service';
 
 @Module({
   imports: [
@@ -70,6 +81,8 @@ import { LoyaltyConnectorObservabilityService } from './loyalty-connector-observ
     LoyaltyApiKeyController,
     LoyaltyPublicController,
     LoyaltyIntegrationController,
+    LoyaltyPosController,
+    LoyaltyMarketingController,
   ],
   providers: [
     LoyaltyProgramService,
@@ -102,6 +115,15 @@ import { LoyaltyConnectorObservabilityService } from './loyalty-connector-observ
     LoyaltyApiKeyGuard,
     LoyaltyQueueEventsService,
     LoyaltyConnectorObservabilityService,
+    // POS integrations
+    LoyaltyPosConnectionService,
+    LoyaltyPosSquareService,
+    LoyaltyPosCloverService,
+    // Marketing sync
+    LoyaltyMarketingConnectionService,
+    LoyaltyMarketingKlaviyoProvider,
+    LoyaltyMarketingMailchimpProvider,
+    LoyaltyMarketingSyncService,
   ],
   exports: [
     LoyaltyAccountService,

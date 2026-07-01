@@ -12,6 +12,7 @@ import { LoyaltyGamificationService } from './loyalty-gamification.service';
 import { LoyaltyCampaignAutomationService } from './loyalty-campaign-automation.service';
 import { LoyaltyWebhookService } from './loyalty-webhook.service';
 import { LoyaltyIntegrationService } from './loyalty-integration.service';
+import { LoyaltyMarketingSyncService } from './loyalty-marketing-sync.service';
 import {
   LoyaltyAppointmentCompletedEvent,
   LoyaltyAppointmentNoShowEvent,
@@ -49,6 +50,7 @@ export class LoyaltyQueueEventsService {
     private readonly campaignAutomation: LoyaltyCampaignAutomationService,
     private readonly loyaltyWebhook: LoyaltyWebhookService,
     private readonly integration: LoyaltyIntegrationService,
+    private readonly marketingSync: LoyaltyMarketingSyncService,
   ) {}
 
   async processRemoteEvent(orgId: string, payload: LoyaltyQueueEventPayload) {
@@ -203,6 +205,8 @@ export class LoyaltyQueueEventsService {
       void this.loyaltyWebhook.dispatch(event.orgId, LOYALTY_WEBHOOK_EVENTS.CUSTOMER_CREATED, {
         customerId: event.customerId,
       });
+      // Sync new patron profile to marketing platforms
+      void this.marketingSync.syncProfile(event.orgId, event.customerId);
       return { ok: true };
     } catch (err) {
       this.logger.warn(`Loyalty customer stub failed: ${(err as Error).message}`);

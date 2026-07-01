@@ -456,3 +456,57 @@ model ConsentLedgerEntry {
   @@index([customerId, channel, purpose])
   @@map("consent_ledger_entries")
 }
+
+// ─── POS Connections (Square / Clover) ─────────────────────────────────────
+
+model LoyaltyPosConnection {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  orgId    String @map("org_id") @db.Uuid
+  /// "square" | "clover"
+  provider String @db.VarChar(20)
+  status   String @default("active") @db.VarChar(20)
+
+  /// HMAC key used to verify inbound webhook signatures from this POS provider
+  webhookSignatureKey String @map("webhook_signature_key") @db.VarChar(500)
+
+  /// Provider-specific config: locationId/merchantId, AES-256-GCM encrypted accessToken, etc.
+  config Json
+
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, provider])
+  @@index([orgId])
+  @@map("loyalty_pos_connections")
+}
+
+// ─── Marketing Sync Connections (Klaviyo / Mailchimp) ──────────────────────
+
+model LoyaltyMarketingConnection {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  orgId    String @map("org_id") @db.Uuid
+  /// "klaviyo" | "mailchimp"
+  provider String @db.VarChar(20)
+  status   String @default("active") @db.VarChar(20)
+
+  /// AES-256-GCM encrypted provider credentials (apiKey, etc.)
+  credentials Json
+
+  /// Provider-specific non-sensitive config (listId, serverPrefix, etc.)
+  config Json @default("{}")
+
+  /// Last successful sync timestamp (updated after each fire-and-forget push)
+  syncedAt  DateTime? @map("synced_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, provider])
+  @@index([orgId])
+  @@map("loyalty_marketing_connections")
+}
+

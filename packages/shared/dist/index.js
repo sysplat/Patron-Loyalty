@@ -30,6 +30,8 @@ __exportStar(require("./constants/roles"), exports);
 __exportStar(require("./constants/customer-crm"), exports);
 __exportStar(require("./constants/loyalty"), exports);
 __exportStar(require("./constants/loyalty-connector"), exports);
+__exportStar(require("./constants/loyalty-pos"), exports);
+__exportStar(require("./constants/loyalty-marketing"), exports);
 __exportStar(require("./constants/sms-credits"), exports);
 __exportStar(require("./constants/sms-credit-packs"), exports);
 __exportStar(require("./constants/industries"), exports);
@@ -83,6 +85,8 @@ __exportStar(require("./validators/upload.validators"), exports);
 __exportStar(require("./validators/customer.validators"), exports);
 __exportStar(require("./validators/loyalty.validators"), exports);
 __exportStar(require("./validators/loyalty-integration.validators"), exports);
+__exportStar(require("./validators/loyalty-pos.validators"), exports);
+__exportStar(require("./validators/loyalty-marketing.validators"), exports);
 __exportStar(require("./validators/query.validators"), exports);
 __exportStar(require("./validators/datetime"), exports);
 //# sourceMappingURL=index.js.map
