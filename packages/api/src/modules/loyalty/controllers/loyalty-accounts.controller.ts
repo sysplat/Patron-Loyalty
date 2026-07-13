@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, ParseUUIDPipe } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, AuthenticatedUser } from '../../../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../common/decorators/permissions.decorator';
@@ -32,7 +32,10 @@ export class LoyaltyAccountsController {
 
   @Get('accounts/:customerId')
   @RequirePermissions({ resource: 'customer', action: 'read' })
-  getAccount(@CurrentUser() user: AuthenticatedUser, @Param('customerId') customerId: string) {
+  getAccount(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
+  ) {
     return this.accounts.getAccountWithLedger(user.orgId, customerId);
   }
 
@@ -41,7 +44,7 @@ export class LoyaltyAccountsController {
   @RequirePermissions({ resource: 'customer', action: 'read' })
   exportPatronDsar(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('customerId') customerId: string,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
   ) {
     return this.accounts.exportPatronDsar(user.orgId, customerId);
   }
@@ -50,7 +53,7 @@ export class LoyaltyAccountsController {
   @RequirePermissions({ resource: 'customer', action: 'update' })
   updateProfile(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('customerId') customerId: string,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
     @Body() body: UpdateLoyaltyProfileDto,
   ) {
     return this.prisma.withTenant(user.orgId, (tx) =>
@@ -68,7 +71,7 @@ export class LoyaltyAccountsController {
   @RequirePermissions({ resource: 'customer', action: 'update' })
   adjustPoints(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('customerId') customerId: string,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
     @Body() body: LoyaltyPointsAdjustDto,
   ) {
     return this.accounts.adjustPoints(user.orgId, customerId, body.points, body.description);

@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, AuthenticatedUser } from '../../../common/decorators/current-user.decorator';
@@ -42,7 +43,7 @@ export class LoyaltyCrmController {
   @RequirePermissions({ resource: 'customer', action: 'read' })
   listCustomerTasks(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('customerId') customerId: string,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
   ) {
     return this.crmTasks.listForCustomer(user.orgId, customerId);
   }

@@ -1,4 +1,13 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, AuthenticatedUser } from '../../../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../common/decorators/permissions.decorator';
@@ -13,7 +22,10 @@ export class LoyaltyWalletController {
 
   @Get('wallets/:customerId')
   @RequirePermissions({ resource: 'customer', action: 'read' })
-  getWallet(@CurrentUser() user: AuthenticatedUser, @Param('customerId') customerId: string) {
+  getWallet(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
+  ) {
     return this.wallet.getWallet(user.orgId, customerId);
   }
 
@@ -21,7 +33,7 @@ export class LoyaltyWalletController {
   @RequirePermissions({ resource: 'customer', action: 'update' })
   adjustWallet(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('customerId') customerId: string,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
     @Body() body: LoyaltyWalletAdjustDto,
   ) {
     return this.wallet.adjustWallet(
