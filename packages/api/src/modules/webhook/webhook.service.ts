@@ -46,8 +46,13 @@ export class WebhookService {
       if (process.env.NODE_ENV === 'test') {
         return;
       }
-      const resolved = await lookup(hostname, { all: true, verbatim: true });
-      if (resolved.length === 0) {
+      let resolved;
+      try {
+        resolved = await lookup(hostname, { all: true, verbatim: true });
+      } catch (err) {
+        throw new BadRequestException('Webhook host could not be resolved');
+      }
+      if (!resolved || resolved.length === 0) {
         throw new BadRequestException('Webhook host did not resolve to an IP address');
       }
       for (const address of resolved) {
