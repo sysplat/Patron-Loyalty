@@ -119,4 +119,9 @@ export class LoyaltyCampaignService {
     }
     return launched;
   }
+
+  async delete(orgId: string, id: string) {
+    await this.patronCrmFeature.requireEnabled(orgId);
+    await this.prisma.withTenant(orgId, (tx) => tx.loyaltyCampaign.delete({ where: { id } }));
+  }
 }

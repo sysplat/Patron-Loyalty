@@ -6,13 +6,14 @@ import {
   CUSTOMER_SEGMENT_PRESET_LABELS,
   CUSTOMER_SEGMENT_PRESET_VALUES,
 } from '@queueplatform/shared';
-import { loyaltyGet, loyaltyPatch, loyaltyPost } from '@/lib/api-response';
+import { loyaltyGet, loyaltyPatch, loyaltyPost, loyaltyDelete } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
 import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { Trash2 } from 'lucide-react';
 
 interface Campaign {
   id: string;
@@ -90,6 +91,15 @@ export default function CampaignsPage() {
       qc.invalidateQueries({ queryKey: ['loyalty', 'campaigns'] });
     },
     onError: () => toast.error('Could not activate campaign'),
+  });
+
+  const deleteCampaign = useMutation({
+    mutationFn: (id: string) => loyaltyDelete(`/loyalty/campaigns/${id}`, token!),
+    onSuccess: () => {
+      toast.success('Campaign deleted');
+      qc.invalidateQueries({ queryKey: ['loyalty', 'campaigns'] });
+    },
+    onError: () => toast.error('Failed to delete campaign'),
   });
 
   return (
@@ -172,7 +182,7 @@ export default function CampaignsPage() {
                   {c.scheduledAt ? ` · scheduled ${new Date(c.scheduledAt).toLocaleString()}` : ''}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {c.status === 'draft' && c.trigger !== 'MANUAL' && (
                   <Button size="sm" variant="secondary" onClick={() => activate.mutate(c.id)}>
                     Enable automation
@@ -186,6 +196,19 @@ export default function CampaignsPage() {
                 {c.status === 'scheduled' && c.trigger === 'MANUAL' && (
                   <span className="text-muted-foreground text-xs">Awaiting schedule</span>
                 )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => {
+                    if (!confirm(`Delete campaign "${c.name}"? This cannot be undone.`)) return;
+                    deleteCampaign.mutate(c.id);
+                  }}
+                  disabled={deleteCampaign.isPending}
+                  title="Delete campaign"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </CardContent>
           </Card>

@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { loyaltyGet, loyaltyPatch, loyaltyPost } from '@/lib/api-response';
+import { loyaltyGet, loyaltyPatch, loyaltyPost, loyaltyDelete } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
 import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { Trash2 } from 'lucide-react';
 
 interface Reward {
   id: string;
@@ -58,6 +59,15 @@ export default function RewardsPage() {
     onError: () => toast.error('Failed to create reward'),
   });
 
+  const deleteReward = useMutation({
+    mutationFn: (id: string) => loyaltyDelete(`/loyalty/rewards/${id}`, token!),
+    onSuccess: () => {
+      toast.success('Reward deleted');
+      qc.invalidateQueries({ queryKey: ['loyalty', 'rewards'] });
+    },
+    onError: () => toast.error('Failed to delete reward'),
+  });
+
   return (
     <div className="space-y-6">
       <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Rewards catalog</h1>
@@ -91,14 +101,29 @@ export default function RewardsPage() {
             <Card key={r.id} className={!r.active ? 'opacity-60' : undefined}>
               <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2">
                 <CardTitle className="text-base">{r.name}</CardTitle>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => toggleActive.mutate({ id: r.id, active: !r.active })}
-                  disabled={toggleActive.isPending}
-                >
-                  {r.active ? 'Deactivate' : 'Activate'}
-                </Button>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => toggleActive.mutate({ id: r.id, active: !r.active })}
+                    disabled={toggleActive.isPending}
+                  >
+                    {r.active ? 'Deactivate' : 'Activate'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => {
+                      if (!confirm(`Delete reward "${r.name}"? This cannot be undone.`)) return;
+                      deleteReward.mutate(r.id);
+                    }}
+                    disabled={deleteReward.isPending}
+                    title="Delete reward"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="text-muted-foreground text-sm">
                 <p>{r.description ?? r.type}</p>

@@ -1,4 +1,14 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, AuthenticatedUser } from '../../../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../common/decorators/permissions.decorator';
@@ -41,5 +51,12 @@ export class LoyaltyCampaignsController {
   @RequirePermissions({ resource: 'customer', action: 'update' })
   launchCampaign(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return this.campaigns.launch(user.orgId, id);
+  }
+
+  @Delete('campaigns/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions({ resource: 'customer', action: 'update' })
+  async deleteCampaign(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    await this.campaigns.delete(user.orgId, id);
   }
 }

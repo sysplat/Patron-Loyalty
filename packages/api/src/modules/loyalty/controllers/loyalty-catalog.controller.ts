@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -82,5 +83,19 @@ export class LoyaltyCatalogController {
   @RequirePermissions({ resource: 'customer', action: 'read' })
   validateCoupon(@CurrentUser() user: AuthenticatedUser, @Body() body: ValidateLoyaltyCouponDto) {
     return this.catalog.validateCoupon(user.orgId, body.code, body.accountId);
+  }
+
+  @Delete('rewards/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions({ resource: 'customer', action: 'update' })
+  async deleteReward(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    await this.catalog.deleteReward(user.orgId, id);
+  }
+
+  @Delete('coupons/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions({ resource: 'customer', action: 'update' })
+  async deleteCoupon(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    await this.catalog.deleteCoupon(user.orgId, id);
   }
 }

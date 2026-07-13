@@ -31,6 +31,10 @@ export function loyaltyPatch<T>(path: string, token: string, body?: unknown): Pr
   return api.patch(path, body, { token }).then((payload) => unwrapApiData<T>(payload));
 }
 
+export function loyaltyDelete(path: string, token: string): Promise<void> {
+  return api.delete(path, { token }) as Promise<void>;
+}
+
 /** Customer list endpoints: `{ success, data, meta }` or paginated raw shape. */
 export type PaginatedResponse<T> = {
   data: T[];

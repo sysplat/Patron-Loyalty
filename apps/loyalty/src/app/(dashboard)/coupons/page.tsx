@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { loyaltyGet, loyaltyPost } from '@/lib/api-response';
+import { loyaltyGet, loyaltyPost, loyaltyDelete } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
 import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { Trash2 } from 'lucide-react';
 
 interface Coupon {
   id: string;
@@ -51,9 +52,18 @@ export default function CouponsPage() {
     },
   });
 
+  const deleteCoupon = useMutation({
+    mutationFn: (id: string) => loyaltyDelete(`/loyalty/coupons/${id}`, token!),
+    onSuccess: () => {
+      toast.success('Coupon deleted');
+      qc.invalidateQueries({ queryKey: ['loyalty', 'coupons'] });
+    },
+    onError: () => toast.error('Failed to delete coupon'),
+  });
+
   return (
     <div className="space-y-6">
-      <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Coupons & promotions</h1>
+      <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Coupons &amp; promotions</h1>
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Create coupon</CardTitle>
@@ -92,10 +102,25 @@ export default function CouponsPage() {
                   {c.name} · {c.type} {c.value}
                 </p>
               </div>
-              <p className="text-sm">
-                {c.usedCount}
-                {c.maxUses ? ` / ${c.maxUses}` : ''} uses
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="text-sm">
+                  {c.usedCount}
+                  {c.maxUses ? ` / ${c.maxUses}` : ''} uses
+                </p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => {
+                    if (!confirm(`Delete coupon "${c.code}"? This cannot be undone.`)) return;
+                    deleteCoupon.mutate(c.id);
+                  }}
+                  disabled={deleteCoupon.isPending}
+                  title="Delete coupon"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}

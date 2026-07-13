@@ -226,4 +226,14 @@ export class LoyaltyCatalogService {
       });
     });
   }
+
+  async deleteReward(orgId: string, id: string) {
+    await this.requireLoyalty(orgId);
+    await this.prisma.withTenant(orgId, (tx) => tx.loyaltyReward.delete({ where: { id } }));
+  }
+
+  async deleteCoupon(orgId: string, id: string) {
+    await this.requireLoyalty(orgId);
+    await this.prisma.withTenant(orgId, (tx) => tx.loyaltyCoupon.delete({ where: { id } }));
+  }
 }

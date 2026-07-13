@@ -25,6 +25,8 @@ import {
   Users,
   Wallet,
   X,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import {
   QlessqLogoMark,
@@ -143,6 +145,8 @@ function LoyaltySidebar({
   theme,
   onToggleTheme,
   hasQueueProduct,
+  collapsed,
+  onToggleCollapse,
 }: {
   pathname: string;
   organization?: { name?: string; logoUrl?: string | null } | null;
@@ -158,6 +162,8 @@ function LoyaltySidebar({
   theme: DashboardTheme;
   onToggleTheme: () => void;
   hasQueueProduct: boolean;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }) {
   const displayName = formatUserDisplayName(user);
   const roleLabel = formatRoleLabel(user?.role);
@@ -167,10 +173,12 @@ function LoyaltySidebar({
   return (
     <aside
       className={cn(
-        'bg-card/65 fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r shadow-xl backdrop-blur-md transition-transform duration-300 ease-out dark:border-slate-800/50 dark:bg-slate-950/70 dark:shadow-black/40',
+        'bg-card/65 fixed inset-y-0 left-0 z-40 flex flex-col border-r shadow-xl backdrop-blur-md transition-all duration-300 ease-out dark:border-slate-800/50 dark:bg-slate-950/70 dark:shadow-black/40',
+        collapsed ? 'w-16' : 'w-64',
         mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
       )}
     >
+      {/* Mobile close button */}
       <div className="absolute right-3 top-4 z-10 md:hidden">
         <button
           type="button"
@@ -182,7 +190,28 @@ function LoyaltySidebar({
         </button>
       </div>
 
-      <div className="flex h-16 items-center gap-2 border-b px-5 pr-12 md:pr-5">
+      {/* Desktop collapse toggle — sits on the right edge */}
+      <button
+        type="button"
+        onClick={onToggleCollapse}
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        className={cn(
+          'text-muted-foreground hover:bg-muted bg-background absolute -right-3.5 top-[72px] z-50 hidden h-7 w-7 items-center justify-center rounded-full border shadow-sm transition-colors md:flex',
+        )}
+      >
+        {collapsed ? (
+          <PanelLeftOpen className="h-3.5 w-3.5" />
+        ) : (
+          <PanelLeftClose className="h-3.5 w-3.5" />
+        )}
+      </button>
+
+      <div
+        className={cn(
+          'flex h-16 items-center gap-2 border-b px-5',
+          collapsed ? 'pr-5' : 'pr-12 md:pr-5',
+        )}
+      >
         <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg">
           {organization?.logoUrl ? (
             <Image
@@ -197,14 +226,16 @@ function LoyaltySidebar({
             <QlessqLogoMark size={44} />
           )}
         </div>
-        <div className="min-w-0">
-          <Link href="/" className="block min-w-0" onClick={onCloseMobile}>
-            <QlessqWordmark height={24} />
-          </Link>
-          <p className="text-muted-foreground truncate text-[10px] font-semibold uppercase tracking-wider">
-            Loyalty
-          </p>
-        </div>
+        {!collapsed && (
+          <div className="min-w-0">
+            <Link href="/" className="block min-w-0" onClick={onCloseMobile}>
+              <QlessqWordmark height={24} />
+            </Link>
+            <p className="text-muted-foreground truncate text-[10px] font-semibold uppercase tracking-wider">
+              Loyalty
+            </p>
+          </div>
+        )}
       </div>
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3" aria-label="Loyalty">
@@ -215,8 +246,10 @@ function LoyaltySidebar({
               key={href}
               href={href}
               onClick={onCloseMobile}
+              title={collapsed ? label : undefined}
               className={cn(
                 'group flex items-center gap-3 rounded-lg border-l-[3px] py-2.5 pl-[9px] pr-3 text-sm font-medium transition-all duration-150',
+                collapsed && 'justify-center px-0 pl-0',
                 active
                   ? 'bg-primary/10 text-primary border-primary shadow-sm'
                   : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground border-transparent',
@@ -228,15 +261,17 @@ function LoyaltySidebar({
                   active ? 'text-primary' : 'text-muted-foreground/70 group-hover:text-foreground',
                 )}
               />
-              <span className="truncate">{label}</span>
-              {active && <ChevronRight className="text-primary/50 ml-auto h-4 w-4 shrink-0" />}
+              {!collapsed && <span className="truncate">{label}</span>}
+              {!collapsed && active && (
+                <ChevronRight className="text-primary/50 ml-auto h-4 w-4 shrink-0" />
+              )}
             </Link>
           );
         })}
       </nav>
 
       <div className="space-y-3 border-t p-3">
-        {hasQueueProduct ? (
+        {!collapsed && hasQueueProduct ? (
           <a
             href={`${webUrl}/dashboard`}
             target="_blank"
@@ -248,21 +283,28 @@ function LoyaltySidebar({
           </a>
         ) : null}
 
-        <div className="flex items-center gap-3 rounded-lg px-2 py-2">
+        <div
+          className={cn(
+            'flex items-center gap-3 rounded-lg px-2 py-2',
+            collapsed && 'flex-col px-0',
+          )}
+        >
           <LoyaltyUserAvatar
             firstName={user?.firstName}
             lastName={user?.lastName}
             email={user?.email}
             logoUrl={organization?.logoUrl}
           />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{displayName}</p>
-            <p className="text-muted-foreground truncate text-xs">{user?.email}</p>
-            <p className="text-muted-foreground/80 truncate text-[10px]">
-              {roleLabel}
-              {isViewer ? ' · Read-only' : ''}
-            </p>
-          </div>
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{displayName}</p>
+              <p className="text-muted-foreground truncate text-xs">{user?.email}</p>
+              <p className="text-muted-foreground/80 truncate text-[10px]">
+                {roleLabel}
+                {isViewer ? ' · Read-only' : ''}
+              </p>
+            </div>
+          )}
           <button
             type="button"
             onClick={onLogout}
@@ -273,7 +315,7 @@ function LoyaltySidebar({
           </button>
         </div>
 
-        <ThemeSelector theme={theme} onToggle={onToggleTheme} />
+        {!collapsed && <ThemeSelector theme={theme} onToggle={onToggleTheme} />}
       </div>
     </aside>
   );
@@ -315,6 +357,7 @@ export function LoyaltyDashboardShell({
   const pathname = usePathname() ?? '/';
   const { theme, toggleTheme, hydrated } = useDashboardTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const headerLabel = currentNavLabel(pathname);
 
@@ -339,9 +382,16 @@ export function LoyaltyDashboardShell({
           theme={theme}
           onToggleTheme={toggleTheme}
           hasQueueProduct={hasQueueProduct}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
         />
 
-        <div className="flex min-w-0 flex-1 flex-col md:ml-64">
+        <div
+          className={cn(
+            'flex min-w-0 flex-1 flex-col transition-all duration-300',
+            sidebarCollapsed ? 'md:ml-16' : 'md:ml-64',
+          )}
+        >
           <header className="bg-card/80 sticky top-0 z-20 flex h-14 min-h-14 items-center justify-between gap-2 border-b px-3 backdrop-blur-md sm:h-16 sm:min-h-16 sm:px-4 md:px-6 dark:border-slate-700/35 dark:bg-[#0a1220]/85">
             <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
               <button
