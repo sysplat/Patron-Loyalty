@@ -38,8 +38,8 @@ export function AuthMarketingPanel() {
             lasting relationships.
           </h2>
           <p className="text-lg leading-relaxed text-white/60">
-            CRM, loyalty points, patron portal, and marketing — sold separately from queue
-            management. Connect QlessQ when you need visit data.
+            A standalone suite for CRM, loyalty points, patron portal, and marketing. Integrates
+            seamlessly with QlessQ to sync customer visit and check-in data.
           </p>
           <div className="space-y-3 pt-4">
             {HIGHLIGHTS.map((item) => (
