@@ -22,14 +22,17 @@ const customerRefinement = (
 export const loyaltyIntegrationUpsertCustomerSchema = z.object({
   externalId: z.string().max(100).optional(),
   name: z.string().min(1).max(200),
-  email: z.string().email().optional().nullable(),
+  email: z
+    .union([z.string().email(), z.literal('')])
+    .optional()
+    .nullable(),
   phone: z.string().max(30).optional().nullable(),
 });
 
 export const loyaltyIntegrationEarnSchema = z
   .object({
     customerId: z.string().uuid().optional(),
-    email: z.string().email().optional(),
+    email: z.union([z.string().email(), z.literal('')]).optional(),
     phone: z.string().max(30).optional(),
     externalId: z.string().max(100).optional(),
     points: z.number().int().min(1).max(1_000_000).optional(),
@@ -54,7 +57,7 @@ export const loyaltyIntegrationEarnSchema = z
 export const loyaltyIntegrationRedeemSchema = z
   .object({
     customerId: z.string().uuid().optional(),
-    email: z.string().email().optional(),
+    email: z.union([z.string().email(), z.literal('')]).optional(),
     phone: z.string().max(30).optional(),
     externalId: z.string().max(100).optional(),
     rewardId: z.string().uuid(),
@@ -72,7 +75,7 @@ export const loyaltyIntegrationCouponRedeemSchema = z
   .object({
     code: z.string().min(2).max(50),
     customerId: z.string().uuid().optional(),
-    email: z.string().email().optional(),
+    email: z.union([z.string().email(), z.literal('')]).optional(),
     phone: z.string().max(30).optional(),
     externalId: z.string().max(100).optional(),
   })
@@ -81,7 +84,7 @@ export const loyaltyIntegrationCouponRedeemSchema = z
 export const loyaltyIntegrationWalletAdjustSchema = z
   .object({
     customerId: z.string().uuid().optional(),
-    email: z.string().email().optional(),
+    email: z.union([z.string().email(), z.literal('')]).optional(),
     phone: z.string().max(30).optional(),
     externalId: z.string().max(100).optional(),
     type: z.enum(['CREDIT', 'DEBIT', 'REFUND', 'CASHBACK', 'BONUS', 'GIFT']),
@@ -112,7 +115,10 @@ export const loyaltyPortalGamePlaySchema = z.object({
 export const loyaltyPublicReferralJoinSchema = z
   .object({
     name: z.string().min(1).max(200),
-    email: z.string().email().optional().nullable(),
+    email: z
+      .union([z.string().email(), z.literal('')])
+      .optional()
+      .nullable(),
     phone: z.string().max(30).optional().nullable(),
   })
   .superRefine((data, ctx) => {
@@ -136,12 +142,18 @@ export const loyaltyIntegrationQueueEventSchema = z
       .object({
         externalId: z.string().min(1).max(100),
         name: z.string().min(1).max(200).optional(),
-        email: z.string().email().optional().nullable(),
+        email: z
+          .union([z.string().email(), z.literal('')])
+          .optional()
+          .nullable(),
         phone: z.string().max(30).optional().nullable(),
       })
       .optional(),
     customerPhone: z.string().max(30).optional().nullable(),
-    customerEmail: z.string().email().optional().nullable(),
+    customerEmail: z
+      .union([z.string().email(), z.literal('')])
+      .optional()
+      .nullable(),
     rating: z.number().int().min(1).max(5).optional(),
     occurredAt: z.string().datetime().optional(),
     connectorVersion: z.number().int().min(1).max(99).optional().default(1),
