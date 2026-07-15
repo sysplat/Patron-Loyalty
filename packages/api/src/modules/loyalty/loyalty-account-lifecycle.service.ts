@@ -25,13 +25,13 @@ export class LoyaltyAccountLifecycleService {
     // pool under concurrent load.
     const referralCode = await this.programService.generateUniqueReferralCode(orgId);
 
-    return this.prisma.withTenant(orgId, async (tx) => {
-      const bronzeTier = await tx.loyaltyTier.findFirst({
-        where: { orgId, slug: 'bronze' },
-        select: { id: true },
-      });
+    try {
+      return await this.prisma.withTenant(orgId, async (tx) => {
+        const bronzeTier = await tx.loyaltyTier.findFirst({
+          where: { orgId, slug: 'bronze' },
+          select: { id: true },
+        });
 
-      try {
         return await tx.loyaltyAccount.upsert({
           where: { customerId },
           update: {},
@@ -48,11 +48,13 @@ export class LoyaltyAccountLifecycleService {
             customer: { select: LOYALTY_ACCOUNT_CUSTOMER_SELECT },
           },
         });
-      } catch (err) {
-        // Handle race condition: if two concurrent requests both try to create
-        // the same account, one will hit a unique constraint violation (P2002)
-        // on customerId or the nested wallet creation. Fall back to a read.
-        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      });
+    } catch (err) {
+      // Handle race condition: if two concurrent requests both try to create
+      // the same account, one will hit a unique constraint violation (P2002)
+      // on customerId or the nested wallet creation. Fall back to a read in a new tx.
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        return await this.prisma.withTenant(orgId, async (tx) => {
           return await tx.loyaltyAccount.findUniqueOrThrow({
             where: { customerId },
             include: {
@@ -61,10 +63,10 @@ export class LoyaltyAccountLifecycleService {
               customer: { select: LOYALTY_ACCOUNT_CUSTOMER_SELECT },
             },
           });
-        }
-        throw err;
+        });
       }
-    });
+      throw err;
+    }
   }
 
   async getAccountByCustomerId(orgId: string, customerId: string) {
