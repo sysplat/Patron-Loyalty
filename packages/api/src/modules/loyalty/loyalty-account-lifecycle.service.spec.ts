@@ -36,8 +36,11 @@ describe('LoyaltyAccountLifecycleService', () => {
     const existing = { id: 'acct-1', customerId: CUSTOMER_ID };
     prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
       fn({
+        loyaltyTier: {
+          findFirst: vi.fn().mockResolvedValue({ id: 'tier-1' }),
+        },
         loyaltyAccount: {
-          findUnique: vi.fn().mockResolvedValue(existing),
+          upsert: vi.fn().mockResolvedValue(existing),
         },
       }),
     );

@@ -19,27 +19,23 @@ export class LoyaltyAccountLifecycleService {
 
     await this.programService.getOrCreateProgram(orgId);
 
-    return this.prisma.withTenant(orgId, async (tx) => {
-      const existing = await tx.loyaltyAccount.findUnique({
-        where: { customerId },
-        include: {
-          tier: true,
-          wallet: true,
-          customer: { select: LOYALTY_ACCOUNT_CUSTOMER_SELECT },
-        },
-      });
-      if (existing) return existing;
+    // Generate referral code OUTSIDE the withTenant block to avoid nested
+    // $transaction calls (generateUniqueReferralCode opens its own withTenant
+    // internally). Nesting interactive transactions poisons the PG connection
+    // pool under concurrent load.
+    const referralCode = await this.programService.generateUniqueReferralCode(orgId);
 
+    return this.prisma.withTenant(orgId, async (tx) => {
       const bronzeTier = await tx.loyaltyTier.findFirst({
         where: { orgId, slug: 'bronze' },
         select: { id: true },
       });
 
-      const referralCode = await this.programService.generateUniqueReferralCode(orgId);
-
       try {
-        return await tx.loyaltyAccount.create({
-          data: {
+        return await tx.loyaltyAccount.upsert({
+          where: { customerId },
+          update: {},
+          create: {
             orgId,
             customerId,
             tierId: bronzeTier?.id ?? null,
@@ -53,8 +49,11 @@ export class LoyaltyAccountLifecycleService {
           },
         });
       } catch (err) {
+        // Handle race condition: if two concurrent requests both try to create
+        // the same account, one will hit a unique constraint violation (P2002)
+        // on customerId or the nested wallet creation. Fall back to a read.
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-          return tx.loyaltyAccount.findUniqueOrThrow({
+          return await tx.loyaltyAccount.findUniqueOrThrow({
             where: { customerId },
             include: {
               tier: true,
