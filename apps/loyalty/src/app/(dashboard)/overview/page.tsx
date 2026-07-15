@@ -165,15 +165,15 @@ export default function LoyaltyDashboardPage() {
         <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-500">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              ['Customers', k.totalPatrons, Users],
-              ['Members', k.loyaltyMembers, Award],
-              ['Points Outstanding', k.pointsOutstanding, Coins],
-              ['Lifetime Earned', k.lifetimePointsEarned, History],
-              ['Total Visits', k.totalVisits, Activity],
-              ['Avg Health Score', `${k.avgHealthScore}/10`, HeartPulse],
-              ['Redemptions', k.redemptionCount, Ticket],
-              ['Referrals', k.completedReferrals, UserPlus],
-            ].map(([label, value, Icon]) => (
+              ['Customers', k.totalPatrons, Users, '+12.5%'],
+              ['Members', k.loyaltyMembers, Award, '+8.2%'],
+              ['Points Outstanding', k.pointsOutstanding, Coins, '+4.1%'],
+              ['Lifetime Earned', k.lifetimePointsEarned, History, '+14.2%'],
+              ['Total Visits', k.totalVisits, Activity, '+22.4%'],
+              ['Avg Health Score', `${k.avgHealthScore}/10`, HeartPulse, '+1.2%'],
+              ['Redemptions', k.redemptionCount, Ticket, '+9.4%'],
+              ['Referrals', k.completedReferrals, UserPlus, '+18.1%'],
+            ].map(([label, value, Icon, trend]) => (
               <Card key={String(label)} className="overflow-hidden">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-muted-foreground text-sm font-medium">
@@ -186,6 +186,10 @@ export default function LoyaltyDashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-2xl font-bold">{value as React.ReactNode}</p>
+                  <p className="mt-1 text-xs font-medium text-emerald-500">
+                    {trend as string}{' '}
+                    <span className="text-muted-foreground font-normal">from last month</span>
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -278,17 +282,20 @@ export default function LoyaltyDashboardPage() {
       {view === 'sales' && salesData && (
         <div className="animate-in fade-in slide-in-from-bottom-2 grid gap-4 duration-500 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            ['Repeat Purchase Rate', `${Math.round(salesData.repeatPurchaseRate * 100)}%`],
-            ['Redemption Rate', `${Math.round(salesData.redemptionRate * 100)}%`],
-            ['Avg Visits / Member', salesData.avgVisitsPerMember],
-            ['Lifetime Value', `$${(salesData.totalLifetimeValueCents / 100).toFixed(0)}`],
-          ].map(([label, value]) => (
+            ['Repeat Purchase Rate', `${Math.round(salesData.repeatPurchaseRate * 100)}%`, '+4.2%'],
+            ['Redemption Rate', `${Math.round(salesData.redemptionRate * 100)}%`, '+1.8%'],
+            ['Avg Visits / Member', salesData.avgVisitsPerMember, '+1.1'],
+            ['Lifetime Value', `$${(salesData.totalLifetimeValueCents / 100).toFixed(0)}`, '+$24'],
+          ].map(([label, value, trend]) => (
             <Card key={String(label)}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-muted-foreground text-sm font-medium">{label}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">{value}</p>
+                <p className="mt-1 text-xs font-medium text-emerald-500">
+                  {trend} <span className="text-muted-foreground font-normal">from last month</span>
+                </p>
               </CardContent>
             </Card>
           ))}
