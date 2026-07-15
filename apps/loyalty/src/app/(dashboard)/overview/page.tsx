@@ -6,6 +6,19 @@ import { loyaltyGet } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
 import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from 'recharts';
+import { Users, Award, Coins, History, Activity, HeartPulse, Ticket, UserPlus } from 'lucide-react';
 
 type DashboardView = 'executive' | 'sales' | 'customer' | 'campaign';
 
@@ -47,6 +60,13 @@ interface CampaignReport {
   campaigns: Array<{ name: string; sentCount: number; status: string }>;
 }
 
+const COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#f43f5e'];
+const CHURN_COLORS: Record<string, string> = {
+  Low: '#10b981',
+  Medium: '#f59e0b',
+  High: '#f43f5e',
+};
+
 export default function LoyaltyDashboardPage() {
   const token = useAuthStore((s) => s.accessToken);
   const [view, setView] = useState<DashboardView>('executive');
@@ -76,10 +96,18 @@ export default function LoyaltyDashboardPage() {
   });
 
   const tabClass = (v: DashboardView) =>
-    `rounded-md px-3 py-1.5 text-sm ${view === v ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`;
+    `rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+      view === v
+        ? 'bg-primary text-primary-foreground shadow-sm'
+        : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+    }`;
 
   if (isLoading) {
-    return <p className="text-muted-foreground">Loading loyalty dashboard…</p>;
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        <div className="border-primary h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
+      </div>
+    );
   }
 
   if (isError) {
@@ -94,16 +122,27 @@ export default function LoyaltyDashboardPage() {
 
   const k = data.kpis;
 
+  const tierChartData = data.tierDistribution.map((r) => ({
+    name: r.tier?.name ?? 'Unassigned',
+    value: r.count,
+  }));
+
+  const churnChartData =
+    churnData?.distribution.map((r) => ({
+      name: r.churnRisk,
+      value: r._count._all,
+    })) ?? [];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       <div>
         <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Loyalty Dashboard</h1>
-        <p className="text-muted-foreground text-sm">
-          Executive, sales, customer, and campaign views.
+        <p className="text-muted-foreground mt-1 text-sm">
+          Executive, sales, customer, and campaign insights.
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="bg-muted/30 inline-flex flex-wrap gap-1 rounded-lg p-1">
         <button
           type="button"
           className={tabClass('executive')}
@@ -123,26 +162,30 @@ export default function LoyaltyDashboardPage() {
       </div>
 
       {view === 'executive' && (
-        <>
+        <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-500">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              ['Patrons', k.totalPatrons],
-              ['Members', k.loyaltyMembers],
-              ['Points outstanding', k.pointsOutstanding],
-              ['Lifetime earned', k.lifetimePointsEarned],
-              ['Total visits', k.totalVisits],
-              ['Avg health score', k.avgHealthScore],
-              ['Redemptions', k.redemptionCount],
-              ['Referrals', k.completedReferrals],
-            ].map(([label, value]) => (
-              <Card key={String(label)}>
-                <CardHeader className="pb-2">
+              ['Customers', k.totalPatrons, Users],
+              ['Members', k.loyaltyMembers, Award],
+              ['Points Outstanding', k.pointsOutstanding, Coins],
+              ['Lifetime Earned', k.lifetimePointsEarned, History],
+              ['Total Visits', k.totalVisits, Activity],
+              ['Avg Health Score', `${k.avgHealthScore}/10`, HeartPulse],
+              ['Redemptions', k.redemptionCount, Ticket],
+              ['Referrals', k.completedReferrals, UserPlus],
+            ].map(([label, value, Icon]) => (
+              <Card key={String(label)} className="overflow-hidden">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-muted-foreground text-sm font-medium">
-                    {label}
+                    {label as string}
                   </CardTitle>
+                  <div className="bg-primary/10 rounded-full p-2">
+                    {/* @ts-ignore dynamic icon */}
+                    <Icon className="text-primary h-4 w-4" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{value}</p>
+                  <p className="text-2xl font-bold">{value as React.ReactNode}</p>
                 </CardContent>
               </Card>
             ))}
@@ -151,50 +194,94 @@ export default function LoyaltyDashboardPage() {
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Tier distribution</CardTitle>
+                <CardTitle>Tier Distribution</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {data.tierDistribution.map((row) => (
-                  <div key={row.tierId ?? 'none'} className="flex justify-between text-sm">
-                    <span>{row.tier?.name ?? 'Unassigned'}</span>
-                    <span className="font-medium">{row.count}</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent points activity</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {data.recentActivity.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">No activity yet.</p>
-                ) : (
-                  data.recentActivity.map((item) => (
-                    <div key={item.id} className="flex justify-between gap-2 text-sm">
-                      <span>
-                        {item.patronName} · {item.description ?? item.type}
-                      </span>
-                      <span className={item.points >= 0 ? 'text-green-600' : 'text-red-600'}>
-                        {item.points > 0 ? '+' : ''}
-                        {item.points}
+              <CardContent>
+                <div className="h-[280px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={tierChartData}
+                        innerRadius={70}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {tierChartData.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip
+                        contentStyle={{
+                          borderRadius: '8px',
+                          border: 'none',
+                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-4 flex flex-wrap justify-center gap-4 text-sm">
+                  {tierChartData.map((entry, index) => (
+                    <div key={entry.name} className="flex items-center gap-2">
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                      />
+                      <span className="text-muted-foreground">
+                        {entry.name} ({entry.value})
                       </span>
                     </div>
-                  ))
-                )}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Points Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {data.recentActivity.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">No activity yet.</p>
+                  ) : (
+                    data.recentActivity.slice(0, 7).map((item) => (
+                      <div key={item.id} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-medium">
+                            {item.patronName.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{item.patronName}</span>
+                            <span className="text-muted-foreground text-xs">
+                              {item.description ?? item.type}
+                            </span>
+                          </div>
+                        </div>
+                        <span
+                          className={`font-medium ${item.points >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}
+                        >
+                          {item.points > 0 ? '+' : ''}
+                          {item.points}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
-        </>
+        </div>
       )}
 
       {view === 'sales' && salesData && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="animate-in fade-in slide-in-from-bottom-2 grid gap-4 duration-500 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            ['Repeat purchase rate', `${Math.round(salesData.repeatPurchaseRate * 100)}%`],
-            ['Redemption rate', `${Math.round(salesData.redemptionRate * 100)}%`],
-            ['Avg visits / member', salesData.avgVisitsPerMember],
-            ['Lifetime value', `$${(salesData.totalLifetimeValueCents / 100).toFixed(0)}`],
+            ['Repeat Purchase Rate', `${Math.round(salesData.repeatPurchaseRate * 100)}%`],
+            ['Redemption Rate', `${Math.round(salesData.redemptionRate * 100)}%`],
+            ['Avg Visits / Member', salesData.avgVisitsPerMember],
+            ['Lifetime Value', `$${(salesData.totalLifetimeValueCents / 100).toFixed(0)}`],
           ].map(([label, value]) => (
             <Card key={String(label)}>
               <CardHeader className="pb-2">
@@ -209,37 +296,85 @@ export default function LoyaltyDashboardPage() {
       )}
 
       {view === 'customer' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Churn risk distribution</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {churnData?.distribution.map((row) => (
-              <div key={row.churnRisk} className="flex justify-between text-sm">
-                <span>{row.churnRisk}</span>
-                <span>{row._count._all} members</span>
-              </div>
-            )) ?? <p className="text-muted-foreground text-sm">Loading…</p>}
-          </CardContent>
-        </Card>
+        <div className="animate-in fade-in slide-in-from-bottom-2 grid gap-6 duration-500 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Churn Risk Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {churnData ? (
+                <>
+                  <div className="h-[280px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={churnChartData}
+                        margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                        <YAxis axisLine={false} tickLine={false} />
+                        <RechartsTooltip
+                          cursor={{ fill: '#f3f4f6' }}
+                          contentStyle={{
+                            borderRadius: '8px',
+                            border: 'none',
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                          }}
+                        />
+                        <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                          {churnChartData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={CHURN_COLORS[entry.name] || COLORS[0]}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              ) : (
+                <div className="flex h-[280px] items-center justify-center">
+                  <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {view === 'campaign' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Active campaigns ({k.activeCampaigns})</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {campaignData?.campaigns.slice(0, 10).map((c) => (
-              <div key={c.name} className="flex justify-between text-sm">
-                <span>{c.name}</span>
-                <span className="text-muted-foreground">
-                  {c.status} · {c.sentCount} sent
-                </span>
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <Card>
+            <CardHeader>
+              <CardTitle>Active Campaigns ({k.activeCampaigns})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {campaignData ? (
+                  campaignData.campaigns.slice(0, 10).map((c) => (
+                    <div
+                      key={c.name}
+                      className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0"
+                    >
+                      <div>
+                        <h4 className="font-medium">{c.name}</h4>
+                        <span className="text-muted-foreground text-sm">{c.sentCount} sent</span>
+                      </div>
+                      <span className="bg-primary/10 text-primary rounded-full px-2.5 py-0.5 text-xs font-medium">
+                        {c.status}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex justify-center py-8">
+                    <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+                  </div>
+                )}
               </div>
-            )) ?? <p className="text-muted-foreground text-sm">Loading…</p>}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );
