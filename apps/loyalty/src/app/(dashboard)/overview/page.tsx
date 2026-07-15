@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { loyaltyGet } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
+import { Skeleton } from '@/components/ui/skeleton';
 import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -104,8 +105,60 @@ export default function LoyaltyDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[400px] items-center justify-center">
-        <div className="border-primary h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
+      <div className="space-y-6 pb-12">
+        <div>
+          <Skeleton className="h-9 w-[250px]" />
+          <Skeleton className="mt-2 h-4 w-[350px]" />
+        </div>
+        <div className="bg-muted/30 inline-flex gap-1 rounded-lg p-1">
+          <Skeleton className="h-8 w-[80px] rounded-md" />
+          <Skeleton className="h-8 w-[80px] rounded-md" />
+          <Skeleton className="h-8 w-[80px] rounded-md" />
+          <Skeleton className="h-8 w-[80px] rounded-md" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Card key={i} className="overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-[100px]" />
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-7 w-[60px]" />
+                <Skeleton className="mt-2 h-3 w-[120px]" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-[150px]" />
+            </CardHeader>
+            <CardContent>
+              <div className="border-muted/40 mx-auto h-[250px] w-[250px] rounded-full border-[20px]" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-[180px]" />
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-[120px]" />
+                      <Skeleton className="h-3 w-[80px]" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-4 w-[40px]" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
