@@ -163,6 +163,9 @@ export class CustomerService {
           orderBy: { createdAt: 'desc' },
           skip: (page - 1) * limit,
           take: limit,
+          include: {
+            loyaltyAccount: { select: { referralCode: true } },
+          },
         }),
         tx.customer.count({ where }),
       ]);
@@ -456,6 +459,7 @@ export class CustomerService {
       marketingSmsConsent: string;
       marketingEmailConsent: string;
       createdAt: Date;
+      loyaltyAccount?: { referralCode: string } | null;
     }>,
   ) {
     const enriched = await Promise.all(
@@ -474,6 +478,7 @@ export class CustomerService {
           visitCount: stats.visitCount,
           lastVisitAt: stats.lastVisitAt,
           createdAt: row.createdAt,
+          referralCode: row.loyaltyAccount?.referralCode || null,
         };
       }),
     );

@@ -35,6 +35,7 @@ interface CustomerListItem {
   visitCount: number;
   lastVisitAt: string | null;
   createdAt: string;
+  referralCode?: string | null;
 }
 
 interface SavedSegment {
@@ -398,6 +399,22 @@ export default function CustomersPage() {
                       ? ` · Last visit ${new Date(c.lastVisitAt).toLocaleDateString()}`
                       : ''}
                   </p>
+                  {c.referralCode && (
+                    <div
+                      className="text-muted-foreground mt-1 flex items-center gap-1.5 text-xs"
+                      onClick={(e) => {
+                        e.preventDefault(); // prevent clicking the Link
+                        navigator.clipboard.writeText(
+                          `${window.location.origin}/refer/${c.referralCode}`,
+                        );
+                        toast.success('Referral link copied');
+                      }}
+                    >
+                      <span className="bg-primary/5 text-primary hover:bg-primary/10 cursor-pointer rounded px-1.5 py-0.5 transition-colors">
+                        /refer/{c.referralCode}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <ChevronRight className="text-muted-foreground h-4 w-4 shrink-0" />
               </Link>

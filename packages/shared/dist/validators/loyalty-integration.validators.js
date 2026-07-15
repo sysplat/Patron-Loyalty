@@ -15,13 +15,16 @@ const customerRefinement = (data, ctx) => {
 exports.loyaltyIntegrationUpsertCustomerSchema = zod_1.z.object({
     externalId: zod_1.z.string().max(100).optional(),
     name: zod_1.z.string().min(1).max(200),
-    email: zod_1.z.string().email().optional().nullable(),
+    email: zod_1.z
+        .union([zod_1.z.string().email(), zod_1.z.literal('')])
+        .optional()
+        .nullable(),
     phone: zod_1.z.string().max(30).optional().nullable(),
 });
 exports.loyaltyIntegrationEarnSchema = zod_1.z
     .object({
     customerId: zod_1.z.string().uuid().optional(),
-    email: zod_1.z.string().email().optional(),
+    email: zod_1.z.union([zod_1.z.string().email(), zod_1.z.literal('')]).optional(),
     phone: zod_1.z.string().max(30).optional(),
     externalId: zod_1.z.string().max(100).optional(),
     points: zod_1.z.number().int().min(1).max(1_000_000).optional(),
@@ -45,7 +48,7 @@ exports.loyaltyIntegrationEarnSchema = zod_1.z
 exports.loyaltyIntegrationRedeemSchema = zod_1.z
     .object({
     customerId: zod_1.z.string().uuid().optional(),
-    email: zod_1.z.string().email().optional(),
+    email: zod_1.z.union([zod_1.z.string().email(), zod_1.z.literal('')]).optional(),
     phone: zod_1.z.string().max(30).optional(),
     externalId: zod_1.z.string().max(100).optional(),
     rewardId: zod_1.z.string().uuid(),
@@ -61,7 +64,7 @@ exports.loyaltyIntegrationCouponRedeemSchema = zod_1.z
     .object({
     code: zod_1.z.string().min(2).max(50),
     customerId: zod_1.z.string().uuid().optional(),
-    email: zod_1.z.string().email().optional(),
+    email: zod_1.z.union([zod_1.z.string().email(), zod_1.z.literal('')]).optional(),
     phone: zod_1.z.string().max(30).optional(),
     externalId: zod_1.z.string().max(100).optional(),
 })
@@ -69,7 +72,7 @@ exports.loyaltyIntegrationCouponRedeemSchema = zod_1.z
 exports.loyaltyIntegrationWalletAdjustSchema = zod_1.z
     .object({
     customerId: zod_1.z.string().uuid().optional(),
-    email: zod_1.z.string().email().optional(),
+    email: zod_1.z.union([zod_1.z.string().email(), zod_1.z.literal('')]).optional(),
     phone: zod_1.z.string().max(30).optional(),
     externalId: zod_1.z.string().max(100).optional(),
     type: zod_1.z.enum(['CREDIT', 'DEBIT', 'REFUND', 'CASHBACK', 'BONUS', 'GIFT']),
@@ -95,7 +98,10 @@ exports.loyaltyPortalGamePlaySchema = zod_1.z.object({
 exports.loyaltyPublicReferralJoinSchema = zod_1.z
     .object({
     name: zod_1.z.string().min(1).max(200),
-    email: zod_1.z.string().email().optional().nullable(),
+    email: zod_1.z
+        .union([zod_1.z.string().email(), zod_1.z.literal('')])
+        .optional()
+        .nullable(),
     phone: zod_1.z.string().max(30).optional().nullable(),
 })
     .superRefine((data, ctx) => {
@@ -118,12 +124,18 @@ exports.loyaltyIntegrationQueueEventSchema = zod_1.z
         .object({
         externalId: zod_1.z.string().min(1).max(100),
         name: zod_1.z.string().min(1).max(200).optional(),
-        email: zod_1.z.string().email().optional().nullable(),
+        email: zod_1.z
+            .union([zod_1.z.string().email(), zod_1.z.literal('')])
+            .optional()
+            .nullable(),
         phone: zod_1.z.string().max(30).optional().nullable(),
     })
         .optional(),
     customerPhone: zod_1.z.string().max(30).optional().nullable(),
-    customerEmail: zod_1.z.string().email().optional().nullable(),
+    customerEmail: zod_1.z
+        .union([zod_1.z.string().email(), zod_1.z.literal('')])
+        .optional()
+        .nullable(),
     rating: zod_1.z.number().int().min(1).max(5).optional(),
     occurredAt: zod_1.z.string().datetime().optional(),
     connectorVersion: zod_1.z.number().int().min(1).max(99).optional().default(1),

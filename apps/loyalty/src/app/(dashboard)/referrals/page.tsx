@@ -44,8 +44,8 @@ export default function ReferralsPage() {
         <div>
           <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Referral Program</h1>
           <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
-            Turn your best customers into your biggest advocates. When a patron shares their invite
-            link, new members can join instantly to earn rewards.
+            Turn your best customers into your biggest advocates. When a customer shares their
+            invite link, new members can join instantly to earn rewards.
           </p>
         </div>
       </div>
@@ -62,7 +62,7 @@ export default function ReferralsPage() {
               <CardTitle className="text-base font-medium">1. Share</CardTitle>
             </CardHeader>
             <CardContent className="text-muted-foreground text-center text-sm">
-              Patrons share their unique invite links or QR codes directly from their loyalty
+              Customers share their unique invite links or QR codes directly from their loyalty
               portal.
             </CardContent>
           </Card>
@@ -91,7 +91,7 @@ export default function ReferralsPage() {
               <CardTitle className="text-base font-medium">3. Earn</CardTitle>
             </CardHeader>
             <CardContent className="text-muted-foreground text-center text-sm">
-              Both the referring patron and the new member earn automated bonus points.
+              Both the referring customer and the new member earn automated bonus points.
             </CardContent>
           </Card>
         </div>
@@ -146,7 +146,7 @@ export default function ReferralsPage() {
               <Trophy className="h-5 w-5 text-amber-500" />
               <CardTitle className="text-lg">Top Referrers Leaderboard</CardTitle>
             </div>
-            <CardDescription>Your most valuable patrons generating new business.</CardDescription>
+            <CardDescription>Your most valuable customers generating new business.</CardDescription>
           </CardHeader>
           <CardContent>
             {report?.topReferrers.length ? (
@@ -181,7 +181,7 @@ export default function ReferralsPage() {
                 </div>
                 <h3 className="text-sm font-medium">No completed referrals yet</h3>
                 <p className="text-muted-foreground mt-1 max-w-sm text-sm">
-                  Once your patrons start sharing their links and friends join, the top advocates
+                  Once your customers start sharing their links and friends join, the top advocates
                   will appear here.
                 </p>
               </div>

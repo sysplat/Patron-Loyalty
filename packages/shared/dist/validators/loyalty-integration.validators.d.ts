@@ -2,7 +2,7 @@ import { z } from 'zod';
 export declare const loyaltyIntegrationUpsertCustomerSchema: z.ZodObject<{
     externalId: z.ZodOptional<z.ZodString>;
     name: z.ZodString;
-    email: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    email: z.ZodNullable<z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodLiteral<"">]>>>;
     phone: z.ZodNullable<z.ZodOptional<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     name: string;
@@ -17,7 +17,7 @@ export declare const loyaltyIntegrationUpsertCustomerSchema: z.ZodObject<{
 }>;
 export declare const loyaltyIntegrationEarnSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
     customerId: z.ZodOptional<z.ZodString>;
-    email: z.ZodOptional<z.ZodString>;
+    email: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodLiteral<"">]>>;
     phone: z.ZodOptional<z.ZodString>;
     externalId: z.ZodOptional<z.ZodString>;
     points: z.ZodOptional<z.ZodNumber>;
@@ -88,7 +88,7 @@ export declare const loyaltyIntegrationEarnSchema: z.ZodEffects<z.ZodEffects<z.Z
 }>;
 export declare const loyaltyIntegrationRedeemSchema: z.ZodEffects<z.ZodObject<{
     customerId: z.ZodOptional<z.ZodString>;
-    email: z.ZodOptional<z.ZodString>;
+    email: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodLiteral<"">]>>;
     phone: z.ZodOptional<z.ZodString>;
     externalId: z.ZodOptional<z.ZodString>;
     rewardId: z.ZodString;
@@ -138,7 +138,7 @@ export declare const loyaltyIntegrationValidateCouponSchema: z.ZodObject<{
 export declare const loyaltyIntegrationCouponRedeemSchema: z.ZodEffects<z.ZodObject<{
     code: z.ZodString;
     customerId: z.ZodOptional<z.ZodString>;
-    email: z.ZodOptional<z.ZodString>;
+    email: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodLiteral<"">]>>;
     phone: z.ZodOptional<z.ZodString>;
     externalId: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
@@ -168,7 +168,7 @@ export declare const loyaltyIntegrationCouponRedeemSchema: z.ZodEffects<z.ZodObj
 }>;
 export declare const loyaltyIntegrationWalletAdjustSchema: z.ZodEffects<z.ZodObject<{
     customerId: z.ZodOptional<z.ZodString>;
-    email: z.ZodOptional<z.ZodString>;
+    email: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodLiteral<"">]>>;
     phone: z.ZodOptional<z.ZodString>;
     externalId: z.ZodOptional<z.ZodString>;
     type: z.ZodEnum<["CREDIT", "DEBIT", "REFUND", "CASHBACK", "BONUS", "GIFT"]>;
@@ -246,7 +246,7 @@ export declare const loyaltyPortalGamePlaySchema: z.ZodObject<{
 }>;
 export declare const loyaltyPublicReferralJoinSchema: z.ZodEffects<z.ZodObject<{
     name: z.ZodString;
-    email: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    email: z.ZodNullable<z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodLiteral<"">]>>>;
     phone: z.ZodNullable<z.ZodOptional<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     name: string;
@@ -274,7 +274,7 @@ export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObjec
     customer: z.ZodOptional<z.ZodObject<{
         externalId: z.ZodString;
         name: z.ZodOptional<z.ZodString>;
-        email: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+        email: z.ZodNullable<z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodLiteral<"">]>>>;
         phone: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
         externalId: string;
@@ -288,7 +288,7 @@ export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObjec
         phone?: string | null | undefined;
     }>>;
     customerPhone: z.ZodNullable<z.ZodOptional<z.ZodString>>;
-    customerEmail: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    customerEmail: z.ZodNullable<z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodLiteral<"">]>>>;
     rating: z.ZodOptional<z.ZodNumber>;
     occurredAt: z.ZodOptional<z.ZodString>;
     connectorVersion: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
