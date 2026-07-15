@@ -68,6 +68,22 @@ const CHURN_COLORS: Record<string, string> = {
   High: '#f43f5e',
 };
 
+function getRelativeTime(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return 'just now';
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 30) return `${diffInDays}d ago`;
+  const diffInMonths = Math.floor(diffInDays / 30);
+  return `${diffInMonths}mo ago`;
+}
+
 export default function LoyaltyDashboardPage() {
   const token = useAuthStore((s) => s.accessToken);
   const [view, setView] = useState<DashboardView>('executive');
@@ -306,18 +322,24 @@ export default function LoyaltyDashboardPage() {
                     data.recentActivity.slice(0, 7).map((item) => (
                       <div key={item.id} className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-3">
-                          <div className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-medium">
+                          <div className="bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-semibold shadow-sm">
                             {item.patronName.charAt(0).toUpperCase()}
                           </div>
                           <div className="flex flex-col">
-                            <span className="font-medium">{item.patronName}</span>
-                            <span className="text-muted-foreground text-xs">
-                              {item.description ?? item.type}
-                            </span>
+                            <span className="text-foreground font-medium">{item.patronName}</span>
+                            <div className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
+                              <span>{item.description ?? item.type}</span>
+                              <span>·</span>
+                              <span>{getRelativeTime(item.createdAt)}</span>
+                            </div>
                           </div>
                         </div>
                         <span
-                          className={`font-medium ${item.points >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                            item.points >= 0
+                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                              : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
+                          }`}
                         >
                           {item.points > 0 ? '+' : ''}
                           {item.points}
