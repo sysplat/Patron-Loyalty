@@ -9,7 +9,26 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Trash2 } from 'lucide-react';
+import { Trash2, PackageOpen } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const EmptyState = ({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: any;
+  title: string;
+  description: string;
+}) => (
+  <div className="flex flex-col items-center justify-center py-12 text-center">
+    <div className="bg-muted mb-4 flex h-12 w-12 items-center justify-center rounded-full">
+      <Icon className="text-muted-foreground/50 h-6 w-6" />
+    </div>
+    <p className="text-base font-medium">{title}</p>
+    <p className="text-muted-foreground mt-1 max-w-[250px] text-sm">{description}</p>
+  </div>
+);
 
 interface Reward {
   id: string;
@@ -94,7 +113,29 @@ export default function RewardsPage() {
         </CardContent>
       </Card>
       {isLoading ? (
-        <p className="text-muted-foreground text-sm">Loading…</p>
+        <div className="grid gap-3 md:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-5 w-1/3" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-1/4" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : rewards.length === 0 ? (
+        <Card className="border-dashed shadow-sm">
+          <CardContent className="pt-6">
+            <EmptyState
+              icon={PackageOpen}
+              title="No rewards created"
+              description="Create a reward above to let your customers redeem their earned points."
+            />
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {rewards.map((r) => (

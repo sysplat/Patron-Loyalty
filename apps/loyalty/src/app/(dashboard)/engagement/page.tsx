@@ -9,6 +9,26 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { Trophy, Medal, Target } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const EmptyState = ({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: any;
+  title: string;
+  description: string;
+}) => (
+  <div className="flex flex-col items-center justify-center py-6 text-center">
+    <div className="bg-muted mb-3 flex h-10 w-10 items-center justify-center rounded-full">
+      <Icon className="text-muted-foreground/50 h-5 w-5" />
+    </div>
+    <p className="text-sm font-medium">{title}</p>
+    <p className="text-muted-foreground mt-1 max-w-[200px] text-xs">{description}</p>
+  </div>
+);
 
 interface Badge {
   id: string;
@@ -109,7 +129,11 @@ export default function EngagementPage() {
         </CardHeader>
         <CardContent className="space-y-2">
           {leaderboardLoading ? (
-            <p className="text-muted-foreground text-sm">Loading…</p>
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-4/6" />
+            </div>
           ) : leaderboard.length ? (
             leaderboard.map((row) => (
               <div key={row.rank} className="flex justify-between text-sm">
@@ -123,7 +147,11 @@ export default function EngagementPage() {
               </div>
             ))
           ) : (
-            <p className="text-muted-foreground text-sm">No loyalty members yet.</p>
+            <EmptyState
+              icon={Trophy}
+              title="No members yet"
+              description="As customers join and earn points, they will appear here."
+            />
           )}
         </CardContent>
       </Card>
@@ -154,15 +182,29 @@ export default function EngagementPage() {
             </Button>
           </div>
           {badgesLoading ? (
-            <p className="text-muted-foreground text-sm">Loading…</p>
-          ) : (
-            <div className="space-y-2">
+            <div className="mt-4 space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          ) : badges.length > 0 ? (
+            <div className="mt-4 space-y-2">
               {badges.map((b) => (
-                <div key={b.id} className="flex justify-between text-sm">
+                <div
+                  key={b.id}
+                  className="flex justify-between border-t pt-2 text-sm first:border-0 first:pt-0"
+                >
                   <span>{b.name}</span>
                   <span className="text-muted-foreground">{b.description ?? 'Auto-award'}</span>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="mt-4 border-t pt-4">
+              <EmptyState
+                icon={Medal}
+                title="No badges created"
+                description="Reward loyal customers by defining visit milestones."
+              />
             </div>
           )}
         </CardContent>
@@ -200,17 +242,31 @@ export default function EngagementPage() {
             </Button>
           </div>
           {challengesLoading ? (
-            <p className="text-muted-foreground text-sm">Loading…</p>
-          ) : (
-            <div className="space-y-2">
+            <div className="mt-4 space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          ) : challenges.length > 0 ? (
+            <div className="mt-4 space-y-2">
               {challenges.map((c) => (
-                <div key={c.id} className="flex justify-between text-sm">
+                <div
+                  key={c.id}
+                  className="flex justify-between border-t pt-2 text-sm first:border-0 first:pt-0"
+                >
                   <span>{c.name}</span>
                   <span className="text-muted-foreground">
                     {c.targetValue} {c.targetType.toLowerCase()} · {c.rewardPoints} pts
                   </span>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="mt-4 border-t pt-4">
+              <EmptyState
+                icon={Target}
+                title="No challenges configured"
+                description="Give customers goals to hit to increase engagement."
+              />
             </div>
           )}
         </CardContent>

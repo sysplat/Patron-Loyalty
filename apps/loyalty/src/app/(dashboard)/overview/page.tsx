@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
 import { loyaltyGet } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -241,15 +242,38 @@ export default function LoyaltyDashboardPage() {
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                { title: 'Create a Reward', desc: 'Add a perk for your patrons', done: true },
-                { title: 'Setup Portal Branding', desc: 'Add your logo and colors', done: false },
-                { title: 'Connect QlessQ', desc: 'Sync historical visits', done: true },
-                { title: 'Share Referral Link', desc: 'Invite your first customer', done: false },
+                {
+                  title: 'Create a Reward',
+                  desc: 'Add a perk for your patrons',
+                  done: true,
+                  href: '/rewards',
+                },
+                {
+                  title: 'Setup Portal Branding',
+                  desc: 'Add your logo and colors',
+                  done: false,
+                  href: '/program',
+                },
+                {
+                  title: 'Connect QlessQ',
+                  desc: 'Sync historical visits',
+                  done: true,
+                  href: '/integrations',
+                },
+                {
+                  title: 'Share Referral Link',
+                  desc: 'Invite your first customer',
+                  done: false,
+                  href: '/referrals',
+                },
               ].map((step, i) => (
-                <div
+                <Link
                   key={i}
-                  className={`flex items-start gap-3 rounded-lg border p-3 ${
-                    step.done ? 'bg-background/50 border-emerald-500/30' : 'bg-background'
+                  href={step.href}
+                  className={`hover:border-primary/50 flex items-start gap-3 rounded-lg border p-3 transition-colors ${
+                    step.done
+                      ? 'bg-background/50 border-emerald-500/30'
+                      : 'bg-background cursor-pointer'
                   }`}
                 >
                   {step.done ? (
@@ -258,12 +282,14 @@ export default function LoyaltyDashboardPage() {
                     <Circle className="text-muted-foreground/30 mt-0.5 h-5 w-5 shrink-0" />
                   )}
                   <div>
-                    <p className={`text-sm font-medium ${step.done ? 'text-foreground' : ''}`}>
+                    <p
+                      className={`text-sm font-medium ${step.done ? 'text-foreground' : 'text-primary'}`}
+                    >
                       {step.title}
                     </p>
                     <p className="text-muted-foreground text-xs">{step.desc}</p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </CardContent>
