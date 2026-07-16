@@ -17,7 +17,16 @@ import { useAuthStore } from '@/lib/auth-store';
 import { branchFilterAllLabel, hasPermission } from '@/lib/rbac-ui';
 import { useTabVisible } from '@/lib/use-tab-visible';
 import { validateCreateCustomer } from '@/lib/validation';
-import { ContactRound, Search, ChevronRight, Sparkles, BookmarkPlus, UserPlus } from 'lucide-react';
+import {
+  ContactRound,
+  Search,
+  ChevronRight,
+  Sparkles,
+  BookmarkPlus,
+  UserPlus,
+  Filter,
+  Tag,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 interface BranchOption {
@@ -256,80 +265,114 @@ export default function CustomersPage() {
         </form>
       ) : null}
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
-        <div className="relative min-w-0 flex-1 lg:max-w-sm">
-          <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
-          <input
-            type="search"
-            value={searchInput}
-            onChange={(e) => {
-              setSearchInput(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search name, email, or phone"
-            className="border-input bg-background h-9 w-full rounded-md border py-2 pl-9 pr-3 text-sm"
-            autoComplete="off"
-          />
+      <div className="bg-card rounded-xl border p-4 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-1 flex-col gap-3 lg:max-w-md lg:flex-row lg:items-center">
+            <div className="relative flex-1">
+              <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+              <input
+                type="search"
+                value={searchInput}
+                onChange={(e) => {
+                  setSearchInput(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search name, email, or phone"
+                className="border-input bg-background focus:ring-primary/20 h-10 w-full rounded-lg border py-2 pl-9 pr-3 text-sm transition-shadow focus:outline-none focus:ring-2"
+                autoComplete="off"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="text-muted-foreground h-4 w-4 shrink-0" />
+              <select
+                value={branchId}
+                onChange={(e) => {
+                  setBranchId(e.target.value);
+                  setPage(1);
+                }}
+                className="border-input bg-background focus:ring-primary/20 h-10 w-full min-w-[140px] rounded-lg border px-3 text-sm font-medium transition-shadow focus:outline-none focus:ring-2 lg:w-auto"
+              >
+                <option value="">{branchLabel}</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {canEdit && (segment || branchId || search) && (
+            <button
+              type="button"
+              onClick={() => setSaveSegmentOpen((v) => !v)}
+              className="border-input bg-background hover:bg-muted text-foreground flex h-10 shrink-0 items-center gap-2 rounded-lg border px-4 text-sm font-medium transition-colors"
+            >
+              <BookmarkPlus className="h-4 w-4" />
+              Save segment
+            </button>
+          )}
         </div>
-        <select
-          value={branchId}
-          onChange={(e) => {
-            setBranchId(e.target.value);
-            setPage(1);
-          }}
-          className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-        >
-          <option value="">{branchLabel}</option>
-          {branches.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={segment}
-          onChange={(e) => {
-            setSegment(e.target.value);
-            setSavedSegmentId('');
-            setPage(1);
-          }}
-          className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-        >
-          <option value="">All customers</option>
-          {PRESET_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        {savedSegments.length > 0 && (
-          <select
-            value={savedSegmentId}
-            onChange={(e) => {
-              setSavedSegmentId(e.target.value);
+
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4">
+          <span className="text-muted-foreground mr-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider">
+            <Tag className="h-3.5 w-3.5" />
+            Segments
+          </span>
+          <button
+            onClick={() => {
               setSegment('');
+              setSavedSegmentId('');
               setPage(1);
             }}
-            className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+            className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-all ${
+              !segment && !savedSegmentId
+                ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                : 'bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground'
+            }`}
           >
-            <option value="">Saved segments</option>
-            {savedSegments.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        )}
-        {canEdit && (segment || branchId || search) && (
-          <button
-            type="button"
-            onClick={() => setSaveSegmentOpen((v) => !v)}
-            className="border-input flex h-9 items-center gap-2 rounded-md border px-3 text-sm"
-          >
-            <BookmarkPlus className="h-4 w-4" />
-            Save segment
+            All customers
           </button>
-        )}
+          {PRESET_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => {
+                setSegment(segment === opt.value ? '' : opt.value);
+                setSavedSegmentId('');
+                setPage(1);
+              }}
+              className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-all ${
+                segment === opt.value
+                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                  : 'bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+          {savedSegments.length > 0 && (
+            <>
+              <div className="bg-border mx-1 h-4 w-px"></div>
+              {savedSegments.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    setSavedSegmentId(savedSegmentId === s.id ? '' : s.id);
+                    setSegment('');
+                    setPage(1);
+                  }}
+                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all ${
+                    savedSegmentId === s.id
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                      : 'border-primary/20 bg-primary/5 text-primary hover:bg-primary/10'
+                  }`}
+                >
+                  <BookmarkPlus className="h-3.5 w-3.5" />
+                  {s.name}
+                </button>
+              ))}
+            </>
+          )}
+        </div>
       </div>
 
       {saveSegmentOpen && (
