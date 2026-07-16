@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Megaphone } from 'lucide-react';
 
 interface Campaign {
   id: string;
@@ -170,50 +170,67 @@ export default function CampaignsPage() {
           </Button>
         </CardContent>
       </Card>
-      <div className="space-y-2">
-        {campaigns.map((c) => (
-          <Card key={c.id}>
-            <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
-              <div>
-                <p className="font-medium">{c.name}</p>
-                <p className="text-muted-foreground text-sm">
-                  {c.channel} · {c.trigger} · {c.status} · {c.sentCount} sent
-                  {c.segmentPreset ? ` · segment: ${c.segmentPreset}` : ''}
-                  {c.scheduledAt ? ` · scheduled ${new Date(c.scheduledAt).toLocaleString()}` : ''}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {c.status === 'draft' && c.trigger !== 'MANUAL' && (
-                  <Button size="sm" variant="secondary" onClick={() => activate.mutate(c.id)}>
-                    Enable automation
+      {campaigns.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="bg-primary/10 mb-4 flex h-12 w-12 items-center justify-center rounded-full">
+              <Megaphone className="text-primary h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-semibold">No campaigns yet</h3>
+            <p className="text-muted-foreground mt-2 max-w-sm text-sm">
+              Create your first marketing campaign above. You can send manual blasts or set up
+              automated triggers like Birthday or Welcome messages.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {campaigns.map((c) => (
+            <Card key={c.id}>
+              <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+                <div>
+                  <p className="font-medium">{c.name}</p>
+                  <p className="text-muted-foreground text-sm">
+                    {c.channel} · {c.trigger} · {c.status} · {c.sentCount} sent
+                    {c.segmentPreset ? ` · segment: ${c.segmentPreset}` : ''}
+                    {c.scheduledAt
+                      ? ` · scheduled ${new Date(c.scheduledAt).toLocaleString()}`
+                      : ''}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {c.status === 'draft' && c.trigger !== 'MANUAL' && (
+                    <Button size="sm" variant="secondary" onClick={() => activate.mutate(c.id)}>
+                      Enable automation
+                    </Button>
+                  )}
+                  {c.status === 'draft' && c.trigger === 'MANUAL' && (
+                    <Button size="sm" variant="outline" onClick={() => launch.mutate(c.id)}>
+                      Launch now
+                    </Button>
+                  )}
+                  {c.status === 'scheduled' && c.trigger === 'MANUAL' && (
+                    <span className="text-muted-foreground text-xs">Awaiting schedule</span>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => {
+                      if (!confirm(`Delete campaign "${c.name}"? This cannot be undone.`)) return;
+                      deleteCampaign.mutate(c.id);
+                    }}
+                    disabled={deleteCampaign.isPending}
+                    title="Delete campaign"
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
-                )}
-                {c.status === 'draft' && c.trigger === 'MANUAL' && (
-                  <Button size="sm" variant="outline" onClick={() => launch.mutate(c.id)}>
-                    Launch now
-                  </Button>
-                )}
-                {c.status === 'scheduled' && c.trigger === 'MANUAL' && (
-                  <span className="text-muted-foreground text-xs">Awaiting schedule</span>
-                )}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => {
-                    if (!confirm(`Delete campaign "${c.name}"? This cannot be undone.`)) return;
-                    deleteCampaign.mutate(c.id);
-                  }}
-                  disabled={deleteCampaign.isPending}
-                  title="Delete campaign"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

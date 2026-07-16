@@ -7,6 +7,34 @@ import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import {
+  Activity,
+  Users,
+  Award,
+  AlertCircle,
+  MapPin,
+  BarChart3,
+  TrendingUp,
+  SearchX,
+} from 'lucide-react';
+
+const EmptyState = ({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: any;
+  title: string;
+  description: string;
+}) => (
+  <div className="flex flex-col items-center justify-center py-6 text-center">
+    <div className="bg-muted mb-3 flex h-10 w-10 items-center justify-center rounded-full">
+      <Icon className="text-muted-foreground h-5 w-5" />
+    </div>
+    <p className="text-sm font-medium">{title}</p>
+    <p className="text-muted-foreground mt-1 max-w-[200px] text-xs">{description}</p>
+  </div>
+);
 
 interface PointsReport {
   byType: Array<{
@@ -249,7 +277,11 @@ export default function ReportsPage() {
               </div>
             ))
           ) : (
-            <p className="text-muted-foreground text-sm">No ledger activity yet.</p>
+            <EmptyState
+              icon={Activity}
+              title="No ledger activity"
+              description="Points have not been earned or spent yet."
+            />
           )}
         </CardContent>
       </Card>
@@ -261,7 +293,7 @@ export default function ReportsPage() {
         <CardContent className="space-y-3">
           {campaignsLoading ? (
             <p className="text-muted-foreground text-sm">Loading campaigns…</p>
-          ) : (
+          ) : campaignReport?.campaigns.length || campaignReport?.sendsByStatus.length ? (
             <>
               {campaignReport?.sendsByStatus.map((row) => (
                 <div key={row.status} className="flex justify-between text-sm">
@@ -278,6 +310,12 @@ export default function ReportsPage() {
                 </div>
               ))}
             </>
+          ) : (
+            <EmptyState
+              icon={SearchX}
+              title="No campaigns sent"
+              description="Metrics will appear here after a campaign is launched."
+            />
           )}
         </CardContent>
       </Card>
@@ -297,7 +335,11 @@ export default function ReportsPage() {
               </div>
             ))
           ) : (
-            <p className="text-muted-foreground text-sm">No patron signups in the last 6 months.</p>
+            <EmptyState
+              icon={TrendingUp}
+              title="No customer growth"
+              description="No patrons have signed up in the last 6 months."
+            />
           )}
         </CardContent>
       </Card>
@@ -318,7 +360,7 @@ export default function ReportsPage() {
         <CardContent className="space-y-2">
           {referralLoading ? (
             <p className="text-muted-foreground text-sm">Loading…</p>
-          ) : referralReport ? (
+          ) : referralReport && referralReport.completed > 0 ? (
             <>
               <div className="flex justify-between text-sm">
                 <span>Completed referrals</span>
@@ -335,7 +377,13 @@ export default function ReportsPage() {
                 </div>
               ))}
             </>
-          ) : null}
+          ) : (
+            <EmptyState
+              icon={Users}
+              title="No referral data"
+              description="Patrons haven't completed any referrals yet."
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -346,7 +394,7 @@ export default function ReportsPage() {
         <CardContent className="space-y-2">
           {redemptionLoading ? (
             <p className="text-muted-foreground text-sm">Loading…</p>
-          ) : (
+          ) : redemptionReport?.byStatus.length || redemptionReport?.byReward.length ? (
             <>
               {redemptionReport?.byStatus.map((row) => (
                 <div key={row.status} className="flex justify-between text-sm">
@@ -364,6 +412,12 @@ export default function ReportsPage() {
                 </div>
               ))}
             </>
+          ) : (
+            <EmptyState
+              icon={Award}
+              title="No redemptions"
+              description="No rewards have been redeemed by patrons."
+            />
           )}
         </CardContent>
       </Card>
@@ -375,7 +429,7 @@ export default function ReportsPage() {
         <CardContent className="space-y-2">
           {vipLoading ? (
             <p className="text-muted-foreground text-sm">Loading…</p>
-          ) : vipReport ? (
+          ) : vipReport && vipReport.vipCount > 0 ? (
             <>
               <p className="text-sm">
                 <span className="font-medium">{vipReport.vipCount}</span> VIP members (Gold+ or 5k+
@@ -391,7 +445,13 @@ export default function ReportsPage() {
                 </div>
               ))}
             </>
-          ) : null}
+          ) : (
+            <EmptyState
+              icon={Award}
+              title="No VIP members"
+              description="No patron has reached VIP status yet."
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -413,7 +473,11 @@ export default function ReportsPage() {
               </div>
             ))
           ) : (
-            <p className="text-muted-foreground text-sm">No loyalty accounts yet.</p>
+            <EmptyState
+              icon={AlertCircle}
+              title="No churn data"
+              description="Not enough customer data to predict churn risk."
+            />
           )}
         </CardContent>
       </Card>
@@ -433,7 +497,11 @@ export default function ReportsPage() {
               </div>
             ))
           ) : (
-            <p className="text-muted-foreground text-sm">No branch visit data yet.</p>
+            <EmptyState
+              icon={MapPin}
+              title="No branch visits"
+              description="Visits haven't been recorded at any branches."
+            />
           )}
         </CardContent>
       </Card>
@@ -458,7 +526,11 @@ export default function ReportsPage() {
               </div>
             ))
           ) : (
-            <p className="text-muted-foreground text-sm">No campaigns yet.</p>
+            <EmptyState
+              icon={BarChart3}
+              title="No ROI data"
+              description="Launch campaigns to see return on investment."
+            />
           )}
         </CardContent>
       </Card>
@@ -489,7 +561,13 @@ export default function ReportsPage() {
                 <span>${(salesDashboard.totalLifetimeValueCents / 100).toFixed(2)}</span>
               </div>
             </>
-          ) : null}
+          ) : (
+            <EmptyState
+              icon={BarChart3}
+              title="No sales data"
+              description="Sales dashboard will populate as purchases are made."
+            />
+          )}
         </CardContent>
       </Card>
     </div>
