@@ -35,11 +35,11 @@ export function PatronTasksPanel({ customerId }: { customerId: string }) {
 
   return (
     <div className="bg-card rounded-xl border p-5">
-      <h2 className="mb-3 font-semibold">Patron tasks</h2>
+      <h2 className="mb-3 font-semibold">Customer tasks</h2>
       {isLoading ? (
         <p className="text-muted-foreground text-sm">Loading tasks…</p>
       ) : tasks.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No tasks for this patron.</p>
+        <p className="text-muted-foreground text-sm">No tasks for this customer.</p>
       ) : (
         <ul className="space-y-2">
           {tasks.map((task) => (

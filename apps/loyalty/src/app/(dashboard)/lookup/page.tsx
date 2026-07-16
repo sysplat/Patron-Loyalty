@@ -45,7 +45,7 @@ export default function PatronLookupPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Patron lookup</h1>
+        <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Customer lookup</h1>
         <p className="text-muted-foreground text-sm">
           Find a loyalty member by phone at the counter — quick points check or profile link.
         </p>
@@ -105,14 +105,14 @@ export default function PatronLookupPage() {
               href={`/patrons/${data.customer.id}`}
               className="text-primary mt-2 inline-block text-sm underline"
             >
-              Open patron profile →
+              Open customer profile →
             </Link>
           </CardContent>
         </Card>
       )}
 
       {data && !data.found && queryPhone && !isLoading && (
-        <p className="text-muted-foreground text-sm">No patron found for that phone number.</p>
+        <p className="text-muted-foreground text-sm">No customer found for that phone number.</p>
       )}
     </div>
   );

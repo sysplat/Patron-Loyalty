@@ -104,19 +104,19 @@ export default function CustomerProfilePage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['customer', customerId] });
       qc.invalidateQueries({ queryKey: ['customers'] });
-      toast.success('Patron updated');
+      toast.success('Customer updated');
     },
-    onError: () => toast.error('Could not update patron'),
+    onError: () => toast.error('Could not update customer'),
   });
 
   if (isLoading) {
-    return <div className="text-muted-foreground py-12 text-center">Loading patron profile…</div>;
+    return <div className="text-muted-foreground py-12 text-center">Loading customer profile…</div>;
   }
 
   if (error || !profile) {
     return (
       <div className="space-y-4 py-12 text-center">
-        <p className="text-destructive text-sm">Patron not found or CRM not available.</p>
+        <p className="text-destructive text-sm">Customer not found or CRM not available.</p>
         <Link href="/patrons" className="text-primary text-sm underline">
           Back to directory
         </Link>
@@ -207,7 +207,7 @@ export default function CustomerProfilePage() {
                     const url = URL.createObjectURL(blob);
                     const anchor = document.createElement('a');
                     anchor.href = url;
-                    anchor.download = `patron-dsar-${customerId}.json`;
+                    anchor.download = `customer-dsar-${customerId}.json`;
                     anchor.click();
                     URL.revokeObjectURL(url);
                     toast.success('DSAR export downloaded');

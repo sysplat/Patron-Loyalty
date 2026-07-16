@@ -143,7 +143,7 @@ export default function CustomersPage() {
       api.post('/customers', payload, { token: token! }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['customers'] });
-      toast.success('Patron added');
+      toast.success('Customer added');
       setCreateOpen(false);
       setCreateForm({ name: '', email: '', phone: '' });
     },
@@ -151,7 +151,7 @@ export default function CustomersPage() {
       const message =
         err && typeof err === 'object' && 'message' in err
           ? String((err as { message?: string }).message)
-          : 'Could not add patron';
+          : 'Could not add customer';
       toast.error(message);
     },
   });
@@ -164,7 +164,7 @@ export default function CustomersPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Patrons</h1>
+          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Customers</h1>
           <p className="text-muted-foreground text-sm">
             Customer directory, visit history, and marketing segments
           </p>
@@ -173,9 +173,9 @@ export default function CustomersPage() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
             <Sparkles className="text-primary h-6 w-6" />
           </div>
-          <h2 className="text-lg font-semibold">Patron CRM is not enabled</h2>
+          <h2 className="text-lg font-semibold">Customer CRM is not enabled</h2>
           <p className="text-muted-foreground mx-auto mt-2 max-w-md text-sm">
-            Patron CRM must be turned on for your organization before you can use the customer
+            Customer CRM must be turned on for your organization before you can use the customer
             directory, profiles, and segments. Contact your platform administrator to enable it.
           </p>
         </div>
@@ -187,9 +187,9 @@ export default function CustomersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Patrons</h1>
+          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Customers</h1>
           <p className="text-muted-foreground text-sm">
-            Search patrons, view visit history, and filter by segments
+            Search customers, view visit history, and filter by segments
           </p>
         </div>
         {canCreate ? (
@@ -199,7 +199,7 @@ export default function CustomersPage() {
             className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium"
           >
             <UserPlus className="h-4 w-4" aria-hidden />
-            Add patron
+            Add customer
           </button>
         ) : null}
       </div>
@@ -243,7 +243,7 @@ export default function CustomersPage() {
               disabled={createPatronMutation.isPending}
               className="bg-primary text-primary-foreground h-9 rounded-md px-4 text-sm font-medium disabled:opacity-50"
             >
-              {createPatronMutation.isPending ? 'Saving…' : 'Save patron'}
+              {createPatronMutation.isPending ? 'Saving…' : 'Save customer'}
             </button>
             <button
               type="button"
@@ -295,7 +295,7 @@ export default function CustomersPage() {
           }}
           className="border-input bg-background h-9 rounded-md border px-3 text-sm"
         >
-          <option value="">All patrons</option>
+          <option value="">All customers</option>
           {PRESET_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
@@ -353,13 +353,13 @@ export default function CustomersPage() {
 
       {error ? (
         <div className="text-destructive py-12 text-center text-sm">
-          Could not load patrons. Try again or contact support.
+          Could not load customers. Try again or contact support.
         </div>
       ) : isLoading ? (
-        <div className="text-muted-foreground py-12 text-center">Loading patrons…</div>
+        <div className="text-muted-foreground py-12 text-center">Loading customers…</div>
       ) : customers.length === 0 ? (
         <div className="text-muted-foreground py-12 text-center">
-          No patrons match your filters.
+          No customers match your filters.
         </div>
       ) : (
         <div className="bg-card overflow-hidden rounded-xl border">
@@ -426,7 +426,7 @@ export default function CustomersPage() {
       {meta && meta.totalPages > 1 && (
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
-            Page {page} of {meta.totalPages} ({meta.total} patrons)
+            Page {page} of {meta.totalPages} ({meta.total} customers)
           </span>
           <div className="flex gap-2">
             <button
@@ -451,7 +451,7 @@ export default function CustomersPage() {
 
       {!canEdit && (
         <p className="text-muted-foreground text-center text-xs">
-          You have read-only access to patron profiles.
+          You have read-only access to customer profiles.
         </p>
       )}
     </div>
