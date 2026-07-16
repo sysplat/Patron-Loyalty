@@ -19,7 +19,19 @@ import {
   YAxis,
   CartesianGrid,
 } from 'recharts';
-import { Users, Award, Coins, History, Activity, HeartPulse, Ticket, UserPlus } from 'lucide-react';
+import {
+  Users,
+  Award,
+  Coins,
+  History,
+  Activity,
+  HeartPulse,
+  Ticket,
+  UserPlus,
+  X,
+  CheckCircle2,
+  Circle,
+} from 'lucide-react';
 
 type DashboardView = 'executive' | 'sales' | 'customer' | 'campaign';
 
@@ -87,6 +99,7 @@ function getRelativeTime(dateString: string) {
 export default function LoyaltyDashboardPage() {
   const token = useAuthStore((s) => s.accessToken);
   const [view, setView] = useState<DashboardView>('executive');
+  const [showOnboarding, setShowOnboarding] = useState(true);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['loyalty', 'dashboard'],
@@ -210,6 +223,52 @@ export default function LoyaltyDashboardPage() {
           Executive, sales, customer, and campaign insights.
         </p>
       </div>
+
+      {showOnboarding && (
+        <Card className="animate-in fade-in slide-in-from-top-2 border-primary/20 bg-primary/5 relative overflow-hidden">
+          <button
+            onClick={() => setShowOnboarding(false)}
+            className="text-muted-foreground hover:text-foreground absolute right-4 top-4"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Welcome to Patron Loyalty! 👋</CardTitle>
+            <p className="text-muted-foreground text-sm">
+              Follow these steps to get your program ready for launch.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                { title: 'Create a Reward', desc: 'Add a perk for your patrons', done: true },
+                { title: 'Setup Portal Branding', desc: 'Add your logo and colors', done: false },
+                { title: 'Connect QlessQ', desc: 'Sync historical visits', done: true },
+                { title: 'Share Referral Link', desc: 'Invite your first customer', done: false },
+              ].map((step, i) => (
+                <div
+                  key={i}
+                  className={`flex items-start gap-3 rounded-lg border p-3 ${
+                    step.done ? 'bg-background/50 border-emerald-500/30' : 'bg-background'
+                  }`}
+                >
+                  {step.done ? (
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
+                  ) : (
+                    <Circle className="text-muted-foreground/30 mt-0.5 h-5 w-5 shrink-0" />
+                  )}
+                  <div>
+                    <p className={`text-sm font-medium ${step.done ? 'text-foreground' : ''}`}>
+                      {step.title}
+                    </p>
+                    <p className="text-muted-foreground text-xs">{step.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="bg-muted/30 inline-flex flex-wrap gap-1 rounded-lg p-1">
         <button
