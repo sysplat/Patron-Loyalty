@@ -123,24 +123,29 @@ async function main() {
 
     ok &&=
       (await step('Session returns access token after login', async () => {
-        const res = await fetch(`${base}/api/auth/session`, {
+        const res = await fetch(`${base}/api/auth/token`, {
           headers: { Cookie: jarStore.header() ?? '' },
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const body = await res.json();
-        if (!body?.data?.accessToken) throw new Error('missing accessToken');
+        if (!body?.accessToken) throw new Error('missing accessToken');
       })) ?? false;
 
     ok &&=
       (await step('Refresh rotates access token', async () => {
-        const res = await fetch(`${base}/api/auth/refresh`, {
+        const refreshRes = await fetch(`${base}/api/auth/refresh`, {
           method: 'POST',
+          headers: { Cookie: jarStore.header() ?? '' },
+        });
+        if (!refreshRes.ok) throw new Error(`HTTP ${refreshRes.status}`);
+        jarStore.store(refreshRes);
+
+        const res = await fetch(`${base}/api/auth/token`, {
           headers: { Cookie: jarStore.header() ?? '' },
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const body = await res.json();
-        if (!body?.data?.accessToken) throw new Error('missing accessToken');
-        jarStore.store(res);
+        if (!body?.accessToken) throw new Error('missing accessToken');
       })) ?? false;
 
     ok &&=
