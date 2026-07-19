@@ -49,13 +49,25 @@ export default function LoyaltySignupPage() {
       await api.post('/auth/register', validation.data, { skipAuth: true });
       setSuccess(true);
     } catch (err: unknown) {
-      const message =
-        err && typeof err === 'object' && 'data' in err
-          ? String((err as { data?: { message?: string } }).data?.message ?? '')
-          : err instanceof Error
-            ? err.message
-            : 'Registration failed';
-      setError(message || 'Registration failed');
+      let message = 'We encountered an issue while creating your account. Please try again.';
+
+      const errorObj = err as any;
+      const status = errorObj?.status || errorObj?.response?.status;
+      const apiMessage = errorObj?.data?.message || errorObj?.response?.data?.message;
+
+      if (
+        status === 409 ||
+        apiMessage === 'Conflict' ||
+        (err instanceof Error && err.message.includes('409'))
+      ) {
+        message = 'An account with this email address already exists. Please sign in instead.';
+      } else if (apiMessage) {
+        message = String(apiMessage);
+      } else if (err instanceof Error && err.message && err.message !== 'Registration failed') {
+        message = err.message;
+      }
+
+      setError(message);
     } finally {
       setLoading(false);
     }
