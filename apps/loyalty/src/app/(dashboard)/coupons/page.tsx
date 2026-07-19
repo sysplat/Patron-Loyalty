@@ -47,6 +47,7 @@ export default function CouponsPage() {
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [value, setValue] = useState('10');
+  const [deletingCoupon, setDeletingCoupon] = useState<Coupon | null>(null);
 
   const { data: coupons = [], isLoading } = useQuery({
     queryKey: ['loyalty', 'coupons'],
@@ -155,10 +156,7 @@ export default function CouponsPage() {
                     size="sm"
                     variant="ghost"
                     className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => {
-                      if (!confirm(`Delete coupon "${c.code}"? This cannot be undone.`)) return;
-                      deleteCoupon.mutate(c.id);
-                    }}
+                    onClick={() => setDeletingCoupon(c)}
                     disabled={deleteCoupon.isPending}
                     title="Delete coupon"
                   >
@@ -168,6 +166,43 @@ export default function CouponsPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {deletingCoupon && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="animate-in fade-in zoom-in-95 w-full max-w-md shadow-lg">
+            <CardHeader>
+              <CardTitle>Delete Coupon</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground text-sm">
+                Are you sure you want to delete the coupon{' '}
+                <span className="text-foreground font-semibold">{deletingCoupon.code}</span>? This
+                action cannot be undone.
+              </p>
+              <div className="mt-6 flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeletingCoupon(null)}
+                  disabled={deleteCoupon.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    deleteCoupon.mutate(deletingCoupon.id, {
+                      onSuccess: () => setDeletingCoupon(null),
+                    });
+                  }}
+                  disabled={deleteCoupon.isPending}
+                >
+                  {deleteCoupon.isPending ? 'Deleting...' : 'Delete'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
