@@ -144,6 +144,18 @@ const worker = new Worker(
 
       // Update notification status — store providerMessageId so the
       // Twilio status-callback webhook can look up this record later.
+      const existingNotification = await prisma.notification.findUnique({
+        where: { id: notificationId },
+      });
+
+      if (!existingNotification) {
+        logger.warn(
+          { notificationId, orgId, requestId },
+          'Notification record not found during status update (likely deleted or rolled back)',
+        );
+        return;
+      }
+
       await prisma.notification.update({
         where: { id: notificationId },
         data: {
