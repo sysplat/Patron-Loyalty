@@ -156,7 +156,7 @@ const worker = new Worker(
         return;
       }
 
-      await prisma.notification.update({
+      await prisma.notification.updateMany({
         where: { id: notificationId },
         data: {
           status: result.success ? 'sent' : 'failed',
