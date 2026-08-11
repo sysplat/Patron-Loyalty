@@ -73,7 +73,7 @@ export class LoyaltyMarketingSyncService {
           errors += 1;
         }
       }
-    } while (true);
+    } while (accounts.length > 0);
 
     return { synced, errors };
   }
