@@ -50,6 +50,7 @@ export class LoyaltyMarketingSyncService {
     let cursor: string | undefined;
     let synced = 0;
     let errors = 0;
+    let batchCount = 0;
 
     do {
       const accounts = await this.prisma.withTenant(orgId, (tx) =>
@@ -62,7 +63,8 @@ export class LoyaltyMarketingSyncService {
         }),
       );
 
-      if (accounts.length === 0) break;
+      batchCount = accounts.length;
+      if (batchCount === 0) break;
       cursor = accounts[accounts.length - 1].id;
 
       for (const account of accounts) {
@@ -73,7 +75,7 @@ export class LoyaltyMarketingSyncService {
           errors += 1;
         }
       }
-    } while (accounts.length > 0);
+    } while (batchCount > 0);
 
     return { synced, errors };
   }
