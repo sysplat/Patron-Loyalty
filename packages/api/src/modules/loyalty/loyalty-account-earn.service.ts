@@ -51,6 +51,8 @@ export class LoyaltyAccountEarnService {
       tierSlug: account.tier?.slug ?? null,
       lifetimePointsEarned: account.lifetimePointsEarned,
       purchaseAmountCents: earnContext.purchaseAmountCents,
+      totalVisits: account.totalVisits,
+      accountId: account.id,
     });
     if (points <= 0) return null;
 

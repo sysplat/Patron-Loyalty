@@ -172,15 +172,18 @@ export class LoyaltyProgramService {
     );
   }
 
-  private ruleMatchesConditions(
+  private async ruleMatchesConditions(
     conditions: Record<string, unknown>,
     ctx: {
       purchaseAmountCents?: number;
       branchId?: string;
       tierSlug?: string | null;
       lifetimePointsEarned?: number;
+      totalVisits?: number;
+      accountId?: string;
+      orgId?: string;
     },
-  ): boolean {
+  ): Promise<boolean> {
     const minPurchase = conditions.minPurchaseCents;
     if (typeof minPurchase === 'number' && (ctx.purchaseAmountCents ?? 0) < minPurchase) {
       return false;
@@ -197,6 +200,32 @@ export class LoyaltyProgramService {
     if (typeof minLifetime === 'number' && (ctx.lifetimePointsEarned ?? 0) < minLifetime) {
       return false;
     }
+
+    if (conditions.isFirstVisit === true) {
+      if (ctx.totalVisits !== 0) return false;
+    }
+
+    const minVisits30Days = conditions.minVisits30Days;
+    if (typeof minVisits30Days === 'number' && minVisits30Days > 0) {
+      if (!ctx.accountId || !ctx.orgId) return false; // Safety check
+
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const recentVisits = await this.prisma.withTenant(ctx.orgId, (tx) =>
+        tx.loyaltyPointLedger.count({
+          where: {
+            orgId: ctx.orgId,
+            accountId: ctx.accountId,
+            type: 'EARN',
+            createdAt: { gte: thirtyDaysAgo },
+            sourceType: { in: ['ticket', 'appointment'] },
+          },
+        }),
+      );
+      if (recentVisits < minVisits30Days) {
+        return false;
+      }
+    }
+
     return true;
   }
 
@@ -208,6 +237,8 @@ export class LoyaltyProgramService {
       branchId?: string;
       tierSlug?: string | null;
       lifetimePointsEarned?: number;
+      totalVisits?: number;
+      accountId?: string;
       lineItems?: Array<{
         id: string;
         name: string;
@@ -234,7 +265,8 @@ export class LoyaltyProgramService {
 
     for (const rule of program.earnRules) {
       const conditions = (rule.conditions ?? {}) as Record<string, unknown>;
-      if (!this.ruleMatchesConditions(conditions, ctx)) continue;
+      const matches = await this.ruleMatchesConditions(conditions, { ...ctx, orgId });
+      if (!matches) continue;
 
       let eligibleAmountCents = ctx.purchaseAmountCents ?? 0;
 
