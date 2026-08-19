@@ -29,4 +29,4 @@ fi
 # QMS-only env names are consumed above; unset so Centrifugo v6 does not warn on startup.
 unset CENTRIFUGO_SECRET CENTRIFUGO_API_KEY CENTRIFUGO_TOKEN_HMAC_SECRET_KEY REDIS_URL REDIS_PRIVATE_URL 2>/dev/null || true
 
-exec centrifugo -c /centrifugo/config.json --http_server.port="${PORT:-8000}"
+exec centrifugo -c /centrifugo/config.json ${engine_args} --http_server.port="${PORT:-8000}"
