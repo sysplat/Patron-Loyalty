@@ -51,6 +51,12 @@ export class LoyaltyIntegrationController {
     private readonly connectorObs: LoyaltyConnectorObservabilityService,
   ) {}
 
+  @Get('ping')
+  @ApiOperation({ summary: 'Verify integration API key and org scope (QlessQ connector health)' })
+  ping(@LoyaltyOrgId() orgId: string) {
+    return { ok: true as const, orgId };
+  }
+
   @Get('customers/lookup')
   @ApiOperation({ summary: 'Look up patron by customerId, email, phone, or external ID' })
   lookupCustomer(

@@ -17,6 +17,7 @@ Patron Loyalty (this repo) and QlessQ (sibling `../QMS`) are **separate products
 
 | Mechanism                                        | Use                                                                                                |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| **`GET /loyalty/integrations/v1/ping`**          | QlessQ connector health: validates `X-Loyalty-Api-Key` and returns `{ ok: true, orgId }`.          |
 | **`POST /loyalty/integrations/v1/queue-events`** | Primary path when QlessQ and LMS deploy separately. QlessQ HTTP forwarder sends normalized events. |
 | **Integration API** (`X-Loyalty-Api-Key`)        | POS/e-commerce: `points/earn`, `customers/upsert`, coupons, wallet.                                |
 | **In-process listener**                          | Same monorepo + shared Postgres: `loyalty.listener.ts` handles events locally (no HTTP).           |

@@ -57,11 +57,14 @@ curl -sS "$API/api/v1/health/meta" | jq .
 curl -sS -o /dev/null -w "%{http_code}\n" "$API/api/v1/health"
 curl -sS -o /dev/null -w "%{http_code}\n" "$API/api/v1/tickets"
 curl -sS -o /dev/null -w "%{http_code}\n" "$API/api/v1/queues"
+curl -sS -o /dev/null -w "%{http_code}\n" "$API/api/v1/loyalty/integrations/v1/ping"
 curl -sS -o /dev/null -w "%{http_code}\n" -X POST "$API/api/v1/loyalty/integrations/v1/queue-events" \
   -H "Content-Type: application/json" -d '{}'
 ```
 
-Expected on loyalty deploy: health **200**, tickets/queues **404**, queue-events **401**.
+Expected on loyalty deploy: health **200**, ping **401** (no key), tickets/queues **404**, queue-events **401**.
+
+With a valid integration key, ping returns **200** `{ "ok": true, "orgId": "..." }`.
 
 Confirm `release` in `/api/v1/health/meta` matches the deployed git SHA.
 

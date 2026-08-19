@@ -38,6 +38,10 @@ describe('LoyaltyIntegrationController (delegation)', () => {
     expect(result).toEqual({ customerId: 'c1' });
   });
 
+  it('returns ok and org id from ping', () => {
+    expect(controller.ping(ORG_ID)).toEqual({ ok: true, orgId: ORG_ID });
+  });
+
   it('delegates earn points to integration service', async () => {
     const body = {
       customerId: 'c1',

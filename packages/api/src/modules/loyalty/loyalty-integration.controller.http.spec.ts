@@ -112,6 +112,19 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
       .expect(401);
   });
 
+  it('returns 401 for ping without an API key', async () => {
+    await request(app.getHttpServer()).get('/api/v1/loyalty/integrations/v1/ping').expect(401);
+  });
+
+  it('returns ok and org id for ping with a valid API key', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/loyalty/integrations/v1/ping')
+      .set('X-Loyalty-Api-Key', 'loyalty_live_test')
+      .expect(200);
+
+    expect(res.body).toEqual({ ok: true, orgId: ORG_ID });
+  });
+
   it('returns 400 for invalid queue-events payload', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/v1/loyalty/integrations/v1/queue-events')
