@@ -8,11 +8,9 @@ set -e
 unset CENTRIFUGO_ENGINE_REDIS_USER CENTRIFUGO_ENGINE_REDIS_PASSWORD 2>/dev/null || true
 
 redis_url="${REDIS_URL:-${REDIS_PRIVATE_URL:-}}"
-engine_args=""
 if [ -n "${redis_url}" ]; then
   export CENTRIFUGO_ENGINE_TYPE=redis
   export CENTRIFUGO_ENGINE_REDIS_ADDRESS="${redis_url}"
-  engine_args="--engine.type=redis --engine.redis.address=${redis_url}"
 fi
 
 # QMS env names → Centrifugo v6 (bundled docker/centrifugo.json uses local dev placeholders).
@@ -29,4 +27,4 @@ fi
 # QMS-only env names are consumed above; unset so Centrifugo v6 does not warn on startup.
 unset CENTRIFUGO_SECRET CENTRIFUGO_API_KEY CENTRIFUGO_TOKEN_HMAC_SECRET_KEY REDIS_URL REDIS_PRIVATE_URL 2>/dev/null || true
 
-exec centrifugo -c /centrifugo/config.json ${engine_args} --http_server.port="${PORT:-8000}"
+exec centrifugo -c /centrifugo/config.json --http_server.port="${PORT:-8000}"
