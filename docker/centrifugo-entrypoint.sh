@@ -4,14 +4,9 @@ set -e
 # Centrifugo v6 env vars: prefix CENTRIFUGO_, uppercase, single underscores between
 # nested config keys (see https://centrifugal.dev/docs/server/configuration).
 
-# Railway may inject split redis vars from prior ops; v6 expects a single URI in ADDRESS.
-unset CENTRIFUGO_ENGINE_REDIS_ADDRESS CENTRIFUGO_ENGINE_REDIS_USER CENTRIFUGO_ENGINE_REDIS_PASSWORD 2>/dev/null || true
-
-redis_url="${REDIS_URL:-${REDIS_PRIVATE_URL:-}}"
-if [ -n "${redis_url}" ]; then
-  export CENTRIFUGO_ENGINE_TYPE=redis
-  export CENTRIFUGO_ENGINE_REDIS_ADDRESS="${redis_url}"
-fi
+# Centrifugo v6 on Railway uses docker/centrifugo.railway.json (no engine block → memory engine).
+# REDIS_URL is linked for future redis engine scaling; memory is fine for a single replica.
+unset CENTRIFUGO_ENGINE_REDIS_ADDRESS CENTRIFUGO_ENGINE_REDIS_USER CENTRIFUGO_ENGINE_REDIS_PASSWORD CENTRIFUGO_ENGINE_TYPE 2>/dev/null || true
 
 # QMS env names → Centrifugo v6 (bundled docker/centrifugo.json uses local dev placeholders).
 if [ -n "${CENTRIFUGO_SECRET:-}" ]; then
