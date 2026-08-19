@@ -4,23 +4,13 @@ set -e
 # Centrifugo v6 env vars: prefix CENTRIFUGO_, uppercase, single underscores between
 # nested config keys (see https://centrifugal.dev/docs/server/configuration).
 
-# Redis engine — Railway injects REDIS_URL when Redis is linked.
-# Centrifugo v6 expects host:port in ENGINE_REDIS_ADDRESS; credentials via USER/PASSWORD.
-if [ -z "${CENTRIFUGO_ENGINE_REDIS_ADDRESS:-}" ]; then
-  redis_url="${REDIS_URL:-${REDIS_PRIVATE_URL:-}}"
-  if [ -n "${redis_url}" ]; then
-    redis_hostport="${redis_url#*://}"
-    redis_hostport="${redis_hostport#*@}"
-    export CENTRIFUGO_ENGINE_REDIS_ADDRESS="${redis_hostport}"
-    if [ "${redis_url}" != "${redis_hostport}" ]; then
-      redis_auth="${redis_url#*://}"
-      redis_auth="${redis_auth%%@*}"
-      if [ -n "${redis_auth}" ] && [ "${redis_auth#*:}" != "${redis_auth}" ]; then
-        export CENTRIFUGO_ENGINE_REDIS_USER="${redis_auth%%:*}"
-        export CENTRIFUGO_ENGINE_REDIS_PASSWORD="${redis_auth#*:}"
-      fi
-    fi
-  fi
+# Railway may inject split redis vars from prior ops; v6 expects a single URI in ADDRESS.
+unset CENTRIFUGO_ENGINE_REDIS_USER CENTRIFUGO_ENGINE_REDIS_PASSWORD 2>/dev/null || true
+
+redis_url="${REDIS_URL:-${REDIS_PRIVATE_URL:-}}"
+if [ -n "${redis_url}" ]; then
+  export CENTRIFUGO_ENGINE_TYPE=redis
+  export CENTRIFUGO_ENGINE_REDIS_ADDRESS="${redis_url}"
 fi
 
 # QMS env names → Centrifugo v6 (bundled docker/centrifugo.json uses local dev placeholders).
