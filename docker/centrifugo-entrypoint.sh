@@ -5,10 +5,22 @@ set -e
 # nested config keys (see https://centrifugal.dev/docs/server/configuration).
 
 # Redis engine — Railway injects REDIS_URL when Redis is linked.
-if [ -n "${REDIS_URL:-}" ]; then
-  export CENTRIFUGO_ENGINE_REDIS_ADDRESS="${REDIS_URL}"
-elif [ -n "${REDIS_PRIVATE_URL:-}" ]; then
-  export CENTRIFUGO_ENGINE_REDIS_ADDRESS="${REDIS_PRIVATE_URL}"
+# Centrifugo v6 expects host:port in ENGINE_REDIS_ADDRESS; credentials via USER/PASSWORD.
+if [ -z "${CENTRIFUGO_ENGINE_REDIS_ADDRESS:-}" ]; then
+  redis_url="${REDIS_URL:-${REDIS_PRIVATE_URL:-}}"
+  if [ -n "${redis_url}" ]; then
+    redis_hostport="${redis_url#*://}"
+    redis_hostport="${redis_hostport#*@}"
+    export CENTRIFUGO_ENGINE_REDIS_ADDRESS="${redis_hostport}"
+    if [ "${redis_url}" != "${redis_hostport}" ]; then
+      redis_auth="${redis_url#*://}"
+      redis_auth="${redis_auth%%@*}"
+      if [ -n "${redis_auth}" ] && [ "${redis_auth#*:}" != "${redis_auth}" ]; then
+        export CENTRIFUGO_ENGINE_REDIS_USER="${redis_auth%%:*}"
+        export CENTRIFUGO_ENGINE_REDIS_PASSWORD="${redis_auth#*:}"
+      fi
+    fi
+  fi
 fi
 
 # QMS env names → Centrifugo v6 (bundled docker/centrifugo.json uses local dev placeholders).
