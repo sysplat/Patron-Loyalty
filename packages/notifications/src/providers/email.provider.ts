@@ -16,15 +16,26 @@ function formatFromAddress(from: string): string {
 }
 
 function serializeEmailSendError(err: unknown): string {
-  if (!(err instanceof Error)) return String(err);
-  const anyErr = err as Error & { response?: { body?: unknown; statusCode?: number } };
-  const status = anyErr.response?.statusCode;
-  const body = anyErr.response?.body;
-  if (body != null) {
-    const text = typeof body === 'string' ? body : JSON.stringify(body);
-    return status != null ? `${err.message} [HTTP ${status}] ${text}` : `${err.message} ${text}`;
+  if (err instanceof Error) {
+    const anyErr = err as Error & { response?: { body?: unknown; statusCode?: number } };
+    const status = anyErr.response?.statusCode;
+    const body = anyErr.response?.body;
+    if (body != null) {
+      const text = typeof body === 'string' ? body : JSON.stringify(body);
+      return status != null ? `${err.message} [HTTP ${status}] ${text}` : `${err.message} ${text}`;
+    }
+    return err.message;
   }
-  return err.message;
+  if (typeof err === 'object' && err !== null) {
+    const record = err as { message?: unknown; name?: unknown; statusCode?: unknown };
+    if (typeof record.message === 'string') {
+      const name = typeof record.name === 'string' ? record.name : 'provider_error';
+      const status = typeof record.statusCode === 'number' ? ` [HTTP ${record.statusCode}]` : '';
+      return `${name}${status}: ${record.message}`;
+    }
+    return JSON.stringify(err);
+  }
+  return String(err);
 }
 
 function htmlBody(body: string): string {
