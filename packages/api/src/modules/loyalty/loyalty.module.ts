@@ -1,4 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CustomerModule } from '../customer/customer.module';
 import { NotificationModule } from '../notification/notification.module';
 import { BillingModule } from '../billing/billing.module';
@@ -48,6 +50,7 @@ import { LoyaltyCampaignAutomationService } from './loyalty-campaign-automation.
 import { LoyaltyPortalService } from './loyalty-portal.service';
 import { LoyaltyWebhookService } from './loyalty-webhook.service';
 import { LoyaltyApiKeyGuard } from './guards/loyalty-api-key.guard';
+import { LoyaltyJwtOrApiKeyGuard } from './guards/loyalty-jwt-or-api-key.guard';
 import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
 import { LoyaltyConnectorObservabilityService } from './loyalty-connector-observability.service';
 // POS integrations
@@ -66,6 +69,13 @@ import { LoyaltyMarketingSyncService } from './loyalty-marketing-sync.service';
     NotificationModule,
     WebhookModule,
     RedisModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('app.jwt.secret'),
+      }),
+      inject: [ConfigService],
+    }),
     forwardRef(() => BillingModule),
   ],
   controllers: [
@@ -115,6 +125,7 @@ import { LoyaltyMarketingSyncService } from './loyalty-marketing-sync.service';
     LoyaltyPortalService,
     LoyaltyWebhookService,
     LoyaltyApiKeyGuard,
+    LoyaltyJwtOrApiKeyGuard,
     LoyaltyQueueEventsService,
     LoyaltyConnectorObservabilityService,
     // POS integrations

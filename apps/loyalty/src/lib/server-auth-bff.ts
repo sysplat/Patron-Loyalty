@@ -4,8 +4,8 @@ import {
   WEB_REFRESH_COOKIE,
   WEB_SESSION_COOKIE,
   getServerApiBase,
-  isSecureCookieEnv,
   resolveAccessTokenTtlSeconds,
+  sessionCookieOptions,
 } from '@queueplatform/shared';
 
 type AuthTokens = { accessToken: string; refreshToken: string };
@@ -13,25 +13,20 @@ type AuthTokens = { accessToken: string; refreshToken: string };
 const ACCESS_TOKEN_COOKIE_MAX_AGE = resolveAccessTokenTtlSeconds();
 
 function setAuthCookies(res: NextResponse, tokens: AuthTokens): void {
-  const secure = isSecureCookieEnv();
-  res.cookies.set(WEB_SESSION_COOKIE, tokens.accessToken, {
-    httpOnly: true,
-    secure,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: ACCESS_TOKEN_COOKIE_MAX_AGE,
-  });
-  res.cookies.set(WEB_REFRESH_COOKIE, tokens.refreshToken, {
-    httpOnly: true,
-    secure,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: REFRESH_TOKEN_TTL_SECONDS,
-  });
+  res.cookies.set(
+    WEB_SESSION_COOKIE,
+    tokens.accessToken,
+    sessionCookieOptions(ACCESS_TOKEN_COOKIE_MAX_AGE),
+  );
+  res.cookies.set(
+    WEB_REFRESH_COOKIE,
+    tokens.refreshToken,
+    sessionCookieOptions(REFRESH_TOKEN_TTL_SECONDS),
+  );
 }
 
 export function clearAuthCookies(res: NextResponse): void {
-  const base = { httpOnly: true, secure: isSecureCookieEnv(), sameSite: 'lax' as const, path: '/' };
+  const base = sessionCookieOptions(0);
   res.cookies.set(WEB_SESSION_COOKIE, '', { ...base, maxAge: 0 });
   res.cookies.set(WEB_REFRESH_COOKIE, '', { ...base, maxAge: 0 });
 }

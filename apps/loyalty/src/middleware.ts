@@ -4,8 +4,8 @@ import {
   REFRESH_TOKEN_TTL_SECONDS,
   WEB_REFRESH_COOKIE,
   WEB_SESSION_COOKIE,
-  isSecureCookieEnv,
   resolveAccessTokenTtlSeconds,
+  sessionCookieOptions,
 } from '@queueplatform/shared';
 
 const publicPaths = [
@@ -26,7 +26,19 @@ const publicPrefixes = ['/portal', '/card', '/refer'];
 
 const DASHBOARD_HOME = '/overview';
 
+/** Preserve the browser hostname when proxied (Cloudflare → Railway). */
+function publicRequestUrl(request: NextRequest): URL {
+  const forwardedHost = request.headers.get('x-forwarded-host')?.split(',')[0]?.trim();
+  const host = forwardedHost || request.headers.get('host');
+  if (!host) return new URL(request.url);
+  const url = new URL(request.url);
+  url.host = host;
+  url.protocol = `${request.headers.get('x-forwarded-proto') ?? url.protocol.replace(':', '')}:`;
+  return url;
+}
+
 export async function middleware(request: NextRequest) {
+  const publicUrl = publicRequestUrl(request);
   const { pathname } = request.nextUrl;
 
   // Never touch Next internals, API routes, or common static assets (belt-and-suspenders with matcher).
@@ -51,7 +63,7 @@ export async function middleware(request: NextRequest) {
   const maybeRefreshForDashboard = async () => {
     if (token || !refresh) return null;
     try {
-      const res = await fetch(new URL('/api/auth/refresh', request.url), {
+      const res = await fetch(new URL('/api/auth/refresh', publicUrl), {
         method: 'POST',
         headers: { cookie: request.headers.get('cookie') ?? '' },
         cache: 'no-store',
@@ -65,21 +77,16 @@ export async function middleware(request: NextRequest) {
       if (!tokens?.accessToken || !tokens.refreshToken) return null;
 
       const next = NextResponse.next();
-      const secure = isSecureCookieEnv();
-      next.cookies.set(WEB_SESSION_COOKIE, tokens.accessToken, {
-        httpOnly: true,
-        secure,
-        sameSite: 'lax',
-        path: '/',
-        maxAge: resolveAccessTokenTtlSeconds(),
-      });
-      next.cookies.set(WEB_REFRESH_COOKIE, tokens.refreshToken, {
-        httpOnly: true,
-        secure,
-        sameSite: 'lax',
-        path: '/',
-        maxAge: REFRESH_TOKEN_TTL_SECONDS,
-      });
+      next.cookies.set(
+        WEB_SESSION_COOKIE,
+        tokens.accessToken,
+        sessionCookieOptions(resolveAccessTokenTtlSeconds()),
+      );
+      next.cookies.set(
+        WEB_REFRESH_COOKIE,
+        tokens.refreshToken,
+        sessionCookieOptions(REFRESH_TOKEN_TTL_SECONDS),
+      );
       return next;
     } catch {
       return null;
@@ -88,12 +95,12 @@ export async function middleware(request: NextRequest) {
 
   // Authenticated users on login/signup → dashboard home
   if (token && signInPaths.includes(path)) {
-    return NextResponse.redirect(new URL(DASHBOARD_HOME, request.url));
+    return NextResponse.redirect(new URL(DASHBOARD_HOME, publicUrl));
   }
 
   // Marketing landing at /
   if (path === '/') {
-    if (token) return NextResponse.redirect(new URL(DASHBOARD_HOME, request.url));
+    if (token) return NextResponse.redirect(new URL(DASHBOARD_HOME, publicUrl));
     return NextResponse.next();
   }
 
@@ -106,7 +113,7 @@ export async function middleware(request: NextRequest) {
   if (!token) {
     const refreshed = await maybeRefreshForDashboard();
     if (refreshed) return refreshed;
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL('/login', publicUrl));
   }
 
   return NextResponse.next();

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { loyaltyGet, loyaltyPost, unwrapApiData } from '@/lib/api-response';
+import { loyaltyGet, loyaltyPost, loyaltyDelete, unwrapApiData } from '@/lib/api-response';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
 import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
@@ -142,7 +142,7 @@ export default function IntegrationsPage() {
   const { data: posConnections = [], isLoading: posLoading } = useQuery({
     queryKey: ['loyalty', 'integrations', 'pos'],
     queryFn: () =>
-      loyaltyPost<PosConnection[]>('/loyalty/integrations/pos/staff', token!).catch(
+      loyaltyGet<PosConnection[]>('/loyalty/integrations/pos', token!).catch(
         () => [] as PosConnection[],
       ),
     enabled: !!token,
@@ -250,7 +250,7 @@ export default function IntegrationsPage() {
 
   const deletePos = useMutation({
     mutationFn: (provider: string) =>
-      loyaltyPost(`/loyalty/integrations/pos/${provider}/delete`, token!),
+      loyaltyDelete(`/loyalty/integrations/pos/${provider}`, token!),
     onSuccess: (_d, provider) => {
       toast.success(`${provider} connection removed`);
       qc.invalidateQueries({ queryKey: ['loyalty', 'integrations', 'pos'] });
@@ -292,7 +292,7 @@ export default function IntegrationsPage() {
 
   const deleteMarketing = useMutation({
     mutationFn: (provider: string) =>
-      loyaltyPost(`/loyalty/integrations/marketing/${provider}/delete`, token!),
+      loyaltyDelete(`/loyalty/integrations/marketing/${provider}`, token!),
     onSuccess: (_d, provider) => {
       toast.success(`${provider} connection removed`);
       qc.invalidateQueries({ queryKey: ['loyalty', 'integrations', 'marketing'] });

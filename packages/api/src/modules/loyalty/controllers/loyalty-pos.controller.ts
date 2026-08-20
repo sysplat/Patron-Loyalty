@@ -21,7 +21,9 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { Request } from 'express';
 import { Public } from '../../../common/decorators/public.decorator';
 import { LOYALTY_POS_PROVIDERS, loyaltyPosProviderSchema } from '@queueplatform/shared';
+import { CurrentUser, AuthenticatedUser } from '../../../common/decorators/current-user.decorator';
 import { LoyaltyApiKeyGuard } from '../guards/loyalty-api-key.guard';
+import { LoyaltyJwtOrApiKeyGuard } from '../guards/loyalty-jwt-or-api-key.guard';
 import { LoyaltyOrgId } from '../decorators/loyalty-org.decorator';
 import { LoyaltyPosConnectionService } from '../loyalty-pos-connection.service';
 import { LoyaltyPosSquareService } from '../loyalty-pos-square.service';
@@ -115,10 +117,8 @@ export class LoyaltyPosController {
 
   @Get()
   @ApiOperation({ summary: 'List active POS connections for the org (credentials redacted)' })
-  listConnections(@LoyaltyOrgId() _orgId: string) {
-    // LoyaltyApiKeyGuard is not applied here — uses the global JwtAuthGuard from app module
-    // orgId is resolved from JWT sub via the standard auth context
-    return { message: 'Use the staff auth endpoints below' };
+  listConnections(@CurrentUser() user: AuthenticatedUser) {
+    return this.connections.listConnections(user.orgId);
   }
 
   @Get('staff')
@@ -132,7 +132,7 @@ export class LoyaltyPosController {
 
   @Post('square')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(LoyaltyApiKeyGuard)
+  @UseGuards(LoyaltyJwtOrApiKeyGuard)
   @Public()
   @ApiHeader({ name: 'X-Loyalty-Api-Key', required: true })
   @ApiOperation({ summary: 'Configure or update Square POS connection' })
@@ -145,7 +145,7 @@ export class LoyaltyPosController {
 
   @Post('clover')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(LoyaltyApiKeyGuard)
+  @UseGuards(LoyaltyJwtOrApiKeyGuard)
   @Public()
   @ApiHeader({ name: 'X-Loyalty-Api-Key', required: true })
   @ApiOperation({ summary: 'Configure or update Clover POS connection' })
@@ -158,7 +158,7 @@ export class LoyaltyPosController {
 
   @Delete(':provider')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @UseGuards(LoyaltyApiKeyGuard)
+  @UseGuards(LoyaltyJwtOrApiKeyGuard)
   @Public()
   @ApiHeader({ name: 'X-Loyalty-Api-Key', required: true })
   @ApiOperation({ summary: 'Remove a POS connection' })

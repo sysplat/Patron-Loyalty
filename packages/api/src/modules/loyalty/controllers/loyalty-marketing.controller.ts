@@ -13,7 +13,7 @@ import { ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { Public } from '../../../common/decorators/public.decorator';
 import { loyaltyMarketingProviderSchema } from '@queueplatform/shared';
-import { LoyaltyApiKeyGuard } from '../guards/loyalty-api-key.guard';
+import { LoyaltyJwtOrApiKeyGuard } from '../guards/loyalty-jwt-or-api-key.guard';
 import { LoyaltyOrgId } from '../decorators/loyalty-org.decorator';
 import { LoyaltyMarketingConnectionService } from '../loyalty-marketing-connection.service';
 import { LoyaltyMarketingSyncService } from '../loyalty-marketing-sync.service';
@@ -24,7 +24,7 @@ import {
 
 @ApiTags('Loyalty Marketing Integrations')
 @Controller('loyalty/integrations/marketing')
-@UseGuards(LoyaltyApiKeyGuard)
+@UseGuards(LoyaltyJwtOrApiKeyGuard)
 @Public()
 export class LoyaltyMarketingController {
   constructor(

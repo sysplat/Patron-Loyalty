@@ -35,6 +35,24 @@ export function isSecureCookieEnv(): boolean {
   return process.env.NODE_ENV === 'production';
 }
 
+/** When set (e.g. `.sysplat.com`), session cookies work across loyalty/lms subdomains. */
+export function resolveSessionCookieDomain(): string | undefined {
+  const raw = process.env.SESSION_COOKIE_DOMAIN?.trim();
+  return raw || undefined;
+}
+
+export function sessionCookieOptions(maxAge: number) {
+  const domain = resolveSessionCookieDomain();
+  return {
+    httpOnly: true as const,
+    secure: isSecureCookieEnv(),
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge,
+    ...(domain ? { domain } : {}),
+  };
+}
+
 /** Ensures browser/server clients target Nest URI versioning (`/api/v1/...`). */
 export function normalizeApiV1Base(url: string): string {
   const base = url.replace(/\/$/, '');
