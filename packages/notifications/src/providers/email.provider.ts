@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import sgMail from '@sendgrid/mail';
 import { Resend } from 'resend';
-import { DEFAULT_NOREPLY_EMAIL, PRODUCT_NAME } from '@queueplatform/shared';
+import { DEFAULT_NOREPLY_EMAIL, LOYALTY_PRODUCT_NAME } from '@queueplatform/shared';
 
 /** Treat unset/blank env vars as missing (Railway often stores cleared keys as ""). */
 function nonEmptyEnv(value?: string): string | undefined {
@@ -22,7 +22,7 @@ function formatFromAddress(from: string): string {
   if (trimmed.includes('<') && parseFromEmail(trimmed)) {
     return trimmed;
   }
-  return `${PRODUCT_NAME} <${email}>`;
+  return `${LOYALTY_PRODUCT_NAME} <${email}>`;
 }
 
 function serializeEmailSendError(err: unknown): string {
@@ -119,7 +119,7 @@ export class EmailProvider {
         const fromEmail = parseFromEmail(from);
         const [res] = await sgMail.send({
           to: data.to,
-          from: { email: fromEmail, name: PRODUCT_NAME },
+          from: { email: fromEmail, name: LOYALTY_PRODUCT_NAME },
           subject: data.subject,
           text: data.body,
           html: htmlBody(data.body),
