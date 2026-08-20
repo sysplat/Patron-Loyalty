@@ -63,3 +63,11 @@ scratch/
 backups/
 *.dump
 .git-op-result.txt
+
+# Accidental root scratch scripts
+/test-*.ts
+# Prisma seed compile artifacts (source is seed.ts)
+packages/database/prisma/seed.js
+packages/database/prisma/seed.js.map
+packages/database/prisma/seed.d.ts
+packages/database/prisma/seed.d.ts.map
