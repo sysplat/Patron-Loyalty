@@ -51,6 +51,11 @@ function postgresUrlWithPoolConfig(connectionUrl: string): string {
     appendParam('pool_timeout', poolTimeout);
   }
 
+  const connectTimeout = process.env.DATABASE_CONNECT_TIMEOUT?.trim() || '10';
+  if (/^\d+$/.test(connectTimeout)) {
+    appendParam('connect_timeout', connectTimeout);
+  }
+
   return url;
 }
 

@@ -103,9 +103,13 @@ export class AuthPasswordService {
 
   async resetPassword(token: string, newPassword: string) {
     const tokenHash = sha256(token);
-    const matched = await this.prisma.passwordReset.findFirst({
-      where: { tokenHash, usedAt: null, expiresAt: { gt: new Date() } },
-    });
+    const matched = await this.prisma.runWithTransientRetry(() =>
+      this.prisma.withBypassRls((tx) =>
+        tx.passwordReset.findFirst({
+          where: { tokenHash, usedAt: null, expiresAt: { gt: new Date() } },
+        }),
+      ),
+    );
 
     if (!matched) {
       throw new BadRequestException('Invalid or expired reset token');
