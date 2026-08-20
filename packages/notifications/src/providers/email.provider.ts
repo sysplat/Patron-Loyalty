@@ -3,6 +3,12 @@ import sgMail from '@sendgrid/mail';
 import { Resend } from 'resend';
 import { DEFAULT_NOREPLY_EMAIL, PRODUCT_NAME } from '@queueplatform/shared';
 
+/** Treat unset/blank env vars as missing (Railway often stores cleared keys as ""). */
+function nonEmptyEnv(value?: string): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed || undefined;
+}
+
 /** Pull bare email from `addr` or `Display Name <addr>`. */
 function parseFromEmail(from: string): string {
   const m = from.trim().match(/<([^>]+)>\s*$/);
@@ -11,8 +17,12 @@ function parseFromEmail(from: string): string {
 }
 
 function formatFromAddress(from: string): string {
-  const email = parseFromEmail(from);
-  return from.includes('<') ? from : `${PRODUCT_NAME} <${email}>`;
+  const trimmed = from.trim();
+  const email = parseFromEmail(trimmed) || parseFromEmail(DEFAULT_NOREPLY_EMAIL);
+  if (trimmed.includes('<') && parseFromEmail(trimmed)) {
+    return trimmed;
+  }
+  return `${PRODUCT_NAME} <${email}>`;
 }
 
 function serializeEmailSendError(err: unknown): string {
@@ -62,8 +72,10 @@ export class EmailProvider {
   constructor() {
     const sendGridApiKey = process.env.TWILIO_SENDGRID_API_KEY ?? process.env.SENDGRID_API_KEY;
     const resendApiKey = process.env.RESEND_API_KEY;
-    const sendGridFrom = process.env.TWILIO_SENDGRID_FROM_EMAIL ?? process.env.SENDGRID_FROM_EMAIL;
-    const resendFrom = process.env.RESEND_FROM_EMAIL;
+    const sendGridFrom =
+      nonEmptyEnv(process.env.TWILIO_SENDGRID_FROM_EMAIL) ??
+      nonEmptyEnv(process.env.SENDGRID_FROM_EMAIL);
+    const resendFrom = nonEmptyEnv(process.env.RESEND_FROM_EMAIL);
     this.provider = process.env.EMAIL_PROVIDER || 'smtp';
 
     this.sendGridApiKey = sendGridApiKey?.trim() || undefined;
@@ -92,7 +104,7 @@ export class EmailProvider {
     }
 
     process.env.EMAIL_FROM =
-      sendGridFrom ?? resendFrom ?? process.env.EMAIL_FROM ?? DEFAULT_NOREPLY_EMAIL;
+      sendGridFrom ?? resendFrom ?? nonEmptyEnv(process.env.EMAIL_FROM) ?? DEFAULT_NOREPLY_EMAIL;
   }
 
   async send(data: {
@@ -100,7 +112,7 @@ export class EmailProvider {
     subject: string;
     body: string;
   }): Promise<{ success: boolean; providerMessageId?: string; error?: string }> {
-    const from = process.env.EMAIL_FROM ?? DEFAULT_NOREPLY_EMAIL;
+    const from = nonEmptyEnv(process.env.EMAIL_FROM) ?? DEFAULT_NOREPLY_EMAIL;
 
     try {
       if (this.sendGridApiKey) {
