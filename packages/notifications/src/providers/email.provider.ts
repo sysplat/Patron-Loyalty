@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import sgMail from '@sendgrid/mail';
+import { Resend } from 'resend';
 import { DEFAULT_NOREPLY_EMAIL, PRODUCT_NAME } from '@queueplatform/shared';
 
 /** Pull bare email from `addr` or `Display Name <addr>`. */
@@ -7,6 +8,11 @@ function parseFromEmail(from: string): string {
   const m = from.trim().match(/<([^>]+)>\s*$/);
   if (m) return m[1].trim();
   return from.trim();
+}
+
+function formatFromAddress(from: string): string {
+  const email = parseFromEmail(from);
+  return from.includes('<') ? from : `${PRODUCT_NAME} <${email}>`;
 }
 
 function serializeEmailSendError(err: unknown): string {
@@ -21,31 +27,42 @@ function serializeEmailSendError(err: unknown): string {
   return err.message;
 }
 
+function htmlBody(body: string): string {
+  return body.includes('<') ? body : body.split('\n').join('<br>\n');
+}
+
 /**
  * Email delivery for the notification worker.
  *
- * When `TWILIO_SENDGRID_API_KEY` / `SENDGRID_API_KEY` is set, prefers SendGrid's **HTTP API**
- * (`@sendgrid/mail`) so delivery does not depend on outbound SMTP (587) from the host —
- * Railway and other clouds often see SMTP connection timeouts while HTTPS to api.sendgrid.com works.
- *
- * Falls back to Nodemailer SMTP for generic relays (`SMTP_*`) or local Mailpit (`localhost:1025`).
+ * Priority when sending:
+ * 1. SendGrid HTTPS (`TWILIO_SENDGRID_API_KEY` / `SENDGRID_API_KEY`)
+ * 2. Resend HTTPS (`RESEND_API_KEY`) — avoids Railway SMTP timeouts
+ * 3. Nodemailer SMTP (`SMTP_*`) or local Mailpit (`localhost:1025`)
+ * 4. Console (`EMAIL_PROVIDER=console`)
  *
  * Side-effect on construction: sets `process.env.EMAIL_FROM` to the resolved from-address.
  */
 export class EmailProvider {
   private readonly sendGridApiKey: string | undefined;
+  private readonly resendClient: Resend | null;
   private readonly provider: string;
   private readonly transporter: nodemailer.Transporter | null;
 
   constructor() {
     const sendGridApiKey = process.env.TWILIO_SENDGRID_API_KEY ?? process.env.SENDGRID_API_KEY;
+    const resendApiKey = process.env.RESEND_API_KEY;
     const sendGridFrom = process.env.TWILIO_SENDGRID_FROM_EMAIL ?? process.env.SENDGRID_FROM_EMAIL;
+    const resendFrom = process.env.RESEND_FROM_EMAIL;
     this.provider = process.env.EMAIL_PROVIDER || 'smtp';
 
     this.sendGridApiKey = sendGridApiKey?.trim() || undefined;
+    const trimmedResendKey = resendApiKey?.trim() || undefined;
+    this.resendClient = trimmedResendKey ? new Resend(trimmedResendKey) : null;
 
     if (this.sendGridApiKey) {
       sgMail.setApiKey(this.sendGridApiKey);
+      this.transporter = null;
+    } else if (this.resendClient) {
       this.transporter = null;
     } else if (this.provider === 'smtp') {
       this.transporter = nodemailer.createTransport({
@@ -63,7 +80,8 @@ export class EmailProvider {
       this.transporter = null;
     }
 
-    process.env.EMAIL_FROM = sendGridFrom ?? process.env.EMAIL_FROM ?? DEFAULT_NOREPLY_EMAIL;
+    process.env.EMAIL_FROM =
+      sendGridFrom ?? resendFrom ?? process.env.EMAIL_FROM ?? DEFAULT_NOREPLY_EMAIL;
   }
 
   async send(data: {
@@ -81,10 +99,24 @@ export class EmailProvider {
           from: { email: fromEmail, name: PRODUCT_NAME },
           subject: data.subject,
           text: data.body,
-          html: data.body.includes('<') ? data.body : data.body.split('\n').join('<br>\n'),
+          html: htmlBody(data.body),
         });
         const id = res.headers['x-message-id'] as string | undefined;
         return { success: true, providerMessageId: id ?? res.statusCode?.toString() };
+      }
+
+      if (this.resendClient) {
+        const { data: resendData, error } = await this.resendClient.emails.send({
+          from: formatFromAddress(from),
+          to: data.to,
+          subject: data.subject,
+          text: data.body,
+          html: htmlBody(data.body),
+        });
+        if (error) {
+          return { success: false, error: serializeEmailSendError(error) };
+        }
+        return { success: true, providerMessageId: resendData?.id };
       }
 
       if (this.provider === 'console') {
@@ -109,7 +141,7 @@ export class EmailProvider {
         to: data.to,
         subject: data.subject,
         text: data.body,
-        html: data.body.includes('<') ? data.body : data.body.split('\n').join('<br>\n'),
+        html: htmlBody(data.body),
       });
       return { success: true, providerMessageId: info.messageId };
     } catch (err: unknown) {

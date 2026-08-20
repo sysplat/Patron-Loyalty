@@ -47,6 +47,7 @@ const emailProviderName = process.env.EMAIL_PROVIDER || 'smtp';
 const sendGridKeyPresent = Boolean(
   (process.env.TWILIO_SENDGRID_API_KEY ?? process.env.SENDGRID_API_KEY)?.trim(),
 );
+const resendKeyPresent = Boolean(process.env.RESEND_API_KEY?.trim());
 
 logger.info(
   sendGridKeyPresent
@@ -54,12 +55,18 @@ logger.info(
         emailTransport: 'sendgrid-https',
         emailFrom: process.env.EMAIL_FROM ?? process.env.TWILIO_SENDGRID_FROM_EMAIL ?? '(unset)',
       }
-    : {
-        emailTransport: emailProviderName,
-        smtpHost: emailProviderName === 'smtp' ? (process.env.SMTP_HOST ?? 'localhost') : undefined,
-        smtpPort: emailProviderName === 'smtp' ? (process.env.SMTP_PORT ?? '1025') : undefined,
-        emailFrom: process.env.EMAIL_FROM ?? '(unset)',
-      },
+    : resendKeyPresent
+      ? {
+          emailTransport: 'resend-https',
+          emailFrom: process.env.EMAIL_FROM ?? process.env.RESEND_FROM_EMAIL ?? '(unset)',
+        }
+      : {
+          emailTransport: emailProviderName,
+          smtpHost:
+            emailProviderName === 'smtp' ? (process.env.SMTP_HOST ?? 'localhost') : undefined,
+          smtpPort: emailProviderName === 'smtp' ? (process.env.SMTP_PORT ?? '1025') : undefined,
+          emailFrom: process.env.EMAIL_FROM ?? '(unset)',
+        },
   'Email delivery configuration (startup)',
 );
 
