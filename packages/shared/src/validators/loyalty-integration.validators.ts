@@ -155,6 +155,7 @@ export const loyaltyIntegrationQueueEventSchema = z
       .optional()
       .nullable(),
     rating: z.number().int().min(1).max(5).optional(),
+    comment: z.string().max(2000).optional().nullable(),
     occurredAt: z.string().datetime().optional(),
     connectorVersion: z.number().int().min(1).max(99).optional().default(1),
   })

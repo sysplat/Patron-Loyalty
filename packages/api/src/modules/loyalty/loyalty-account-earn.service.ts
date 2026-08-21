@@ -198,11 +198,13 @@ export class LoyaltyAccountEarnService {
     orgId: string,
     reviewId: string,
     customerId: string | null,
+    rating?: number,
   ): Promise<LoyaltyApplyPointsResult | null> {
+    const stars = rating != null ? Math.min(5, Math.max(1, Math.round(rating))) : null;
     return this.earnFromEvent(orgId, customerId, LOYALTY_EARN_EVENT_TYPES.REVIEW_SUBMITTED, {
       sourceType: 'review',
       sourceId: reviewId,
-      description: 'Points for review',
+      description: stars != null ? `Points for review (${stars}★)` : 'Points for review',
     });
   }
 

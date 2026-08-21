@@ -9,6 +9,9 @@ exports.createReviewSchema = zod_1.z.object({
     customerEmail: zod_1.z.string().email().optional(),
     rating: zod_1.z.number().int().min(1).max(5),
     comment: zod_1.z.string().max(2000).optional(),
+    /** Public track context — server resolves contact so email reaches loyalty after approval. */
+    ticketId: zod_1.z.string().uuid().optional(),
+    visitId: zod_1.z.string().uuid().optional(),
 });
 exports.moderateReviewSchema = zod_1.z.object({
     action: zod_1.z.enum(['approve', 'reject']),

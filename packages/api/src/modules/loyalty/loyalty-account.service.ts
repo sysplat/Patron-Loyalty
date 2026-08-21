@@ -105,8 +105,13 @@ export class LoyaltyAccountService {
     return this.earn.handleAppointmentCompleted(orgId, appointmentId, customerId, branchId);
   }
 
-  handleReviewSubmitted(orgId: string, reviewId: string, customerId: string | null) {
-    return this.earn.handleReviewSubmitted(orgId, reviewId, customerId);
+  handleReviewSubmitted(
+    orgId: string,
+    reviewId: string,
+    customerId: string | null,
+    rating?: number,
+  ) {
+    return this.earn.handleReviewSubmitted(orgId, reviewId, customerId, rating);
   }
 
   exportPatronDsar(orgId: string, customerId: string) {

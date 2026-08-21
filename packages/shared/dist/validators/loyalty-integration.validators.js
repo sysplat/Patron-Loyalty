@@ -137,6 +137,7 @@ exports.loyaltyIntegrationQueueEventSchema = zod_1.z
         .optional()
         .nullable(),
     rating: zod_1.z.number().int().min(1).max(5).optional(),
+    comment: zod_1.z.string().max(2000).optional().nullable(),
     occurredAt: zod_1.z.string().datetime().optional(),
     connectorVersion: zod_1.z.number().int().min(1).max(99).optional().default(1),
 })

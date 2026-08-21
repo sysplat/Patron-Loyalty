@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -21,6 +21,7 @@ import {
   Ticket,
   Bell,
   Footprints,
+  Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -60,6 +61,11 @@ interface CustomerProfile {
   visitCount: number;
   lastVisitAt: string | null;
   createdAt: string;
+  satisfaction?: {
+    reviewCount: number;
+    averageRating: number | null;
+    latestRating: number | null;
+  };
   timeline: TimelineItem[];
   consentLedger: ConsentLedgerEntry[];
 }
@@ -76,6 +82,46 @@ function consentLabel(value: string): string {
   return value === 'GRANTED' ? 'Opted in' : 'Not opted in';
 }
 
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return `${parts[0]![0] ?? ''}${parts[1]![0] ?? ''}`.toUpperCase();
+}
+
+function formatRelativeDay(iso: string | null): string {
+  if (!iso) return 'No visits yet';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+function StarRow({ rating, size = 'md' }: { rating: number; size?: 'sm' | 'md' }) {
+  const clamped = Math.min(5, Math.max(0, Math.round(rating)));
+  const iconClass = size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4';
+  return (
+    <span className="inline-flex items-center gap-0.5" aria-label={`${clamped} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={cn(
+            iconClass,
+            star <= clamped
+              ? 'fill-amber-400 text-amber-500'
+              : 'text-muted-foreground/35 fill-transparent',
+          )}
+        />
+      ))}
+    </span>
+  );
+}
+
 export default function CustomerProfilePage() {
   const params = useParams();
   const customerId = String(params.customerId ?? '');
@@ -86,6 +132,7 @@ export default function CustomerProfilePage() {
 
   const [tagInput, setTagInput] = useState('');
   const [notesDraft, setNotesDraft] = useState<string | null>(null);
+  const [timelineFilter, setTimelineFilter] = useState<'all' | TimelineItem['type']>('all');
 
   const {
     data: profile,
@@ -104,19 +151,33 @@ export default function CustomerProfilePage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['customer', customerId] });
       qc.invalidateQueries({ queryKey: ['customers'] });
-      toast.success('Customer updated');
+      toast.success('Patron updated');
     },
-    onError: () => toast.error('Could not update customer'),
+    onError: () => toast.error('Could not update patron'),
   });
 
+  const filteredTimeline = useMemo(() => {
+    if (!profile) return [];
+    if (timelineFilter === 'all') return profile.timeline;
+    return profile.timeline.filter((item) => item.type === timelineFilter);
+  }, [profile, timelineFilter]);
+
   if (isLoading) {
-    return <div className="text-muted-foreground py-12 text-center">Loading customer profile…</div>;
+    return (
+      <div className="animate-pulse space-y-6">
+        <div className="bg-muted h-28 rounded-2xl" />
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="bg-muted h-64 rounded-2xl lg:col-span-1" />
+          <div className="bg-muted h-96 rounded-2xl lg:col-span-2" />
+        </div>
+      </div>
+    );
   }
 
   if (error || !profile) {
     return (
       <div className="space-y-4 py-12 text-center">
-        <p className="text-destructive text-sm">Customer not found or CRM not available.</p>
+        <p className="text-destructive text-sm">Patron not found or CRM not available.</p>
         <Link href="/patrons" className="text-primary text-sm underline">
           Back to directory
         </Link>
@@ -125,6 +186,11 @@ export default function CustomerProfilePage() {
   }
 
   const notes = notesDraft ?? profile.notes;
+  const satisfaction = profile.satisfaction ?? {
+    reviewCount: 0,
+    averageRating: null,
+    latestRating: null,
+  };
 
   function addTag(): void {
     if (!profile) return;
@@ -148,78 +214,164 @@ export default function CustomerProfilePage() {
     setNotesDraft(null);
   }
 
+  const filterOptions: Array<{ value: typeof timelineFilter; label: string }> = [
+    { value: 'all', label: 'All' },
+    { value: 'review', label: 'Reviews' },
+    { value: 'ticket', label: 'Tickets' },
+    { value: 'visit', label: 'Visits' },
+    { value: 'appointment', label: 'Appointments' },
+    { value: 'notification', label: 'Messages' },
+  ];
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <Link
           href="/patrons"
-          className="text-muted-foreground hover:text-foreground rounded-lg p-2 transition-colors"
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition-colors"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-4 w-4" />
+          Patrons
         </Link>
-        <div className="min-w-0 flex-1">
-          <h1 className={`truncate ${DASHBOARD_PAGE_HEADING_CLASS}`}>{profile.name}</h1>
-          <p className="text-muted-foreground text-sm">
-            {profile.visitCount} visit{profile.visitCount === 1 ? '' : 's'}
-            {profile.lastVisitAt
-              ? ` · Last visit ${new Date(profile.lastVisitAt).toLocaleString()}`
-              : ''}
-          </p>
-        </div>
       </div>
+
+      <section className="from-card via-card to-muted/30 relative overflow-hidden rounded-2xl border bg-gradient-to-br p-6 shadow-sm">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+          <div
+            className="bg-primary/10 text-primary flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-semibold tracking-tight"
+            aria-hidden
+          >
+            {initials(profile.name)}
+          </div>
+          <div className="min-w-0 flex-1 space-y-3">
+            <div>
+              <h1 className={`truncate ${DASHBOARD_PAGE_HEADING_CLASS}`}>{profile.name}</h1>
+              <p className="text-muted-foreground mt-1 text-sm">
+                Member since{' '}
+                {new Date(profile.createdAt).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+              {profile.email ? (
+                <a
+                  href={`mailto:${profile.email}`}
+                  className="text-foreground/90 hover:text-foreground inline-flex items-center gap-1.5"
+                >
+                  <Mail className="text-muted-foreground h-4 w-4" />
+                  {profile.email}
+                </a>
+              ) : null}
+              {profile.phone ? (
+                <a
+                  href={`tel:${profile.phone}`}
+                  className="text-foreground/90 hover:text-foreground inline-flex items-center gap-1.5"
+                >
+                  <Phone className="text-muted-foreground h-4 w-4" />
+                  {profile.phone}
+                </a>
+              ) : null}
+              {!profile.email && !profile.phone ? (
+                <span className="text-muted-foreground">No contact details on file</span>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="bg-background/80 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium">
+                {profile.visitCount} visit{profile.visitCount === 1 ? '' : 's'}
+              </span>
+              <span className="bg-background/80 text-muted-foreground inline-flex items-center rounded-full border px-3 py-1 text-xs">
+                Last visit · {formatRelativeDay(profile.lastVisitAt)}
+              </span>
+              {satisfaction.averageRating != null ? (
+                <span className="bg-background/80 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium">
+                  <StarRow rating={satisfaction.averageRating} size="sm" />
+                  {satisfaction.averageRating.toFixed(1)} avg · {satisfaction.reviewCount} review
+                  {satisfaction.reviewCount === 1 ? '' : 's'}
+                </span>
+              ) : (
+                <span className="bg-background/80 text-muted-foreground inline-flex items-center rounded-full border px-3 py-1 text-xs">
+                  No ratings yet
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-1">
-          <div className="bg-card space-y-3 rounded-xl border p-5">
-            <h2 className="font-semibold">Contact</h2>
-            {profile.phone && (
-              <div className="flex items-center gap-2 text-sm">
-                <Phone className="text-muted-foreground h-4 w-4" />
-                {profile.phone}
+          <div className="bg-card rounded-2xl border p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold tracking-tight">Satisfaction</h2>
+              {satisfaction.latestRating != null ? (
+                <span className="text-muted-foreground text-xs">
+                  Latest {satisfaction.latestRating}★
+                </span>
+              ) : null}
+            </div>
+            {satisfaction.reviewCount > 0 && satisfaction.averageRating != null ? (
+              <div className="space-y-3">
+                <div className="flex items-end gap-3">
+                  <p className="text-4xl font-semibold tabular-nums tracking-tight">
+                    {satisfaction.averageRating.toFixed(1)}
+                  </p>
+                  <div className="pb-1">
+                    <StarRow rating={satisfaction.averageRating} />
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      from {satisfaction.reviewCount} approved review
+                      {satisfaction.reviewCount === 1 ? '' : 's'}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  Ratings sync from QlessQ after approval and appear here on the patron timeline.
+                </p>
               </div>
-            )}
-            {profile.email && (
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="text-muted-foreground h-4 w-4" />
-                {profile.email}
-              </div>
-            )}
-            {!profile.phone && !profile.email && (
-              <p className="text-muted-foreground text-sm">No contact details on file.</p>
+            ) : (
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                No synced ratings yet. Approve a QlessQ review for this email to see stars and
+                review history here.
+              </p>
             )}
           </div>
 
-          <div className="bg-card space-y-4 rounded-xl border p-5">
-            <h2 className="font-semibold">Consent</h2>
-            {canEdit && (
-              <button
-                type="button"
-                className="border-input hover:bg-muted w-full rounded-md border px-3 py-2 text-sm"
-                onClick={async () => {
-                  try {
-                    const payload = await loyaltyGet<Record<string, unknown>>(
-                      `/loyalty/accounts/${customerId}/dsar-export`,
-                      token!,
-                    );
-                    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-                      type: 'application/json',
-                    });
-                    const url = URL.createObjectURL(blob);
-                    const anchor = document.createElement('a');
-                    anchor.href = url;
-                    anchor.download = `customer-dsar-${customerId}.json`;
-                    anchor.click();
-                    URL.revokeObjectURL(url);
-                    toast.success('DSAR export downloaded');
-                  } catch {
-                    toast.error('DSAR export failed');
-                  }
-                }}
-              >
-                Download DSAR export (JSON)
-              </button>
-            )}
-            <div className="space-y-2 text-sm">
+          <div className="bg-card space-y-4 rounded-2xl border p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold tracking-tight">Consent</h2>
+              {canEdit ? (
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs"
+                  onClick={async () => {
+                    try {
+                      const payload = await loyaltyGet<Record<string, unknown>>(
+                        `/loyalty/accounts/${customerId}/dsar-export`,
+                        token!,
+                      );
+                      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+                        type: 'application/json',
+                      });
+                      const url = URL.createObjectURL(blob);
+                      const anchor = document.createElement('a');
+                      anchor.href = url;
+                      anchor.download = `customer-dsar-${customerId}.json`;
+                      anchor.click();
+                      URL.revokeObjectURL(url);
+                      toast.success('DSAR export downloaded');
+                    } catch {
+                      toast.error('DSAR export failed');
+                    }
+                  }}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  DSAR
+                </button>
+              ) : null}
+            </div>
+            <div className="space-y-2.5 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-muted-foreground flex items-center gap-2">
                   <MessageSquare className="h-4 w-4" />
@@ -229,7 +381,7 @@ export default function CustomerProfilePage() {
                   className={cn(
                     'rounded-full px-2 py-0.5 text-xs',
                     profile.marketingSmsConsent === 'GRANTED'
-                      ? 'bg-emerald-100 text-emerald-700'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
                       : 'bg-muted text-muted-foreground',
                   )}
                 >
@@ -245,7 +397,7 @@ export default function CustomerProfilePage() {
                   className={cn(
                     'rounded-full px-2 py-0.5 text-xs',
                     profile.marketingEmailConsent === 'GRANTED'
-                      ? 'bg-emerald-100 text-emerald-700'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
                       : 'bg-muted text-muted-foreground',
                   )}
                 >
@@ -259,12 +411,12 @@ export default function CustomerProfilePage() {
                 </span>
               </div>
             </div>
-            {profile.consentLedger.length > 0 && (
+            {profile.consentLedger.length > 0 ? (
               <div className="border-t pt-3">
-                <p className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wide">
+                <p className="text-muted-foreground mb-2 text-[11px] font-medium uppercase tracking-wider">
                   Consent history
                 </p>
-                <ul className="max-h-48 space-y-2 overflow-y-auto text-xs">
+                <ul className="max-h-40 space-y-2 overflow-y-auto text-xs">
                   {profile.consentLedger.map((entry) => (
                     <li key={entry.id} className="text-muted-foreground">
                       <span className="text-foreground">
@@ -276,35 +428,39 @@ export default function CustomerProfilePage() {
                   ))}
                 </ul>
               </div>
-            )}
+            ) : null}
           </div>
 
-          <div className="bg-card space-y-3 rounded-xl border p-5">
-            <h2 className="flex items-center gap-2 font-semibold">
+          <div className="bg-card space-y-3 rounded-2xl border p-5 shadow-sm">
+            <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight">
               <Tag className="h-4 w-4" />
               Tags & notes
             </h2>
             <div className="flex flex-wrap gap-2">
-              {profile.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="bg-muted inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs"
-                >
-                  {tag}
-                  {canEdit && (
-                    <button
-                      type="button"
-                      onClick={() => removeTag(tag)}
-                      className="text-muted-foreground hover:text-foreground"
-                      aria-label={`Remove ${tag}`}
-                    >
-                      ×
-                    </button>
-                  )}
-                </span>
-              ))}
+              {profile.tags.length === 0 ? (
+                <p className="text-muted-foreground text-xs">No tags yet</p>
+              ) : (
+                profile.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="bg-muted inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs"
+                  >
+                    {tag}
+                    {canEdit ? (
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="text-muted-foreground hover:text-foreground"
+                        aria-label={`Remove ${tag}`}
+                      >
+                        ×
+                      </button>
+                    ) : null}
+                  </span>
+                ))
+              )}
             </div>
-            {canEdit && (
+            {canEdit ? (
               <div className="flex gap-2">
                 <input
                   value={tagInput}
@@ -322,7 +478,7 @@ export default function CustomerProfilePage() {
                   Add
                 </button>
               </div>
-            )}
+            ) : null}
             <textarea
               value={notes}
               onChange={(e) => setNotesDraft(e.target.value)}
@@ -331,7 +487,7 @@ export default function CustomerProfilePage() {
               placeholder="Staff notes (allergies, preferences…)"
               className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
             />
-            {canEdit && notesDraft !== null && notesDraft !== profile.notes && (
+            {canEdit && notesDraft !== null && notesDraft !== profile.notes ? (
               <button
                 type="button"
                 onClick={saveNotes}
@@ -340,7 +496,7 @@ export default function CustomerProfilePage() {
               >
                 Save notes
               </button>
-            )}
+            ) : null}
           </div>
 
           <PatronLoyaltyPanel customerId={customerId} />
@@ -349,35 +505,87 @@ export default function CustomerProfilePage() {
         </div>
 
         <div className="lg:col-span-2">
-          <div className="bg-card rounded-xl border p-5">
-            <h2 className="mb-4 font-semibold">Activity timeline</h2>
-            {profile.timeline.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No activity recorded yet.</p>
+          <div className="bg-card rounded-2xl border p-5 shadow-sm">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-sm font-semibold tracking-tight">Activity</h2>
+              <div className="flex flex-wrap gap-1.5">
+                {filterOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setTimelineFilter(option.value)}
+                    className={cn(
+                      'rounded-full px-2.5 py-1 text-xs transition-colors',
+                      timelineFilter === option.value
+                        ? 'bg-foreground text-background'
+                        : 'bg-muted text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {filteredTimeline.length === 0 ? (
+              <p className="text-muted-foreground py-10 text-center text-sm">
+                {timelineFilter === 'all'
+                  ? 'No activity recorded yet.'
+                  : `No ${timelineFilter} activity yet.`}
+              </p>
             ) : (
-              <ul className="space-y-4">
-                {profile.timeline.map((item) => {
+              <ul className="relative space-y-0">
+                {filteredTimeline.map((item, index) => {
                   const Icon = TIMELINE_ICONS[item.type];
+                  const rating =
+                    item.type === 'review' && typeof item.meta?.rating === 'number'
+                      ? item.meta.rating
+                      : null;
+                  const isLast = index === filteredTimeline.length - 1;
                   return (
-                    <li key={`${item.type}-${item.id}`} className="flex gap-3">
-                      <div className="bg-muted flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
-                        <Icon className="text-muted-foreground h-4 w-4" />
+                    <li key={`${item.type}-${item.id}`} className="relative flex gap-3 pb-5">
+                      {!isLast ? (
+                        <span
+                          className="bg-border absolute left-[17px] top-9 h-[calc(100%-1.25rem)] w-px"
+                          aria-hidden
+                        />
+                      ) : null}
+                      <div
+                        className={cn(
+                          'relative z-[1] flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border',
+                          item.type === 'review'
+                            ? 'border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/40'
+                            : 'bg-muted/60',
+                        )}
+                      >
+                        <Icon
+                          className={cn(
+                            'h-4 w-4',
+                            item.type === 'review'
+                              ? 'text-amber-600 dark:text-amber-400'
+                              : 'text-muted-foreground',
+                          )}
+                        />
                       </div>
-                      <div className="min-w-0 flex-1 border-b pb-4 last:border-0">
+                      <div className="min-w-0 flex-1 pt-0.5">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium">{item.title}</span>
-                          {item.status && (
-                            <span className="bg-muted rounded-full px-2 py-0.5 text-xs capitalize">
+                          {rating != null ? <StarRow rating={rating} size="sm" /> : null}
+                          {item.status ? (
+                            <span className="bg-muted rounded-full px-2 py-0.5 text-[11px] capitalize">
                               {item.status.replace('_', ' ')}
                             </span>
-                          )}
+                          ) : null}
                         </div>
-                        {item.subtitle && (
+                        {item.subtitle ? (
                           <p className="text-muted-foreground text-sm">{item.subtitle}</p>
-                        )}
-                        {item.type === 'review' && typeof item.meta?.comment === 'string' && (
-                          <p className="text-muted-foreground mt-1 text-sm">{item.meta.comment}</p>
-                        )}
-                        <p className="text-muted-foreground mt-1 text-xs">
+                        ) : null}
+                        {item.type === 'review' && typeof item.meta?.comment === 'string' ? (
+                          <p className="bg-muted/40 text-foreground/90 mt-2 rounded-lg px-3 py-2 text-sm leading-relaxed">
+                            “{item.meta.comment}”
+                          </p>
+                        ) : null}
+                        <p className="text-muted-foreground mt-1.5 text-xs">
                           {new Date(item.occurredAt).toLocaleString()}
                         </p>
                       </div>

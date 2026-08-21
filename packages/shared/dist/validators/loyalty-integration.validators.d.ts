@@ -290,6 +290,7 @@ export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObjec
     customerPhone: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     customerEmail: z.ZodNullable<z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodLiteral<"">]>>>;
     rating: z.ZodOptional<z.ZodNumber>;
+    comment: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     occurredAt: z.ZodOptional<z.ZodString>;
     connectorVersion: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
 }, "strip", z.ZodTypeAny, {
@@ -308,6 +309,7 @@ export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObjec
     customerPhone?: string | null | undefined;
     customerEmail?: string | null | undefined;
     rating?: number | undefined;
+    comment?: string | null | undefined;
     occurredAt?: string | undefined;
 }, {
     event: import("../constants/loyalty-connector").QPlatformQueueIntegrationEvent;
@@ -324,6 +326,7 @@ export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObjec
     customerPhone?: string | null | undefined;
     customerEmail?: string | null | undefined;
     rating?: number | undefined;
+    comment?: string | null | undefined;
     occurredAt?: string | undefined;
     connectorVersion?: number | undefined;
 }>, {
@@ -342,6 +345,7 @@ export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObjec
     customerPhone?: string | null | undefined;
     customerEmail?: string | null | undefined;
     rating?: number | undefined;
+    comment?: string | null | undefined;
     occurredAt?: string | undefined;
 }, {
     event: import("../constants/loyalty-connector").QPlatformQueueIntegrationEvent;
@@ -358,6 +362,7 @@ export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObjec
     customerPhone?: string | null | undefined;
     customerEmail?: string | null | undefined;
     rating?: number | undefined;
+    comment?: string | null | undefined;
     occurredAt?: string | undefined;
     connectorVersion?: number | undefined;
 }>;

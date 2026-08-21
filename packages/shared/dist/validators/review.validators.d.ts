@@ -6,10 +6,15 @@ export declare const createReviewSchema: z.ZodObject<{
     customerEmail: z.ZodOptional<z.ZodString>;
     rating: z.ZodNumber;
     comment: z.ZodOptional<z.ZodString>;
+    /** Public track context — server resolves contact so email reaches loyalty after approval. */
+    ticketId: z.ZodOptional<z.ZodString>;
+    visitId: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     orgId: string;
     customerName: string;
     rating: number;
+    ticketId?: string | undefined;
+    visitId?: string | undefined;
     branchId?: string | undefined;
     customerEmail?: string | undefined;
     comment?: string | undefined;
@@ -17,6 +22,8 @@ export declare const createReviewSchema: z.ZodObject<{
     orgId: string;
     customerName: string;
     rating: number;
+    ticketId?: string | undefined;
+    visitId?: string | undefined;
     branchId?: string | undefined;
     customerEmail?: string | undefined;
     comment?: string | undefined;

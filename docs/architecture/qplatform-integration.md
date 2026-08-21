@@ -79,14 +79,14 @@ QPlatform sends `customer.externalId` = QPlatform `Customer.id`. LMS upserts pat
 }
 ```
 
-| `event`                 | LMS action                                |
-| ----------------------- | ----------------------------------------- |
-| `ticket.completed`      | Earn visit points, increment challenges   |
-| `ticket.no_show`        | Churn risk + win-back trigger             |
-| `appointment.completed` | Earn appointment points                   |
-| `appointment.no_show`   | Churn risk + win-back trigger             |
-| `review.submitted`      | Review bonus points                       |
-| `customer.created`      | Ensure loyalty account + welcome campaign |
+| `event`                 | LMS action                                                     |
+| ----------------------- | -------------------------------------------------------------- |
+| `ticket.completed`      | Earn visit points, increment challenges                        |
+| `ticket.no_show`        | Churn risk + win-back trigger                                  |
+| `appointment.completed` | Earn appointment points                                        |
+| `appointment.no_show`   | Churn risk + win-back trigger                                  |
+| `review.submitted`      | Review bonus points **and** mirrored rating on patron timeline |
+| `customer.created`      | Ensure loyalty account + welcome campaign                      |
 
 Idempotency: earn ledger dedupes on `(orgId, accountId, sourceType, sourceId)` for `earn` / `bonus` rows. QPlatform connector retries and duplicate `queue-events` deliveries return `{ ok: true, idempotent: true }` without re-awarding points, incrementing visits, or firing gamification side effects. Enforced in application code and by partial unique index `loyalty_point_ledger_earn_source_idempotent_idx`.
 

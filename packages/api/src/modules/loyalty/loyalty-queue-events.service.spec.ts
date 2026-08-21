@@ -24,9 +24,15 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     evaluateBadgesForAccount: vi.fn(),
   };
   const customerFindFirst = vi.fn();
+  const reviewFindFirst = vi.fn();
+  const reviewCreate = vi.fn();
+  const reviewUpdate = vi.fn();
   const prisma = {
     withTenant: vi.fn((_orgId: string, fn: (tx: unknown) => unknown) =>
-      fn({ customer: { findFirst: customerFindFirst } }),
+      fn({
+        customer: { findFirst: customerFindFirst },
+        review: { findFirst: reviewFindFirst, create: reviewCreate, update: reviewUpdate },
+      }),
     ),
   };
   const campaignAutomation = { fireTrigger: vi.fn() };
@@ -48,7 +54,14 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     gamification.evaluateBadgesForAccount.mockResolvedValue([]);
     campaignAutomation.fireTrigger.mockResolvedValue(undefined);
     integration.upsertCustomer.mockResolvedValue({ customerId: CUSTOMER_ID });
-    customerFindFirst.mockResolvedValue(null);
+    customerFindFirst.mockResolvedValue({
+      id: CUSTOMER_ID,
+      name: 'Jane',
+      email: 'jane@example.com',
+    });
+    reviewFindFirst.mockResolvedValue(null);
+    reviewCreate.mockResolvedValue({ id: 'review-1' });
+    reviewUpdate.mockResolvedValue({ id: 'review-1' });
 
     const marketingSync = { syncProfile: vi.fn() };
     service = new LoyaltyQueueEventsService(
@@ -112,6 +125,8 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     });
 
     it('skips earn when customer cannot be resolved', async () => {
+      customerFindFirst.mockResolvedValue(null);
+      integration.upsertCustomer.mockResolvedValue({ customerId: null });
       const result = await service.processRemoteEvent(ORG_ID, {
         event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
         sourceId: 'ticket-2',
@@ -256,7 +271,12 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
         rating: 5,
       });
 
-      expect(accounts.handleReviewSubmitted).toHaveBeenCalledWith(ORG_ID, 'review-1', CUSTOMER_ID);
+      expect(accounts.handleReviewSubmitted).toHaveBeenCalledWith(
+        ORG_ID,
+        'review-1',
+        CUSTOMER_ID,
+        5,
+      );
       expect(result).toMatchObject({
         ok: true,
         event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED,

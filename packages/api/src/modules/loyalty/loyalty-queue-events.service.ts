@@ -37,6 +37,7 @@ export type LoyaltyQueueEventPayload = {
   customerPhone?: string | null;
   customerEmail?: string | null;
   rating?: number;
+  comment?: string | null;
 };
 
 @Injectable()
@@ -105,16 +106,14 @@ export class LoyaltyQueueEventsService {
           ),
         );
         break;
-      case QPLATFORM_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED:
+      case QPLATFORM_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED: {
+        const customerId = await this.resolveCustomerId(orgId, payload);
         result = await this.onReviewSubmitted(
-          new LoyaltyReviewSubmittedEvent(
-            orgId,
-            payload.sourceId,
-            await this.resolveCustomerId(orgId, payload),
-            payload.rating ?? 5,
-          ),
+          new LoyaltyReviewSubmittedEvent(orgId, payload.sourceId, customerId, payload.rating ?? 5),
+          payload,
         );
         break;
+      }
       case QPLATFORM_QUEUE_INTEGRATION_EVENTS.CUSTOMER_CREATED: {
         const customerId = await this.resolveCustomerId(orgId, payload);
         if (!customerId) {
@@ -178,13 +177,20 @@ export class LoyaltyQueueEventsService {
     }
   }
 
-  async onReviewSubmitted(event: LoyaltyReviewSubmittedEvent) {
+  async onReviewSubmitted(event: LoyaltyReviewSubmittedEvent, payload?: LoyaltyQueueEventPayload) {
     try {
       if (!event.customerId) return { skipped: true, reason: 'no_customer' };
+
+      // Mirror QPlatform review into LMS so patron timeline / satisfaction show the stars.
+      if (payload) {
+        await this.mirrorInboundReview(event.orgId, event.customerId, payload);
+      }
+
       const earned = await this.accounts.handleReviewSubmitted(
         event.orgId,
         event.reviewId,
         event.customerId,
+        event.rating,
       );
       if (earned?.idempotent) return { ok: true, idempotent: true };
       return { ok: true };
@@ -192,6 +198,60 @@ export class LoyaltyQueueEventsService {
       this.logger.warn(`Loyalty review hook failed: ${(err as Error).message}`);
       throw err;
     }
+  }
+
+  /**
+   * Persist an approved review snapshot from QPlatform queue-events.
+   * Points alone are not enough — staff expect ratings on the patron timeline.
+   * Omits branchId (QMS branch UUIDs may not exist in a separate LMS database).
+   */
+  private async mirrorInboundReview(
+    orgId: string,
+    customerId: string,
+    payload: LoyaltyQueueEventPayload,
+  ): Promise<void> {
+    const rating = Math.min(5, Math.max(1, Math.round(payload.rating ?? 5)));
+    const customer = await this.prisma.withTenant(orgId, (tx) =>
+      tx.customer.findFirst({
+        where: { id: customerId, orgId },
+        select: { name: true, email: true },
+      }),
+    );
+    const customerName = payload.customer?.name?.trim() || customer?.name?.trim() || 'Patron';
+    const customerEmail =
+      (payload.customerEmail || payload.customer?.email || customer?.email || null)?.trim() || null;
+    const comment = typeof payload.comment === 'string' ? payload.comment.trim() || null : null;
+
+    await this.prisma.withTenant(orgId, async (tx) => {
+      const existing = await tx.review.findFirst({
+        where: { id: payload.sourceId, orgId },
+        select: { id: true },
+      });
+      if (existing) {
+        await tx.review.update({
+          where: { id: payload.sourceId },
+          data: {
+            rating,
+            status: 'approved',
+            customerName,
+            customerEmail,
+            ...(comment !== null ? { comment } : {}),
+          },
+        });
+        return;
+      }
+      await tx.review.create({
+        data: {
+          id: payload.sourceId,
+          orgId,
+          customerName,
+          customerEmail,
+          rating,
+          comment,
+          status: 'approved',
+        },
+      });
+    });
   }
 
   async onCustomerCreated(event: LoyaltyCustomerCreatedEvent) {
@@ -280,7 +340,10 @@ export class LoyaltyQueueEventsService {
       tx.customer.findFirst({
         where: {
           orgId,
-          OR: [...phoneOr, ...(email ? [{ email }] : [])],
+          OR: [
+            ...phoneOr,
+            ...(email ? [{ email: { equals: email, mode: 'insensitive' as const } }] : []),
+          ],
         },
         select: { id: true },
       }),

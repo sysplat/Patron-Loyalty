@@ -217,6 +217,25 @@ export class CustomerService {
       ]);
 
       const stats = await this.computeVisitStats(tx, orgId, contact);
+      const reviewRows = timeline.filter((item) => item.type === 'review');
+      const ratings = reviewRows
+        .map((item) =>
+          typeof item.meta?.rating === 'number' ? (item.meta.rating as number) : null,
+        )
+        .filter((n): n is number => n != null);
+      const satisfaction =
+        ratings.length > 0
+          ? {
+              reviewCount: ratings.length,
+              averageRating:
+                Math.round((ratings.reduce((sum, n) => sum + n, 0) / ratings.length) * 10) / 10,
+              latestRating: ratings[0] ?? null,
+            }
+          : {
+              reviewCount: 0,
+              averageRating: null as number | null,
+              latestRating: null as number | null,
+            };
 
       return {
         id: customer.id,
@@ -231,6 +250,7 @@ export class CustomerService {
         visitCount: stats.visitCount,
         lastVisitAt: stats.lastVisitAt,
         createdAt: customer.createdAt,
+        satisfaction,
         timeline,
         consentLedger,
       };
