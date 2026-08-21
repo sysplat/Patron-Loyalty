@@ -111,8 +111,10 @@ export class EmailProvider {
     to: string;
     subject: string;
     body: string;
+    replyTo?: string;
   }): Promise<{ success: boolean; providerMessageId?: string; error?: string }> {
     const from = nonEmptyEnv(process.env.EMAIL_FROM) ?? DEFAULT_NOREPLY_EMAIL;
+    const replyTo = data.replyTo ?? process.env.SUPPORT_CONTACT_EMAIL ?? 'sysplatco@gmail.com';
 
     try {
       if (this.sendGridApiKey) {
@@ -120,6 +122,7 @@ export class EmailProvider {
         const [res] = await sgMail.send({
           to: data.to,
           from: { email: fromEmail, name: LOYALTY_PRODUCT_NAME },
+          replyTo,
           subject: data.subject,
           text: data.body,
           html: htmlBody(data.body),
@@ -132,6 +135,7 @@ export class EmailProvider {
         const { data: resendData, error } = await this.resendClient.emails.send({
           from: formatFromAddress(from),
           to: data.to,
+          replyTo,
           subject: data.subject,
           text: data.body,
           html: htmlBody(data.body),
@@ -144,9 +148,10 @@ export class EmailProvider {
 
       if (this.provider === 'console') {
         console.log('\n--- EMAIL SENT (CONSOLE PROVIDER) ---');
-        console.log(`From:    ${from}`);
-        console.log(`To:      ${data.to}`);
-        console.log(`Subject: ${data.subject}`);
+        console.log(`From:     ${from}`);
+        console.log(`Reply-To: ${replyTo}`);
+        console.log(`To:       ${data.to}`);
+        console.log(`Subject:  ${data.subject}`);
         console.log('Body:');
         console.log(data.body);
         console.log('--------------------------------------\n');
@@ -162,6 +167,7 @@ export class EmailProvider {
       const info = await this.transporter.sendMail({
         from,
         to: data.to,
+        replyTo,
         subject: data.subject,
         text: data.body,
         html: htmlBody(data.body),
