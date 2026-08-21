@@ -1,5 +1,5 @@
 /** Legal entity and document versions — bump versions when text changes materially. */
-export declare const LEGAL_ENTITY_NAME = "Sysplat QPlatform";
+export declare const LEGAL_ENTITY_NAME = "Sysplat Patron Loyalty";
 export declare const LEGAL_CONTACT_EMAIL = "legal@sysplat.com";
 /** ISO date identifying the published Terms of Service revision. */
 export declare const CURRENT_TERMS_VERSION = "2026-06-04";
