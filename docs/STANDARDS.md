@@ -2,7 +2,7 @@
 
 > **Patron Loyalty repo:** This workspace ships **`apps/loyalty`** only. Sections referencing `apps/web`, `apps/admin`, kiosk, or queue serve surfaces apply to sibling **`../QMS`**. See [architecture/REPO_BOUNDARIES.md](./architecture/REPO_BOUNDARIES.md).
 
-This document defines the standards for QlessQ (QMS). It is intentionally tuned to this repository, its deployment model, and its product constraints.
+This document defines the standards for QPlatform (QMS). It is intentionally tuned to this repository, its deployment model, and its product constraints.
 
 These standards are not meant to be dogma. They are the best defaults for this codebase. The rule order is:
 
@@ -18,7 +18,7 @@ If a lower-priority rule conflicts with a higher-priority one, the higher-priori
 
 ## 1. Project profile
 
-**QlessQ (QMS)** is a multi-tenant SaaS queue management system built as a monorepo.
+**QPlatform (QMS)** is a multi-tenant SaaS queue management system built as a monorepo.
 
 | Area                            | Stack                                                            | Primary location                             |
 | ------------------------------- | ---------------------------------------------------------------- | -------------------------------------------- |

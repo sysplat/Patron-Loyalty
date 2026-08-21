@@ -11,7 +11,7 @@ export const supportMessageSchema = z.object({
   message: z.string().min(1).max(10000),
   /** Platform-operator internal note (platform admin API only). */
   isInternal: z.boolean().optional(),
-  /** Org-only note; not sent to QlessQ support. */
+  /** Org-only note; not sent to QPlatform support. */
   isOrgInternal: z.boolean().optional(),
 });
 

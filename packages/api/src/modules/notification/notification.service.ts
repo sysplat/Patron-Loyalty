@@ -728,7 +728,7 @@ export class NotificationService {
             '',
             'We look forward to seeing you.',
             '',
-            '— The QlessQ Team',
+            '— The QPlatform Team',
           ].join('\n'),
           variables: {
             appointmentId: opts.appointmentId,

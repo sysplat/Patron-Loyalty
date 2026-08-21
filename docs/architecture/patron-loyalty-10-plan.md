@@ -76,24 +76,24 @@ See [PATRON_LOYALTY_10X_ROADMAP.md](./PATRON_LOYALTY_10X_ROADMAP.md) for the for
 | Supertest suite for `/loyalty/integrations/v1/*`  | `loyalty-integration.controller.http.spec.ts` |
 | Lookup, idempotent earn replay, extra event types | Same spec (11 cases)                          |
 
-## Phase 6 — QlessQ connector observability ✅
+## Phase 6 — QPlatform connector observability ✅
 
 **Status:** Complete (2026-06-28)
 
-| Item                                      | Done                                                             |
-| ----------------------------------------- | ---------------------------------------------------------------- |
-| Structured ingest logs + latency/outcome  | `loyalty-connector-observability.service.ts`                     |
-| 4xx spike warning per org (Redis, 1h)     | Same service                                                     |
-| `connectorVersion` on queue-event payload | `@queueplatform/shared`                                          |
-| Ops runbook                               | [QLESSQ_CONNECTOR_OPS.md](../operations/QLESSQ_CONNECTOR_OPS.md) |
+| Item                                      | Done                                                                   |
+| ----------------------------------------- | ---------------------------------------------------------------------- |
+| Structured ingest logs + latency/outcome  | `loyalty-connector-observability.service.ts`                           |
+| 4xx spike warning per org (Redis, 1h)     | Same service                                                           |
+| `connectorVersion` on queue-event payload | `@queueplatform/shared`                                                |
+| Ops runbook                               | [QPLATFORM_CONNECTOR_OPS.md](../operations/QPLATFORM_CONNECTOR_OPS.md) |
 
 ## Phase 7 — Operability & release discipline (in progress)
 
 **Status:** Started (2026-06-28)
 
-| Item                                       | Done                                                             |
-| ------------------------------------------ | ---------------------------------------------------------------- |
-| Sentry / health release tag                | `getObservabilityRelease()` in shared + API                      |
-| Deploy verification in connector ops doc   | [QLESSQ_CONNECTOR_OPS.md](../operations/QLESSQ_CONNECTOR_OPS.md) |
-| Architecture scorecard (quarterly re-rate) | This doc                                                         |
-| Nightly load workflow (staging)            | Planned — needs staging secrets                                  |
+| Item                                       | Done                                                                   |
+| ------------------------------------------ | ---------------------------------------------------------------------- |
+| Sentry / health release tag                | `getObservabilityRelease()` in shared + API                            |
+| Deploy verification in connector ops doc   | [QPLATFORM_CONNECTOR_OPS.md](../operations/QPLATFORM_CONNECTOR_OPS.md) |
+| Architecture scorecard (quarterly re-rate) | This doc                                                               |
+| Nightly load workflow (staging)            | Planned — needs staging secrets                                        |

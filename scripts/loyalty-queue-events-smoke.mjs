@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Smoke-test QlessQ → LMS queue-events connector.
+ * Smoke-test QPlatform → LMS queue-events connector.
  *
  * Usage:
  *   LOYALTY_API_URL=https://pl-api-production-a528.up.railway.app/api/v1 \

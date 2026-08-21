@@ -12,7 +12,7 @@ exports.supportMessageSchema = zod_1.z.object({
     message: zod_1.z.string().min(1).max(10000),
     /** Platform-operator internal note (platform admin API only). */
     isInternal: zod_1.z.boolean().optional(),
-    /** Org-only note; not sent to QlessQ support. */
+    /** Org-only note; not sent to QPlatform support. */
     isOrgInternal: zod_1.z.boolean().optional(),
 });
 exports.reassignSupportContactSchema = zod_1.z.object({

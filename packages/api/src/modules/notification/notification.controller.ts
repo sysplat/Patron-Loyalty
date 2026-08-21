@@ -98,7 +98,7 @@ export class NotificationController {
     return this.notificationService.send(user.orgId, {
       channel: 'sms',
       to: body.to,
-      body: 'QlessQ test SMS successful.',
+      body: 'QPlatform test SMS successful.',
       recipientConsent: {
         transactionalSmsAllowed: true,
       },

@@ -1,5 +1,5 @@
 import { cn } from './cn';
-import { QlessqBrand } from './qlessq-brand';
+import { QPlatformBrand } from './qplatform-brand';
 import { PatronPoweredBy } from './patron-powered-by';
 
 export type PatronOrganizationBrandProps = {
@@ -181,14 +181,14 @@ export function PatronOrganizationBrand({
   if (variant === 'header') {
     return (
       <div className={cn('flex w-full justify-center', className)}>
-        <QlessqBrand href={null} markSize={52} wordmarkHeight={32} showWordmark priority />
+        <QPlatformBrand href={null} markSize={52} wordmarkHeight={32} showWordmark priority />
       </div>
     );
   }
 
   return (
     <div className={cn('flex flex-col items-center gap-2', className)}>
-      <QlessqBrand
+      <QPlatformBrand
         href={null}
         markSize={markSize}
         wordmarkHeight={Math.round(markSize * 0.55)}

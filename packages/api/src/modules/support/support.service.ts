@@ -404,7 +404,7 @@ export class SupportService {
 
   /**
    * Adds a reply from a tenant user to an existing support request.
-   * Public replies go to QlessQ (contact only). Org-internal notes stay in-org.
+   * Public replies go to QPlatform (contact only). Org-internal notes stay in-org.
    */
   async addOrgReply(
     orgId: string,
@@ -470,7 +470,7 @@ export class SupportService {
 
     if (request.contactUserId !== actor.userId) {
       throw new ForbiddenException(
-        'Only the assigned contact can reply to QlessQ support on this ticket',
+        'Only the assigned contact can reply to QPlatform support on this ticket',
       );
     }
 
@@ -533,7 +533,7 @@ export class SupportService {
   }
 
   /**
-   * Reassigns the org contact who may reply to QlessQ on this ticket.
+   * Reassigns the org contact who may reply to QPlatform on this ticket.
    * Restricted to owner/admin.
    */
   async reassignContact(

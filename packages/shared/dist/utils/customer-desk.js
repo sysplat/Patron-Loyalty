@@ -2,7 +2,7 @@
 /**
  * Desk terminology for customer- and staff-facing copy.
  *
- * Policy (QlessQ):
+ * Policy (QPlatform):
  * - **Desk** — numbered physical service point (`Desk` model, `deskNumber`). Use in all
  *   product UI, SMS, track, lobby display, and staff admin ("Branch desks", "Desk 2").
  * - **Station** — workbench session template only (`StationProfile`, capabilities). Never

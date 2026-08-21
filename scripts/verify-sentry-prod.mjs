@@ -31,7 +31,7 @@ async function main() {
 
   if (!sentryEnabled) {
     console.error(
-      'sentryEnabled is false — set SENTRY_DSN on pl-api (Railway UI) and redeploy. See docs/operations/QLESSQ_CONNECTOR_OPS.md',
+      'sentryEnabled is false — set SENTRY_DSN on pl-api (Railway UI) and redeploy. See docs/operations/QPLATFORM_CONNECTOR_OPS.md',
     );
     process.exit(1);
   }

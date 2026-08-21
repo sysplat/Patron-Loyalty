@@ -4,14 +4,14 @@ Use after engineering deploy; **do not treat as counsel-approved** until `COUNSE
 
 ## Test tiers (engineering gate)
 
-| Tier        | Command                                                        | When                                                  |
-| ----------- | -------------------------------------------------------------- | ----------------------------------------------------- |
-| PR / local  | `pnpm validate:ci`                                             | No prod; lint + types + static gates + unit tests     |
-| E2E smoke   | `pnpm --filter @queueplatform/e2e test` (CI disabled Jun 2026) | API + loyalty Playwright locally                      |
-| Pre-release | `pnpm audit:patron-loyalty`                                    | Railway migration + prod smoke                        |
-| Boundary    | `pnpm audit:staging-soak`                                      | Prod health + loyalty deploy profile curls            |
-| Sentry      | `pnpm audit:verify-sentry-prod`                                | `sentryEnabled: true` on pl-api                       |
-| Connector   | `pnpm audit:loyalty-queue-events-smoke`                        | Split-deploy QlessQ → LMS idempotency (needs API key) |
+| Tier        | Command                                                        | When                                                     |
+| ----------- | -------------------------------------------------------------- | -------------------------------------------------------- |
+| PR / local  | `pnpm validate:ci`                                             | No prod; lint + types + static gates + unit tests        |
+| E2E smoke   | `pnpm --filter @queueplatform/e2e test` (CI disabled Jun 2026) | API + loyalty Playwright locally                         |
+| Pre-release | `pnpm audit:patron-loyalty`                                    | Railway migration + prod smoke                           |
+| Boundary    | `pnpm audit:staging-soak`                                      | Prod health + loyalty deploy profile curls               |
+| Sentry      | `pnpm audit:verify-sentry-prod`                                | `sentryEnabled: true` on pl-api                          |
+| Connector   | `pnpm audit:loyalty-queue-events-smoke`                        | Split-deploy QPlatform → LMS idempotency (needs API key) |
 
 See [TESTING.md](../operations/TESTING.md) for full matrix.
 
@@ -39,7 +39,7 @@ NEXT_PUBLIC_API_URL=https://pl-api-production-a528.up.railway.app/api/v1
 NEXT_PUBLIC_CENTRIFUGO_WS_URL=wss://<centrifugo-host>/connection/websocket
 ```
 
-## 3. QlessQ Railway (queue product — **sibling `../QMS` repo**, not this workspace)
+## 3. QPlatform Railway (queue product — **sibling `../QMS` repo**, not this workspace)
 
 Set on **QMS `apps/web` and `apps/admin`** (rebuild required for `NEXT_PUBLIC_*`):
 
@@ -55,7 +55,7 @@ LOYALTY_URL=https://pl-loyalty-production.up.railway.app
 
 Add loyalty host to **qms-api** `APP_ALLOWED_ORIGINS`.
 
-Disable legacy **qms-loyalty** service if still deployed from QlessQ repo.
+Disable legacy **qms-loyalty** service if still deployed from QPlatform repo.
 
 ## 4. Bundle / split-deploy tenants
 
@@ -65,7 +65,7 @@ Disable legacy **qms-loyalty** service if still deployed from QlessQ repo.
 
 ## 5. Prohibited businesses
 
-Patron Loyalty uses the **same prohibited-industry list** as QlessQ (`packages/shared/src/constants/prohibited-businesses.ts`). Do not onboard tenants in those categories for either product.
+Patron Loyalty uses the **same prohibited-industry list** as QPlatform (`packages/shared/src/constants/prohibited-businesses.ts`). Do not onboard tenants in those categories for either product.
 
 ## 6. Patron portal consent
 

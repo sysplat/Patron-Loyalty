@@ -1,13 +1,13 @@
 export const BRAND = {
-  logoMark: '/brand/qlessq-logo.png',
-  wordmark: '/brand/qlessq-text.png',
+  logoMark: '/brand/qplatform-logo.png',
+  wordmark: '/brand/qplatform-text.png',
   // White-on-dark assets. The source artwork is solid dark on transparent, so
   // it is recolored to white at render time (see `tone="onDark"` on the brand
   // components); this keeps one source of truth and guarantees a crisp white.
-  logoMarkWhite: '/brand/qlessq-logo-white.png',
-  wordmarkWhite: '/brand/qlessq-text-white.png',
-  altMark: 'QlessQ',
-  altWordmark: 'QlessQ',
+  logoMarkWhite: '/brand/qplatform-logo-white.png',
+  wordmarkWhite: '/brand/qplatform-text-white.png',
+  altMark: 'QPlatform',
+  altWordmark: 'QPlatform',
 } as const;
 
 /** Source wordmark aspect ratio (2853×1619). */

@@ -19,7 +19,7 @@ describe('two-factor.util', () => {
     const secret = generateTotpSecret();
     const url = buildOtpauthUrl('ops@example.com', secret);
     expect(url).toContain('otpauth://totp/');
-    expect(url).toContain(encodeURIComponent('QlessQ'));
+    expect(url).toContain(encodeURIComponent('QPlatform'));
     expect(url).toContain(secret);
   });
 

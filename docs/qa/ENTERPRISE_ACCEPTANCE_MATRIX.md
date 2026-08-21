@@ -1,6 +1,6 @@
 # Enterprise Remediation Acceptance Matrix
 
-> **QMS sibling repo:** References to `apps/web` or `apps/admin` describe the **QlessQ** queue product in the sibling `../QMS` repository — not Patron Loyalty (`apps/loyalty`). See [REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md).
+> **QMS sibling repo:** References to `apps/web` or `apps/admin` describe the **QPlatform** queue product in the sibling `../QMS` repository — not Patron Loyalty (`apps/loyalty`). See [REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md).
 
 This matrix is the release gate for each remediation PR.
 

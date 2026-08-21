@@ -16,7 +16,7 @@ async function run() {
     if (!org) {
       org = await prisma.organization.create({
         data: {
-          name: 'QlessQ Internal Staff',
+          name: 'QPlatform Internal Staff',
           slug: orgSlug,
           status: 'active',
         },

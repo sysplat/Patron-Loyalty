@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   LOYALTY_CAMPAIGN_TRIGGERS,
   LOYALTY_WEBHOOK_EVENTS,
-  QLESSQ_QUEUE_INTEGRATION_EVENTS,
-  type QlessqQueueIntegrationEvent,
+  QPLATFORM_QUEUE_INTEGRATION_EVENTS,
+  type QPlatformQueueIntegrationEvent,
 } from '@queueplatform/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import { customerPhoneOr } from '../customer/customer-contact.util';
@@ -23,7 +23,7 @@ import {
 } from './loyalty.events';
 
 export type LoyaltyQueueEventPayload = {
-  event: QlessqQueueIntegrationEvent;
+  event: QPlatformQueueIntegrationEvent;
   sourceId: string;
   branchId?: string;
   serviceId?: string | null;
@@ -60,7 +60,7 @@ export class LoyaltyQueueEventsService {
 
     let result: Record<string, unknown>;
     switch (payload.event) {
-      case QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED:
+      case QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED:
         result = await this.onTicketCompleted(
           new LoyaltyTicketCompletedEvent(
             orgId,
@@ -71,7 +71,7 @@ export class LoyaltyQueueEventsService {
           ),
         );
         break;
-      case QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_NO_SHOW:
+      case QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_NO_SHOW:
         result = await this.onTicketNoShow(
           new LoyaltyTicketNoShowEvent(
             orgId,
@@ -81,7 +81,7 @@ export class LoyaltyQueueEventsService {
           ),
         );
         break;
-      case QLESSQ_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_COMPLETED:
+      case QPLATFORM_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_COMPLETED:
         result = await this.onAppointmentCompleted(
           new LoyaltyAppointmentCompletedEvent(
             orgId,
@@ -93,7 +93,7 @@ export class LoyaltyQueueEventsService {
           ),
         );
         break;
-      case QLESSQ_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_NO_SHOW:
+      case QPLATFORM_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_NO_SHOW:
         result = await this.onAppointmentNoShow(
           new LoyaltyAppointmentNoShowEvent(
             orgId,
@@ -105,7 +105,7 @@ export class LoyaltyQueueEventsService {
           ),
         );
         break;
-      case QLESSQ_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED:
+      case QPLATFORM_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED:
         result = await this.onReviewSubmitted(
           new LoyaltyReviewSubmittedEvent(
             orgId,
@@ -115,7 +115,7 @@ export class LoyaltyQueueEventsService {
           ),
         );
         break;
-      case QLESSQ_QUEUE_INTEGRATION_EVENTS.CUSTOMER_CREATED: {
+      case QPLATFORM_QUEUE_INTEGRATION_EVENTS.CUSTOMER_CREATED: {
         const customerId = await this.resolveCustomerId(orgId, payload);
         if (!customerId) {
           result = { skipped: true, reason: 'no_customer' };

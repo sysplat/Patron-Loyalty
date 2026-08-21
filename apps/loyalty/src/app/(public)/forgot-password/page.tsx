@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Mail } from 'lucide-react';
 import { LOYALTY_PRODUCT_NAME } from '@queueplatform/shared';
 import { api } from '@/lib/api';
-import { QlessqBrand } from '@/components/brand';
+import { QPlatformBrand } from '@/components/brand';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 px-4 py-12">
       <div className="w-full max-w-md rounded-2xl border bg-white/90 p-8 shadow-xl backdrop-blur">
         <div className="mb-6 text-center">
-          <QlessqBrand href="/" markSize={48} wordmarkHeight={26} className="mx-auto" />
+          <QPlatformBrand href="/" markSize={48} wordmarkHeight={26} className="mx-auto" />
           <p className="text-muted-foreground mt-2 text-xs font-medium uppercase tracking-wide">
             {LOYALTY_PRODUCT_NAME}
           </p>

@@ -2,7 +2,7 @@
 
 Standalone **Patron Loyalty Management System** — CRM, points, tiers, rewards, campaigns, and patron portal.
 
-Split from the [QlessQ](https://github.com/syslyto/QlessQ) monorepo. QlessQ handles queues; this product handles loyalty. They connect optionally via webhooks and the Integration API (see `docs/architecture/qlessq-integration.md`).
+Split from the [QPlatform](https://github.com/syslyto/QPlatform) monorepo. QPlatform handles queues; this product handles loyalty. They connect optionally via webhooks and the Integration API (see `docs/architecture/qplatform-integration.md`).
 
 ## Stack
 
@@ -40,9 +40,9 @@ pnpm dev:notifications
 
 ## Product model
 
-- **Sold separately** from QlessQ (`productSku: loyalty` or bundle)
+- **Sold separately** from QPlatform (`productSku: loyalty` or bundle)
 - **Own Terms/Privacy** at `/terms`, `/privacy`, `/patron-terms`, `/patron-privacy`
-- **Optional QlessQ link** — earn points from queue/appointment events when tenants use both products
+- **Optional QPlatform link** — earn points from queue/appointment events when tenants use both products
 
 ## Commands
 
@@ -56,9 +56,9 @@ pnpm db:generate   # after Prisma schema changes
 ## Related
 
 - Architecture: `docs/architecture/patron-loyalty.md`
-- QlessQ integration: `docs/architecture/qlessq-integration.md`
-- QlessQ sibling repo: `../QMS` (queue product)
+- QPlatform integration: `docs/architecture/qplatform-integration.md`
+- QPlatform sibling repo: `../QMS` (queue product)
 
 ## Deploy
 
-Same pattern as QlessQ: Railway services for API + `apps/loyalty` Next.js app, shared Postgres/Redis. Use `LOYALTY_URL` / `NEXT_PUBLIC_LOYALTY_URL` for the staff app origin.
+Same pattern as QPlatform: Railway services for API + `apps/loyalty` Next.js app, shared Postgres/Redis. Use `LOYALTY_URL` / `NEXT_PUBLIC_LOYALTY_URL` for the staff app origin.

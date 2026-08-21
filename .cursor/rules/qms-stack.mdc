@@ -1,9 +1,9 @@
 ---
-description: QlessQ monorepo stack, commands, and integration conventions
+description: QPlatform monorepo stack, commands, and integration conventions
 alwaysApply: true
 ---
 
-# QlessQ (QMS)
+# QPlatform (QMS)
 
 Multi-tenant queue SaaS: NestJS API, Next.js web/admin, Prisma/PostgreSQL, Redis/BullMQ, Centrifugo, Stripe, Twilio/SendGrid.
 

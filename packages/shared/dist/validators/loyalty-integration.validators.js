@@ -115,7 +115,7 @@ exports.loyaltyPublicReferralJoinSchema = zod_1.z
 });
 exports.loyaltyIntegrationQueueEventSchema = zod_1.z
     .object({
-    event: zod_1.z.enum(loyalty_connector_1.QLESSQ_QUEUE_INTEGRATION_EVENT_VALUES),
+    event: zod_1.z.enum(loyalty_connector_1.QPLATFORM_QUEUE_INTEGRATION_EVENT_VALUES),
     sourceId: zod_1.z.string().min(1).max(100),
     branchId: zod_1.z.string().uuid().optional(),
     serviceId: zod_1.z.string().uuid().optional().nullable(),

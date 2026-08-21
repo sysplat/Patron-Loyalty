@@ -15,7 +15,7 @@ export class SupportController {
   constructor(private readonly supportService: SupportService) {}
 
   @Post('requests')
-  @ApiOperation({ summary: 'Submit a support request to QlessQ support' })
+  @ApiOperation({ summary: 'Submit a support request to QPlatform support' })
   async create(
     @CurrentUser()
     user: {
@@ -64,7 +64,7 @@ export class SupportController {
   }
 
   @Patch('requests/:id/contact')
-  @ApiOperation({ summary: 'Reassign the org contact who may reply to QlessQ support' })
+  @ApiOperation({ summary: 'Reassign the org contact who may reply to QPlatform support' })
   async reassignContact(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,

@@ -367,7 +367,7 @@ model Customer {
   region                  String?              @db.VarChar(100)
   postalCode              String?              @map("postal_code") @db.VarChar(20)
   country                 String?              @db.VarChar(2)
-  /// QlessQ / connector patron id — indexed for O(1) integration lookups.
+  /// QPlatform / connector patron id — indexed for O(1) integration lookups.
   externalId              String?              @map("external_id") @db.VarChar(255)
   metadata                Json?
   createdAt               DateTime             @default(now()) @map("created_at")

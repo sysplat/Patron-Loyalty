@@ -2,17 +2,17 @@ import type { LegalDocumentContent } from './types';
 
 export const loyaltyDpaOverviewContent: LegalDocumentContent = {
   intro:
-    'This overview summarizes the baseline data-processing commitments QlessQ applies when acting as a service provider for Patron Loyalty tenant organizations. It supports security and legal review workflows and should be read alongside your Patron Loyalty Terms of Service. QlessQ does not sell personal information.',
+    'This overview summarizes the baseline data-processing commitments QPlatform applies when acting as a service provider for Patron Loyalty tenant organizations. It supports security and legal review workflows and should be read alongside your Patron Loyalty Terms of Service. QPlatform does not sell personal information.',
   sections: [
     {
       id: 'roles',
       title: '1. Roles',
-      body: 'Tenant organization: data controller (or business) for patron profiles, loyalty balances, campaign audiences, and related Patron Data.\nQlessQ: data processor (or service provider) for Patron Data processed through the Loyalty Service.',
+      body: 'Tenant organization: data controller (or business) for patron profiles, loyalty balances, campaign audiences, and related Patron Data.\nQPlatform: data processor (or service provider) for Patron Data processed through the Loyalty Service.',
     },
     {
       id: 'processing-scope',
       title: '2. Processing Scope',
-      body: 'QlessQ processes Patron Data to deliver patron CRM, loyalty points, tiers, rewards, campaigns, referrals, and related analytics requested by the tenant. When QlessQ queue management is also licensed, visit and appointment outcomes may be ingested to award loyalty automatically. QlessQ may use aggregated or operational data for internal service analysis; it does not sell personal information.',
+      body: 'QPlatform processes Patron Data to deliver patron CRM, loyalty points, tiers, rewards, campaigns, referrals, and related analytics requested by the tenant. When QPlatform queue management is also licensed, visit and appointment outcomes may be ingested to award loyalty automatically. QPlatform may use aggregated or operational data for internal service analysis; it does not sell personal information.',
     },
     {
       id: 'processor-commitments',
@@ -22,7 +22,7 @@ export const loyaltyDpaOverviewContent: LegalDocumentContent = {
     {
       id: 'cross-border',
       title: '4. Cross-Border Processing',
-      body: 'QlessQ may process data in multiple jurisdictions through infrastructure and communications subprocessors. Applicable transfer safeguards must be documented in customer contracting artifacts.',
+      body: 'QPlatform may process data in multiple jurisdictions through infrastructure and communications subprocessors. Applicable transfer safeguards must be documented in customer contracting artifacts.',
     },
     {
       id: 'related-documents',

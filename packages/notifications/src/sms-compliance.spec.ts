@@ -22,7 +22,7 @@ describe('decorateTransactionalSmsBody', () => {
 describe('stripLegacySmsComplianceSuffix', () => {
   it('detects legacy seeded template footer', () => {
     const body =
-      'Your turn! Ticket {{displayNumber}} — please proceed to Desk {{counterNumber}}. QlessQ alerts. Msg&data rates may apply. Reply STOP to opt out, HELP for help.';
+      'Your turn! Ticket {{displayNumber}} — please proceed to Desk {{counterNumber}}. QPlatform alerts. Msg&data rates may apply. Reply STOP to opt out, HELP for help.';
 
     expect(hasLegacySmsComplianceSuffix(body)).toBe(true);
     expect(stripLegacySmsComplianceSuffix(body)).toBe(

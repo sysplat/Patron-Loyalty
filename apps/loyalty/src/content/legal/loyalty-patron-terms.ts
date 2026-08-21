@@ -2,12 +2,12 @@ import type { LegalDocumentContent } from './types';
 
 export const loyaltyPatronTermsContent: LegalDocumentContent = {
   intro:
-    'These Loyalty Program Terms ("Terms") govern your use of the patron loyalty program portal, digital card, and related features (the "Loyalty Program") operated by the business or organization that enrolled you (the "Organization"). QlessQ provides the software on the Organization\'s behalf.',
+    'These Loyalty Program Terms ("Terms") govern your use of the patron loyalty program portal, digital card, and related features (the "Loyalty Program") operated by the business or organization that enrolled you (the "Organization"). QPlatform provides the software on the Organization\'s behalf.',
   sections: [
     {
       id: 'relationship',
       title: '1. Our Relationship',
-      body: "The Organization runs the Loyalty Program and decides how points are earned, rewards are offered, and marketing messages are sent. QlessQ is a technology service provider to the Organization. These Terms are between you and the Organization's program rules as implemented through our platform. Contact the Organization with questions about rewards, eligibility, or service complaints.",
+      body: "The Organization runs the Loyalty Program and decides how points are earned, rewards are offered, and marketing messages are sent. QPlatform is a technology service provider to the Organization. These Terms are between you and the Organization's program rules as implemented through our platform. Contact the Organization with questions about rewards, eligibility, or service complaints.",
     },
     {
       id: 'program-participation',
@@ -22,7 +22,7 @@ export const loyaltyPatronTermsContent: LegalDocumentContent = {
     {
       id: 'redemptions',
       title: '4. Rewards and Redemptions',
-      body: 'Self-serve redemptions through the portal deduct points from your balance when successful. Some rewards may require in-store verification or staff approval. The Organization is responsible for honouring rewards. QlessQ is not responsible for product availability, pricing, or fulfilment by the Organization.',
+      body: 'Self-serve redemptions through the portal deduct points from your balance when successful. Some rewards may require in-store verification or staff approval. The Organization is responsible for honouring rewards. QPlatform is not responsible for product availability, pricing, or fulfilment by the Organization.',
     },
     {
       id: 'marketing',
@@ -37,7 +37,7 @@ export const loyaltyPatronTermsContent: LegalDocumentContent = {
     {
       id: 'limitation',
       title: '7. Limitation of Liability',
-      body: "QlessQ is not liable for the Organization's products, services, or marketing practices. Disputes about rewards or patron treatment should be resolved with the Organization.",
+      body: "QPlatform is not liable for the Organization's products, services, or marketing practices. Disputes about rewards or patron treatment should be resolved with the Organization.",
     },
   ],
 };

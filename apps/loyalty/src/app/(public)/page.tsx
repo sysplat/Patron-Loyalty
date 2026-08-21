@@ -50,7 +50,7 @@ export default function LandingPage() {
             </h1>
             <p className="text-muted-foreground mx-auto mt-6 max-w-2xl text-lg">
               Sell, retain, and re-engage patrons with points, tiers, campaigns, and a branded
-              portal. Optional sync with QlessQ when you run queues too.
+              portal. Optional sync with QPlatform when you run queues too.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
@@ -94,10 +94,10 @@ export default function LandingPage() {
 
         <section id="integration" className="py-20">
           <div className="container mx-auto max-w-3xl px-4 text-center sm:px-6">
-            <h2 className="text-3xl font-bold">Works alone or with QlessQ</h2>
+            <h2 className="text-3xl font-bold">Works alone or with QPlatform</h2>
             <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
               Loyalty-only businesses use imports, staff entry, and the Integration API. When you
-              also run QlessQ, completed visits and appointments can earn points automatically —
+              also run QPlatform, completed visits and appointments can earn points automatically —
               same patron identity, separate product terms.
             </p>
             <Link

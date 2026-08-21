@@ -1,6 +1,6 @@
 # Repository boundaries — Patron Loyalty (this repo)
 
-This repository ships **Patron Loyalty (LMS)** only. QlessQ queue management lives in the sibling repo **`../QMS`**.
+This repository ships **Patron Loyalty (LMS)** only. QPlatform queue management lives in the sibling repo **`../QMS`**.
 
 ## What ships from this repo
 
@@ -15,17 +15,17 @@ This repository ships **Patron Loyalty (LMS)** only. QlessQ queue management liv
 
 ## QMS-only (sibling `../QMS` repo — not in this workspace)
 
-| Surface             | Typical path in QMS                     | Purpose                                           |
-| ------------------- | --------------------------------------- | ------------------------------------------------- |
-| Tenant / kiosk web  | `apps/web`                              | Queue dashboard, kiosk, lobby display, track/book |
-| Platform admin      | `apps/admin`                            | Cross-tenant operator console                     |
-| QlessQ connector UI | `apps/web` → loyalty connector settings | Links org to LMS `queue-events`                   |
+| Surface                | Typical path in QMS                     | Purpose                                           |
+| ---------------------- | --------------------------------------- | ------------------------------------------------- |
+| Tenant / kiosk web     | `apps/web`                              | Queue dashboard, kiosk, lobby display, track/book |
+| Platform admin         | `apps/admin`                            | Cross-tenant operator console                     |
+| QPlatform connector UI | `apps/web` → loyalty connector settings | Links org to LMS `queue-events`                   |
 
 When docs mention `apps/web`, `apps/admin`, `/kiosk`, `/display`, `/track`, or `/book` without a qualifier, assume **QMS** unless the doc explicitly says `apps/loyalty`.
 
 ## Integration between products
 
-See [qlessq-integration.md](./qlessq-integration.md) for the HTTP connector (`POST /loyalty/integrations/v1/queue-events`), tenant linking, and idempotency rules.
+See [qplatform-integration.md](./qplatform-integration.md) for the HTTP connector (`POST /loyalty/integrations/v1/queue-events`), tenant linking, and idempotency rules.
 
 ## CI gates in this repo
 
@@ -63,6 +63,6 @@ On `full` deploy, `QueueProductGuard` returns **404** for QMS route prefixes whe
 | Loyalty | `loyalty_accounts`, `loyalty_point_ledger`, `loyalty_rewards` | Gated by `patronCrmEnabled`                       |
 | QMS     | `tickets`, `queues`, `visits`, `desks`                        | Omitted at boot when `API_DEPLOY_PROFILE=loyalty` |
 
-**Connector identity:** `customers.external_id` (unique per org) is the canonical QlessQ patron key; legacy `metadata.externalId` is backfilled and still read as fallback.
+**Connector identity:** `customers.external_id` (unique per org) is the canonical QPlatform patron key; legacy `metadata.externalId` is backfilled and still read as fallback.
 
 **LMS prod migrations:** `pnpm db:migrate:deploy:railway` against Patron-Loyalty Postgres after linking Railway (`pl-api` / database service).

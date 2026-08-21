@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DISPLAY_CREDENTIAL_TTL_SECONDS = exports.DISPLAY_SESSION_TTL_SECONDS = exports.REFRESH_TOKEN_TTL_SECONDS = exports.ACCESS_TOKEN_TTL_SECONDS = exports.ACCESS_TOKEN_TTL_SECONDS_DEFAULT = exports.DISPLAY_API_KEY_COOKIE = exports.DISPLAY_DEVICE_COOKIE = exports.DISPLAY_SESSION_COOKIE = exports.ADMIN_REFRESH_COOKIE = exports.ADMIN_SESSION_COOKIE = exports.WEB_REFRESH_COOKIE = exports.WEB_SESSION_COOKIE = void 0;
 exports.resolveAccessTokenTtlSeconds = resolveAccessTokenTtlSeconds;
 exports.isSecureCookieEnv = isSecureCookieEnv;
+exports.resolveSessionCookieDomain = resolveSessionCookieDomain;
+exports.sessionCookieOptions = sessionCookieOptions;
 exports.normalizeApiV1Base = normalizeApiV1Base;
 exports.getApiBase = getApiBase;
 exports.getServerApiBase = getServerApiBase;
@@ -40,6 +42,22 @@ exports.DISPLAY_SESSION_TTL_SECONDS = 60 * 60 * 24;
 exports.DISPLAY_CREDENTIAL_TTL_SECONDS = 60 * 60 * 24 * 365;
 function isSecureCookieEnv() {
     return process.env.NODE_ENV === 'production';
+}
+/** When set (e.g. `.sysplat.com`), session cookies work across loyalty/lms subdomains. */
+function resolveSessionCookieDomain() {
+    const raw = process.env.SESSION_COOKIE_DOMAIN?.trim();
+    return raw || undefined;
+}
+function sessionCookieOptions(maxAge) {
+    const domain = resolveSessionCookieDomain();
+    return {
+        httpOnly: true,
+        secure: isSecureCookieEnv(),
+        sameSite: 'lax',
+        path: '/',
+        maxAge,
+        ...(domain ? { domain } : {}),
+    };
 }
 /** Ensures browser/server clients target Nest URI versioning (`/api/v1/...`). */
 function normalizeApiV1Base(url) {

@@ -255,7 +255,7 @@ export default function LoyaltyDashboardPage() {
                   href: '/program',
                 },
                 {
-                  title: 'Connect QlessQ',
+                  title: 'Connect QPlatform',
                   desc: 'Sync historical visits',
                   done: true,
                   href: '/integrations',

@@ -1,6 +1,6 @@
 # SRS completion map
 
-> **QMS sibling repo:** References to `apps/web` or `apps/admin` describe the **QlessQ** queue product in the sibling `../QMS` repository — not Patron Loyalty (`apps/loyalty`). See [REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md).
+> **QMS sibling repo:** References to `apps/web` or `apps/admin` describe the **QPlatform** queue product in the sibling `../QMS` repository — not Patron Loyalty (`apps/loyalty`). See [REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md).
 
 Source document: [`Complete_Loyalty_Management_System_SRS.pdf`](../Complete_Loyalty_Management_System_SRS.pdf)
 
@@ -33,13 +33,13 @@ This tracks implementation in **Patron Loyalty** (`sysplatLMS`) against the SRS 
 | 16  | Segmentation                     | **Done**        | All built-in presets (QMS + loyalty RFM) + saved segments in patrons + campaigns              |
 | 17  | Analytics & BI                   | **Partial**     | Executive/sales/customer/campaign dashboard views + extended reports — not full BI suite      |
 | 18  | Mobile app                       | **Deferred**    | Responsive patron portal + digital card (PWA-ready)                                           |
-| 19  | POS / e-commerce integrations    | **Partial**     | Integration API v1 + QlessQ connector; no Shopify/WooCommerce plugins                         |
+| 19  | POS / e-commerce integrations    | **Partial**     | Integration API v1 + QPlatform connector; no Shopify/WooCommerce plugins                      |
 | 20  | Multi-branch / franchise         | **Partial**     | Branch-scoped patrons, branch performance report, public store locator — no franchise rollup  |
 | 21  | Security & compliance            | **Mostly done** | RBAC, MFA (staff auth), audit/consent ledger, DSAR JSON export per patron — SSO deferred      |
 | 22  | User roles                       | **Partial**     | QMS RBAC reused; no dedicated Cashier/Support LMS roles                                       |
 | 23  | SaaS requirements                | **Done**        | Multi-tenant, Stripe plans, loyalty activation/trial                                          |
 | 24  | AI features                      | **Partial**     | Rule-based health score + churn risk; no ML models                                            |
-| 25  | Advanced competitive             | **Partial**     | QlessQ queue integration; NFC/coalition/marketplace/geofencing deferred                       |
+| 25  | Advanced competitive             | **Partial**     | QPlatform queue integration; NFC/coalition/marketplace/geofencing deferred                    |
 | 26  | Reporting                        | **Mostly done** | Core reports + branch/ROI/sales + CSV export for points/referrals                             |
 | 27  | Database entities                | **Done**        | Prisma models including CRM tickets, opportunities, patron game plays, locale/currency        |
 | 29  | Non-functional                   | **Partial**     | API-first, responsive UI; display currency + default locale on program (full i18n deferred)   |

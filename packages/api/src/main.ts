@@ -191,7 +191,7 @@ async function bootstrap() {
       const deployProfile = resolveApiDeployProfile();
       const isLoyalty = isLoyaltyOnlyApiDeploy(deployProfile);
       const swaggerConfig = new DocumentBuilder()
-        .setTitle(isLoyalty ? 'Patron Loyalty API' : 'QlessQ API')
+        .setTitle(isLoyalty ? 'Patron Loyalty API' : 'QPlatform API')
         .setDescription(
           isLoyalty
             ? 'Patron Loyalty (LMS) — CRM, points, tiers, campaigns, integrations'

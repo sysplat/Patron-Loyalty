@@ -9,10 +9,10 @@ async function main() {
     },
   });
 
-  // QlessQ has settings table.
+  // QPlatform has settings table.
   const settings = await prisma.setting.findMany();
   console.log(
-    'Settings in QlessQ:',
+    'Settings in QPlatform:',
     settings.map((s) => ({ key: s.key, value: s.value })),
   );
 

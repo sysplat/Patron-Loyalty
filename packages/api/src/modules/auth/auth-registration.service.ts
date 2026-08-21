@@ -252,7 +252,8 @@ export class AuthRegistrationService {
         ? this.configService.get<string>('app.loyaltyUrl') || 'http://localhost:3003'
         : this.configService.get<string>('app.appUrl') || 'http://localhost:3000';
     const verificationLink = `${verifyBase.replace(/\/$/, '')}/verify-email?token=${result.verificationToken}`;
-    const productLabel = result.productSku === PRODUCT_SKUS.LOYALTY ? 'Patron Loyalty' : 'QlessQ';
+    const productLabel =
+      result.productSku === PRODUCT_SKUS.LOYALTY ? 'Patron Loyalty' : 'QPlatform';
     await this.notificationService
       .send(result.org.id, {
         channel: 'email',

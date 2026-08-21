@@ -1,5 +1,5 @@
 ---
-description: Patron Loyalty (LMS) is a separately sellable product from QlessQ; optional QMS integration; own legal/PII scope.
+description: Patron Loyalty (LMS) is a separately sellable product from QPlatform; optional QMS integration; own legal/PII scope.
 globs:
   - apps/loyalty/**
   - packages/api/src/modules/customer/**
@@ -14,7 +14,7 @@ Read `docs/architecture/patron-loyalty.md` before adding loyalty or CRM features
 ## Product boundary
 
 - **LMS is a separate product** — sellable as `productSku: loyalty`, bundled with QMS (`bundle`), or added to QMS via `patronCrmEnabled`. It has its own plan, signup (`apps/loyalty`), and staff app (port 3003).
-- **QlessQ connection is optional** — when both are on the same org, loyalty consumes queue events and shared `Customer` identity. Loyalty-only orgs use Integration API, imports, or manual entry—no queue UI.
+- **QPlatform connection is optional** — when both are on the same org, loyalty consumes queue events and shared `Customer` identity. Loyalty-only orgs use Integration API, imports, or manual entry—no queue UI.
 - **Separate legal & PII** — LMS may collect richer patron data (birthday, gender, location, marketing). Use LMS-specific Terms/Privacy for loyalty signup and patron portal—not QMS kiosk legal copy. Do not widen kiosk data collection to match LMS.
 
 ## Implementation rules

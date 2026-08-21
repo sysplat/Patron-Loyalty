@@ -1,4 +1,4 @@
-# QlessQ Support & AI-Assisted Operations
+# QPlatform Support & AI-Assisted Operations
 
 Internal runbook for platform operators. **Not published to tenants.** Supports DPA commitments (documented tenant instructions, least privilege, auditability) when using AI-assisted development tools (Cursor and comparable copilots) for engineering and customer support.
 

@@ -2,12 +2,12 @@ import type { LegalDocumentContent } from './types';
 
 export const loyaltyPatronPrivacyContent: LegalDocumentContent = {
   intro:
-    'This Loyalty Program Privacy Notice explains how QlessQ processes your personal information on behalf of the organization that operates your loyalty program (the "Organization") when you use the patron loyalty portal, digital card, or related features. This notice is separate from privacy notices you may have seen when joining a queue or booking an appointment.',
+    'This Loyalty Program Privacy Notice explains how QPlatform processes your personal information on behalf of the organization that operates your loyalty program (the "Organization") when you use the patron loyalty portal, digital card, or related features. This notice is separate from privacy notices you may have seen when joining a queue or booking an appointment.',
   sections: [
     {
       id: 'role',
       title: '1. Our Role',
-      body: 'QlessQ acts as a service provider (data processor) to the Organization (the data controller). The Organization decides why and how your loyalty data is used. For requests about your loyalty profile, marketing preferences, or reward history, contact the Organization first; we support them in responding.',
+      body: 'QPlatform acts as a service provider (data processor) to the Organization (the data controller). The Organization decides why and how your loyalty data is used. For requests about your loyalty profile, marketing preferences, or reward history, contact the Organization first; we support them in responding.',
     },
     {
       id: 'information-collected',

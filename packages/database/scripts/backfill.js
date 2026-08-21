@@ -7,7 +7,7 @@ async function main() {
   });
 
   await client.connect();
-  console.log('Connected to QlessQ DB');
+  console.log('Connected to QPlatform DB');
 
   const res = await client.query(`
     SELECT id, name, email, phone 

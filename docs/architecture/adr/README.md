@@ -9,4 +9,4 @@ Lightweight ADRs for cross-cutting decisions. Full context lives in linked docs.
 | [003](./003-connector-version-field.md)            | `connectorVersion` on queue-event payloads            | Accepted |
 | [004](./004-api-deploy-profile-module-registry.md) | `API_DEPLOY_PROFILE` module registry                  | Accepted |
 
-**When to add an ADR:** schema or auth contract changes, deploy profile changes, or QlessQ ↔ LMS integration semantics.
+**When to add an ADR:** schema or auth contract changes, deploy profile changes, or QPlatform ↔ LMS integration semantics.

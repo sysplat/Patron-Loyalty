@@ -168,7 +168,7 @@ ${table}
 - [ ] Set \`INTEGRATION_DATABASE_URL\` to a **non-prod** DB for golden-path spec (\`pnpm audit:loyalty-integration-db\`) — optional
 - [ ] Set \`LOYALTY_INTEGRATION_API_KEY\` and run \`pnpm audit:loyalty-queue-events-smoke\`
 - [ ] Counsel sign-off per \`docs/compliance/PATRON_LOYALTY_LAUNCH_CHECKLIST.md\`
-- [ ] QlessQ connector smoke: ticket complete → points ledger (or queue-events smoke script)
+- [ ] QPlatform connector smoke: ticket complete → points ledger (or queue-events smoke script)
 - [ ] Webhook: create endpoint + rotate signing secret on prod
 - [ ] Set \`TWILIO_WHATSAPP_NUMBER\` if using WhatsApp campaigns
 

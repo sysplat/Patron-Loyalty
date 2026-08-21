@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   LOYALTY_CAMPAIGN_TRIGGERS,
   LOYALTY_WEBHOOK_EVENTS,
-  QLESSQ_QUEUE_INTEGRATION_EVENTS,
+  QPLATFORM_QUEUE_INTEGRATION_EVENTS,
 } from '@queueplatform/shared';
 import { LoyaltyTicketCompletedEvent } from './loyalty.events';
 import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
@@ -62,17 +62,17 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     );
   });
 
-  describe(QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED, () => {
+  describe(QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED, () => {
     it('resolves customer by externalId and awards visit credit', async () => {
       const result = await service.processRemoteEvent(ORG_ID, {
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
         sourceId: 'ticket-1',
         branchId: BRANCH_ID,
-        customer: { externalId: 'qlessq-cust-1', name: 'Jane' },
+        customer: { externalId: 'qplatform-cust-1', name: 'Jane' },
       });
 
       expect(integration.upsertCustomer).toHaveBeenCalledWith(ORG_ID, {
-        externalId: 'qlessq-cust-1',
+        externalId: 'qplatform-cust-1',
         name: 'Jane',
         email: undefined,
         phone: undefined,
@@ -91,7 +91,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
       expect(gamification.evaluateBadgesForAccount).toHaveBeenCalledWith(ORG_ID, CUSTOMER_ID);
       expect(result).toMatchObject({
         ok: true,
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
         sourceId: 'ticket-1',
       });
     });
@@ -100,7 +100,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
       accounts.handleTicketCompleted.mockResolvedValue({ idempotent: true });
 
       const result = await service.processRemoteEvent(ORG_ID, {
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
         sourceId: 'ticket-1',
         customerId: CUSTOMER_ID,
         branchId: BRANCH_ID,
@@ -113,7 +113,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
 
     it('skips earn when customer cannot be resolved', async () => {
       const result = await service.processRemoteEvent(ORG_ID, {
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
         sourceId: 'ticket-2',
         branchId: BRANCH_ID,
       });
@@ -123,10 +123,10 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     });
   });
 
-  describe(QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_NO_SHOW, () => {
+  describe(QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_NO_SHOW, () => {
     it('fires win-back when customer is known', async () => {
       const result = await service.processRemoteEvent(ORG_ID, {
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_NO_SHOW,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_NO_SHOW,
         sourceId: 'ticket-3',
         customerId: CUSTOMER_ID,
         branchId: BRANCH_ID,
@@ -144,13 +144,13 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
       expect(result).toMatchObject({
         ok: true,
         sourceId: 'ticket-3',
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_NO_SHOW,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_NO_SHOW,
       });
     });
 
     it('still records no-show when customer id is missing', async () => {
       const result = await service.processRemoteEvent(ORG_ID, {
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_NO_SHOW,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_NO_SHOW,
         sourceId: 'ticket-4',
         branchId: BRANCH_ID,
       });
@@ -164,12 +164,12 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     });
   });
 
-  describe(QLESSQ_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_COMPLETED, () => {
+  describe(QPLATFORM_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_COMPLETED, () => {
     it('resolves customer by phone and awards visit credit', async () => {
       customerFindFirst.mockResolvedValue({ id: CUSTOMER_ID });
 
       const result = await service.processRemoteEvent(ORG_ID, {
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_COMPLETED,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_COMPLETED,
         sourceId: 'appt-1',
         branchId: BRANCH_ID,
         customerPhone: '+15551234567',
@@ -188,7 +188,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
       );
       expect(result).toMatchObject({
         ok: true,
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_COMPLETED,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_COMPLETED,
         sourceId: 'appt-1',
       });
     });
@@ -197,7 +197,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
       accounts.handleAppointmentCompleted.mockResolvedValue({ idempotent: true });
 
       const result = await service.processRemoteEvent(ORG_ID, {
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_COMPLETED,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_COMPLETED,
         sourceId: 'appt-2',
         customerId: CUSTOMER_ID,
         branchId: BRANCH_ID,
@@ -209,7 +209,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
 
     it('skips when customer cannot be resolved', async () => {
       const result = await service.processRemoteEvent(ORG_ID, {
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_COMPLETED,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_COMPLETED,
         sourceId: 'appt-3',
         branchId: BRANCH_ID,
       });
@@ -219,12 +219,12 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     });
   });
 
-  describe(QLESSQ_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_NO_SHOW, () => {
+  describe(QPLATFORM_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_NO_SHOW, () => {
     it('fires win-back after resolving customer by email', async () => {
       customerFindFirst.mockResolvedValue({ id: CUSTOMER_ID });
 
       const result = await service.processRemoteEvent(ORG_ID, {
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_NO_SHOW,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_NO_SHOW,
         sourceId: 'appt-4',
         branchId: BRANCH_ID,
         customerEmail: 'patron@example.com',
@@ -241,16 +241,16 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
       );
       expect(result).toMatchObject({
         ok: true,
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_NO_SHOW,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_NO_SHOW,
         sourceId: 'appt-4',
       });
     });
   });
 
-  describe(QLESSQ_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED, () => {
+  describe(QPLATFORM_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED, () => {
     it('awards review points when customer is known', async () => {
       const result = await service.processRemoteEvent(ORG_ID, {
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED,
         sourceId: 'review-1',
         customerId: CUSTOMER_ID,
         rating: 5,
@@ -259,7 +259,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
       expect(accounts.handleReviewSubmitted).toHaveBeenCalledWith(ORG_ID, 'review-1', CUSTOMER_ID);
       expect(result).toMatchObject({
         ok: true,
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED,
         sourceId: 'review-1',
       });
     });
@@ -268,7 +268,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
       accounts.handleReviewSubmitted.mockResolvedValue({ idempotent: true });
 
       const result = await service.processRemoteEvent(ORG_ID, {
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED,
         sourceId: 'review-2',
         customerId: CUSTOMER_ID,
         rating: 4,
@@ -279,7 +279,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
 
     it('skips when customer is missing', async () => {
       const result = await service.processRemoteEvent(ORG_ID, {
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.REVIEW_SUBMITTED,
         sourceId: 'review-3',
         rating: 3,
       });
@@ -289,12 +289,12 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     });
   });
 
-  describe(QLESSQ_QUEUE_INTEGRATION_EVENTS.CUSTOMER_CREATED, () => {
+  describe(QPLATFORM_QUEUE_INTEGRATION_EVENTS.CUSTOMER_CREATED, () => {
     it('ensures account and fires welcome automation', async () => {
       const result = await service.processRemoteEvent(ORG_ID, {
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.CUSTOMER_CREATED,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.CUSTOMER_CREATED,
         sourceId: 'cust-new',
-        customer: { externalId: 'qlessq-new', name: 'New Patron' },
+        customer: { externalId: 'qplatform-new', name: 'New Patron' },
       });
 
       expect(accounts.ensureAccount).toHaveBeenCalledWith(ORG_ID, CUSTOMER_ID);
@@ -311,13 +311,13 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
       expect(result).toMatchObject({
         ok: true,
         sourceId: 'cust-new',
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.CUSTOMER_CREATED,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.CUSTOMER_CREATED,
       });
     });
 
     it('skips when customer cannot be resolved', async () => {
       const result = await service.processRemoteEvent(ORG_ID, {
-        event: QLESSQ_QUEUE_INTEGRATION_EVENTS.CUSTOMER_CREATED,
+        event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.CUSTOMER_CREATED,
         sourceId: 'cust-orphan',
       });
 
@@ -333,7 +333,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
 
   it('resolves customer by customerId without upsert', async () => {
     const result = await service.processRemoteEvent(ORG_ID, {
-      event: QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
+      event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
       sourceId: 'ticket-direct',
       customerId: CUSTOMER_ID,
       branchId: BRANCH_ID,
@@ -353,7 +353,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     customerFindFirst.mockResolvedValue({ id: CUSTOMER_ID });
 
     const result = await service.processRemoteEvent(ORG_ID, {
-      event: QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
+      event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
       sourceId: 'ticket-email',
       branchId: BRANCH_ID,
       customerEmail: 'patron@example.com',

@@ -43,7 +43,7 @@ test.describe('Loyalty integrations API key UI', () => {
 
     await expect(page.getByText(/Last used:/)).toBeVisible();
     await expect(page.getByText(/No connector traffic in 30\+ days/)).toBeVisible();
-    await expect(page.getByText(/verify QlessQ or POS config/)).toBeVisible();
+    await expect(page.getByText(/verify QPlatform or POS config/)).toBeVisible();
   });
 
   test('shows never used when lastUsedAt is null', async ({ page }) => {

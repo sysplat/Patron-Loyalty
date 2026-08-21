@@ -352,7 +352,7 @@ export class AppointmentBookingService {
           body: `
 <div style="font-family:Inter,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
   <div style="text-align:center;margin-bottom:32px">
-    <div style="display:inline-block;background:#6366f1;color:#fff;font-size:14px;font-weight:800;letter-spacing:1px;padding:8px 16px;border-radius:8px">QlessQ</div>
+    <div style="display:inline-block;background:#6366f1;color:#fff;font-size:14px;font-weight:800;letter-spacing:1px;padding:8px 16px;border-radius:8px">QPlatform</div>
   </div>
   <h1 style="font-size:22px;font-weight:700;margin:0 0 8px">Your appointment is confirmed ✓</h1>
   <p style="color:#6b7280;margin:0 0 32px">Here's everything you need to know about your upcoming appointment.</p>

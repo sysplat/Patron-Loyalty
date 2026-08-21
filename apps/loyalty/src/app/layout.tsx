@@ -7,7 +7,7 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'QlessQ Loyalty',
+  title: 'QPlatform Loyalty',
   description: 'Patron CRM and loyalty management',
   manifest: '/manifest.webmanifest',
   icons: {

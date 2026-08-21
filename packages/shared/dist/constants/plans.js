@@ -101,7 +101,7 @@ exports.PLANS = {
         },
     },
 };
-/** Standalone Patron Loyalty (LMS) — sold without QlessQ queue. */
+/** Standalone Patron Loyalty (LMS) — sold without QPlatform queue. */
 exports.LOYALTY_STARTER = {
     name: 'Loyalty Starter',
     slug: 'loyalty-starter',

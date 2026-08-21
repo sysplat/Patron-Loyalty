@@ -1,18 +1,18 @@
 # Patron Loyalty — Data Processing Addendum (DPA) Overview
 
-This document summarizes baseline processor commitments QlessQ applies for **Patron Loyalty** tenant organizations.
-**QlessQ does not sell personal information.**
+This document summarizes baseline processor commitments QPlatform applies for **Patron Loyalty** tenant organizations.
+**QPlatform does not sell personal information.**
 
 > **Mirror note:** Authoritative source is `apps/loyalty/src/content/legal/loyalty-dpa-overview.ts`. Edit that file first, then sync this markdown. See `COMPLIANCE_NEXT_STEPS.md`.
 
 ## Roles
 
 - Tenant organization: data controller for Patron Data
-- QlessQ: data processor (service provider) for Patron Data processed through the Loyalty Service
+- QPlatform: data processor (service provider) for Patron Data processed through the Loyalty Service
 
 ## Processing Scope
 
-Patron CRM, loyalty points, tiers, rewards, campaigns, referrals, and analytics. Optional ingestion of QlessQ queue visit outcomes when both products are licensed. No sale of personal information.
+Patron CRM, loyalty points, tiers, rewards, campaigns, referrals, and analytics. Optional ingestion of QPlatform queue visit outcomes when both products are licensed. No sale of personal information.
 
 ## Core Processor Commitments
 

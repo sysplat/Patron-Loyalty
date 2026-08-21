@@ -1,15 +1,15 @@
-# Counsel Review Brief — QlessQ (QMS)
+# Counsel Review Brief — QPlatform (QMS)
 
-> **QMS sibling repo:** References to `apps/web` or `apps/admin` describe the **QlessQ** queue product in the sibling `../QMS` repository — not Patron Loyalty (`apps/loyalty`). See [REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md).
+> **QMS sibling repo:** References to `apps/web` or `apps/admin` describe the **QPlatform** queue product in the sibling `../QMS` repository — not Patron Loyalty (`apps/loyalty`). See [REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md).
 
 **Internal — for qualified legal counsel only.** This brief helps an attorney review our published legal artifacts and internal ops policies. It is not legal advice.
 
 ## Product summary
 
-- **Product:** QlessQ — multi-tenant B2B SaaS for queue management, appointments, lobby displays, SMS/email notifications (Twilio/SendGrid), billing (Stripe).
+- **Product:** QPlatform — multi-tenant B2B SaaS for queue management, appointments, lobby displays, SMS/email notifications (Twilio/SendGrid), billing (Stripe).
 - **Customers:** Organizations (tenants) — clinics, service businesses, etc.
 - **End users:** Patrons (walk-ins, kiosk, online booking, track links) — data controlled by the tenant.
-- **Roles:** Tenant = data controller (typical). QlessQ = data processor / service provider for patron data.
+- **Roles:** Tenant = data controller (typical). QPlatform = data processor / service provider for patron data.
 - **Markets:** US and Canada emphasized in existing copy (CASL, PIPEDA references). Cross-border processing disclosed.
 - **Data sale:** We **do not sell, rent, or trade** personal information. CRM/analytics (if adopted) is for internal analysis only.
 
@@ -55,7 +55,7 @@ Twilio, Twilio SendGrid, Stripe, Railway, PostgreSQL, Redis, Centrifugo, Sentry 
 
 ### Entity and jurisdiction
 
-1. Is **QlessQ** the correct legal entity name in all documents, or should we use a registered corporate name?
+1. Is **QPlatform** the correct legal entity name in all documents, or should we use a registered corporate name?
 2. Is **§13 Governing Law** (jurisdiction of establishment) correctly stated for our entity?
 3. Do we need separate Quebec/French-language artifacts?
 

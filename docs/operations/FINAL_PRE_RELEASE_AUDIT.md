@@ -2,7 +2,7 @@
 
 Release checklist before promoting `main` to production.
 
-> **Patron Loyalty (LMS) note:** Steps that reference `apps/web`, `apps/admin`, tenant queue E2E, or QMS-specific smoke scripts apply to the **QlessQ sibling repo** only. For LMS, use [TESTING.md](./TESTING.md), `pnpm test:ci`, and `pnpm audit:patron-loyalty` instead.
+> **Patron Loyalty (LMS) note:** Steps that reference `apps/web`, `apps/admin`, tenant queue E2E, or QMS-specific smoke scripts apply to the **QPlatform sibling repo** only. For LMS, use [TESTING.md](./TESTING.md), `pnpm test:ci`, and `pnpm audit:patron-loyalty` instead.
 
 ## 1. CI and builds
 

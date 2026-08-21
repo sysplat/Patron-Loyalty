@@ -100,7 +100,7 @@ describe('SupportService', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
-  it('only the assigned contact can send a public reply to QlessQ', async () => {
+  it('only the assigned contact can send a public reply to QPlatform', async () => {
     mockPrisma.supportRequest.findFirst.mockResolvedValue({
       id: 'sr-1',
       status: 'open',

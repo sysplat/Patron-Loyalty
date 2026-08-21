@@ -5,7 +5,7 @@
 
 ## Context
 
-QlessQ forwards queue events with a stable patron key (`customer.externalId`). LMS must resolve patrons without JSON metadata scans or ambiguous email-only matching.
+QPlatform forwards queue events with a stable patron key (`customer.externalId`). LMS must resolve patrons without JSON metadata scans or ambiguous email-only matching.
 
 ## Decision
 
@@ -16,11 +16,11 @@ QlessQ forwards queue events with a stable patron key (`customer.externalId`). L
 
 ## Consequences
 
-- **Positive:** Indexable lookups; predictable idempotency keys tied to QlessQ patron id.
+- **Positive:** Indexable lookups; predictable idempotency keys tied to QPlatform patron id.
 - **Negative:** Migration + backfill required for long-lived tenants.
 - **Ops:** Staff can see connector activity via integration API key `lastUsedAt`.
 
 ## References
 
 - [REPO_BOUNDARIES.md](../REPO_BOUNDARIES.md) — connector identity note
-- [qlessq-integration.md](../qlessq-integration.md)
+- [qplatform-integration.md](../qplatform-integration.md)

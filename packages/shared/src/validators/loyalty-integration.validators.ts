@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { LOYALTY_EARN_EVENT_TYPES } from '../constants/loyalty';
-import { QLESSQ_QUEUE_INTEGRATION_EVENT_VALUES } from '../constants/loyalty-connector';
+import { QPLATFORM_QUEUE_INTEGRATION_EVENT_VALUES } from '../constants/loyalty-connector';
 
 const customerRefinement = (
   data: {
@@ -133,7 +133,7 @@ export const loyaltyPublicReferralJoinSchema = z
 
 export const loyaltyIntegrationQueueEventSchema = z
   .object({
-    event: z.enum(QLESSQ_QUEUE_INTEGRATION_EVENT_VALUES),
+    event: z.enum(QPLATFORM_QUEUE_INTEGRATION_EVENT_VALUES),
     sourceId: z.string().min(1).max(100),
     branchId: z.string().uuid().optional(),
     serviceId: z.string().uuid().optional().nullable(),

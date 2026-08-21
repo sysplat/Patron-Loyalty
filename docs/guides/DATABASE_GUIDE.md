@@ -156,11 +156,11 @@ const results = await prisma.$queryRaw`
 
 Run seeder: `pnpm --filter @queueplatform/database db:seed`
 
-## Bootstrap QlessQ staff (or customer-org admin)
+## Bootstrap QPlatform staff (or customer-org admin)
 
 Implementation: `packages/api/scripts/bootstrap-platform-staff.ts` (run via `pnpm db:bootstrap-admin` from the repo root).
 
-The database requires every `User` to have an `orgId`. **QlessQ staff are not attached to a customer tenant by default**: the script creates or reuses a **reserved** organization with slug **`queueplatform-internal`** (“QlessQ (platform staff)”). Users in that org are **platform operators** for the API and Admin dashboard (see `isPlatformOperator` / `PlatformOperatorGuard`). Optional **`PLATFORM_OPERATOR_*`** / **`NEXT_PUBLIC_PLATFORM_OPERATOR_*`** env vars are only for **bootstrap or break-glass** access (e.g. first deploy before internal org exists, or staff not placed in the internal org).
+The database requires every `User` to have an `orgId`. **QPlatform staff are not attached to a customer tenant by default**: the script creates or reuses a **reserved** organization with slug **`queueplatform-internal`** (“QPlatform (platform staff)”). Users in that org are **platform operators** for the API and Admin dashboard (see `isPlatformOperator` / `PlatformOperatorGuard`). Optional **`PLATFORM_OPERATOR_*`** / **`NEXT_PUBLIC_PLATFORM_OPERATOR_*`** env vars are only for **bootstrap or break-glass** access (e.g. first deploy before internal org exists, or staff not placed in the internal org).
 
 ### Default (no `BOOTSTRAP_ORG_ID`)
 

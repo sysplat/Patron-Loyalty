@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './src/app.module';
 import { LoyaltyQueueEventsService } from './src/modules/loyalty/loyalty-queue-events.service';
-import { QLESSQ_QUEUE_INTEGRATION_EVENTS } from '@queueplatform/shared';
+import { QPLATFORM_QUEUE_INTEGRATION_EVENTS } from '@queueplatform/shared';
 
 async function main() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -11,7 +11,7 @@ async function main() {
 
   try {
     const res = await service.processRemoteEvent(orgId, {
-      event: QLESSQ_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
+      event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
       sourceId: '9b8c9dd4-5b76-4d44-99cc-e77a08bae9e3',
       branchId: 'ac34446c-3f3d-4715-b798-7636ed5f5097',
       customerId: 'e9838cbb-fbad-4c5f-8fb1-2c92a4448ab8',

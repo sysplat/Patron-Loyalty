@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { api, refreshAccessToken } from '@/lib/api';
 import { validateLogin } from '@/lib/validation';
 import { useAuthStore } from '@/lib/auth-store';
-import { QlessqBrand } from '@/components/brand';
+import { QPlatformBrand } from '@/components/brand';
 import { AuthMarketingPanel } from '@/components/marketing/auth-marketing-panel';
 
 function mapLoginUser(data: {
@@ -249,7 +249,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-8">
           {/* Mobile logo */}
           <div className="text-center lg:hidden">
-            <QlessqBrand href="/" markSize={48} wordmarkHeight={28} />
+            <QPlatformBrand href="/" markSize={48} wordmarkHeight={28} />
           </div>
 
           <div className="rounded-2xl border bg-white/80 p-8 shadow-xl shadow-blue-100/30 backdrop-blur">

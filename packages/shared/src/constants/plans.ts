@@ -112,7 +112,7 @@ export const PLANS: Record<string, PlanDefinition> = {
   },
 };
 
-/** Standalone Patron Loyalty (LMS) — sold without QlessQ queue. */
+/** Standalone Patron Loyalty (LMS) — sold without QPlatform queue. */
 export const LOYALTY_STARTER: PlanDefinition = {
   name: 'Loyalty Starter',
   slug: 'loyalty-starter',

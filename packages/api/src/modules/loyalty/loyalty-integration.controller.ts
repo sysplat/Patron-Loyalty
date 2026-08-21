@@ -52,7 +52,9 @@ export class LoyaltyIntegrationController {
   ) {}
 
   @Get('ping')
-  @ApiOperation({ summary: 'Verify integration API key and org scope (QlessQ connector health)' })
+  @ApiOperation({
+    summary: 'Verify integration API key and org scope (QPlatform connector health)',
+  })
   ping(@LoyaltyOrgId() orgId: string) {
     return { ok: true as const, orgId };
   }
@@ -136,7 +138,7 @@ export class LoyaltyIntegrationController {
   @Post('queue-events')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Ingest normalized QlessQ queue events (ticket/appointment/review/customer)',
+    summary: 'Ingest normalized QPlatform queue events (ticket/appointment/review/customer)',
   })
   ingestQueueEvent(
     @LoyaltyOrgId() orgId: string,

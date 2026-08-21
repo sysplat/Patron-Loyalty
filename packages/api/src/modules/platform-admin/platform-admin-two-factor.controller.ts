@@ -30,7 +30,7 @@ export class PlatformAdminTwoFactorController {
   @Post('setup')
   @ApiOperation({ summary: 'Start TOTP enrollment (returns secret and otpauth URL)' })
   async setup(@CurrentUser() user: AuthenticatedUser) {
-    const data = await this.twoFactor.beginSetup(user.userId, 'QlessQ Admin', this.ch);
+    const data = await this.twoFactor.beginSetup(user.userId, 'QPlatform Admin', this.ch);
     return { success: true, data };
   }
 

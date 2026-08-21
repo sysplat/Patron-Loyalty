@@ -61,7 +61,7 @@ describe.skipIf(!integrationDbUrl)('LoyaltyIntegrationService (DB golden path)',
     await prisma.onModuleInit();
 
     const suffix = Date.now().toString();
-    externalId = `qlessq-golden-${suffix}`;
+    externalId = `qplatform-golden-${suffix}`;
     const org = await prisma.organization.create({
       data: {
         name: 'Integration Test Org',

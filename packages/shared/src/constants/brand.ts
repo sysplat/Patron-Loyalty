@@ -1,6 +1,6 @@
 /** Product display name and default contact addresses (override via env where noted). */
 
-export const PRODUCT_NAME = 'QlessQ';
+export const PRODUCT_NAME = 'QPlatform';
 
 /** Public-facing name for the Patron Loyalty / LMS product. */
 export const LOYALTY_PRODUCT_NAME = 'Patron Loyalty';

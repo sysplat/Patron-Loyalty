@@ -1,4 +1,4 @@
-# Cursor plugins for QlessQ
+# Cursor plugins for QPlatform
 
 Setup for AI-native / agent-first development on this monorepo (NestJS, Next.js, Prisma, Stripe, Twilio, Railway, Playwright).
 

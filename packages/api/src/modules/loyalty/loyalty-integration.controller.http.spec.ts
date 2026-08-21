@@ -147,7 +147,7 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
       sourceId: 'ticket-contract-1',
       branchId: '00000000-0000-0000-0000-000000000001',
       customer: {
-        externalId: 'qlessq-cust-contract',
+        externalId: 'qplatform-cust-contract',
         name: 'Contract Patron',
       },
     };
@@ -208,7 +208,7 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
     await request(app.getHttpServer())
       .post('/api/v1/loyalty/integrations/v1/customers/upsert')
       .set('X-Loyalty-Api-Key', 'loyalty_live_test')
-      .send({ externalId: 'qlessq-cust-contract' })
+      .send({ externalId: 'qplatform-cust-contract' })
       .expect(400);
 
     expect(integration.upsertCustomer).not.toHaveBeenCalled();
@@ -217,12 +217,12 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
   it('delegates upsert to integration service with org id', async () => {
     integration.upsertCustomer.mockResolvedValue({
       customerId: '00000000-0000-0000-0000-0000000000cc',
-      externalId: 'qlessq-cust-upsert',
+      externalId: 'qplatform-cust-upsert',
       created: true,
     });
 
     const body = {
-      externalId: 'qlessq-cust-upsert',
+      externalId: 'qplatform-cust-upsert',
       name: 'Upsert Patron',
       email: 'upsert@example.com',
     };
@@ -260,12 +260,12 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
   it('returns lookup result from integration service', async () => {
     integration.lookupCustomer.mockResolvedValue({
       customerId: '00000000-0000-0000-0000-0000000000aa',
-      externalId: 'qlessq-cust-lookup',
+      externalId: 'qplatform-cust-lookup',
     });
 
     const res = await request(app.getHttpServer())
       .get('/api/v1/loyalty/integrations/v1/customers/lookup')
-      .query({ externalId: 'qlessq-cust-lookup' })
+      .query({ externalId: 'qplatform-cust-lookup' })
       .set('X-Loyalty-Api-Key', 'loyalty_live_test')
       .expect(200);
 
@@ -273,11 +273,11 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
       customerId: undefined,
       email: undefined,
       phone: undefined,
-      externalId: 'qlessq-cust-lookup',
+      externalId: 'qplatform-cust-lookup',
     });
     expect(res.body).toEqual({
       customerId: '00000000-0000-0000-0000-0000000000aa',
-      externalId: 'qlessq-cust-lookup',
+      externalId: 'qplatform-cust-lookup',
     });
   });
 
@@ -339,7 +339,7 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
       event: 'appointment.completed',
       sourceId: 'appt-contract-1',
       branchId: '00000000-0000-0000-0000-000000000001',
-      customer: { externalId: 'qlessq-appt-cust', name: 'Appt Patron' },
+      customer: { externalId: 'qplatform-appt-cust', name: 'Appt Patron' },
     };
 
     await request(app.getHttpServer())
@@ -424,7 +424,7 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
 
     const body = {
       code: 'SAVE10',
-      externalId: 'qlessq-cust-coupon',
+      externalId: 'qplatform-cust-coupon',
     };
 
     await request(app.getHttpServer())

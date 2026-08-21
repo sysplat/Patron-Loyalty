@@ -266,7 +266,7 @@ export declare const loyaltyPublicReferralJoinSchema: z.ZodEffects<z.ZodObject<{
     phone?: string | null | undefined;
 }>;
 export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObject<{
-    event: z.ZodEnum<[import("../constants/loyalty-connector").QlessqQueueIntegrationEvent, ...import("../constants/loyalty-connector").QlessqQueueIntegrationEvent[]]>;
+    event: z.ZodEnum<[import("../constants/loyalty-connector").QPlatformQueueIntegrationEvent, ...import("../constants/loyalty-connector").QPlatformQueueIntegrationEvent[]]>;
     sourceId: z.ZodString;
     branchId: z.ZodOptional<z.ZodString>;
     serviceId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
@@ -293,7 +293,7 @@ export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObjec
     occurredAt: z.ZodOptional<z.ZodString>;
     connectorVersion: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
 }, "strip", z.ZodTypeAny, {
-    event: import("../constants/loyalty-connector").QlessqQueueIntegrationEvent;
+    event: import("../constants/loyalty-connector").QPlatformQueueIntegrationEvent;
     sourceId: string;
     connectorVersion: number;
     customer?: {
@@ -310,7 +310,7 @@ export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObjec
     rating?: number | undefined;
     occurredAt?: string | undefined;
 }, {
-    event: import("../constants/loyalty-connector").QlessqQueueIntegrationEvent;
+    event: import("../constants/loyalty-connector").QPlatformQueueIntegrationEvent;
     sourceId: string;
     customer?: {
         externalId: string;
@@ -327,7 +327,7 @@ export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObjec
     occurredAt?: string | undefined;
     connectorVersion?: number | undefined;
 }>, {
-    event: import("../constants/loyalty-connector").QlessqQueueIntegrationEvent;
+    event: import("../constants/loyalty-connector").QPlatformQueueIntegrationEvent;
     sourceId: string;
     connectorVersion: number;
     customer?: {
@@ -344,7 +344,7 @@ export declare const loyaltyIntegrationQueueEventSchema: z.ZodEffects<z.ZodObjec
     rating?: number | undefined;
     occurredAt?: string | undefined;
 }, {
-    event: import("../constants/loyalty-connector").QlessqQueueIntegrationEvent;
+    event: import("../constants/loyalty-connector").QPlatformQueueIntegrationEvent;
     sourceId: string;
     customer?: {
         externalId: string;

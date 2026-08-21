@@ -20,6 +20,16 @@ export declare const DISPLAY_SESSION_TTL_SECONDS: number;
 /** Long-lived device + apiKey cookies (rolling on each successful refresh). */
 export declare const DISPLAY_CREDENTIAL_TTL_SECONDS: number;
 export declare function isSecureCookieEnv(): boolean;
+/** When set (e.g. `.sysplat.com`), session cookies work across loyalty/lms subdomains. */
+export declare function resolveSessionCookieDomain(): string | undefined;
+export declare function sessionCookieOptions(maxAge: number): {
+    domain?: string | undefined;
+    httpOnly: true;
+    secure: boolean;
+    sameSite: "lax";
+    path: string;
+    maxAge: number;
+};
 /** Ensures browser/server clients target Nest URI versioning (`/api/v1/...`). */
 export declare function normalizeApiV1Base(url: string): string;
 export declare function getApiBase(): string;

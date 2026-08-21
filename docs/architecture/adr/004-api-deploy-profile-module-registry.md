@@ -16,7 +16,7 @@
 
 ## Consequences
 
-- **Positive:** Smaller attack surface on LMS-only deploy; clear split-deploy story with QlessQ sibling.
+- **Positive:** Smaller attack surface on LMS-only deploy; clear split-deploy story with QPlatform sibling.
 - **Negative:** Single codebase must maintain conditional module registry; integration tests cover both profiles where needed.
 - **Verify:** `pnpm audit:staging-soak`; [REPO_BOUNDARIES.md](../REPO_BOUNDARIES.md)
 

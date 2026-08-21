@@ -1,9 +1,9 @@
 export {
   BRAND,
   WORDMARK_ASPECT,
-  QlessqBrand,
-  QlessqLogoMark,
-  QlessqWordmark,
+  QPlatformBrand,
+  QPlatformLogoMark,
+  QPlatformWordmark,
   PatronOrganizationBrand,
   type PatronOrganizationBrandProps,
   PatronPoweredBy,

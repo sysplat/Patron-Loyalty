@@ -6,7 +6,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
-import { QlessqWordmark } from '@/components/brand';
+import { QPlatformWordmark } from '@/components/brand';
 
 function VerifyEmailContent() {
   const router = useRouter();
@@ -41,7 +41,7 @@ function VerifyEmailContent() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-violet-50 px-4 py-12">
       <div className="w-full max-w-md rounded-2xl border bg-white/90 p-8 text-center shadow-xl backdrop-blur">
-        <QlessqWordmark height={22} className="mx-auto" />
+        <QPlatformWordmark height={22} className="mx-auto" />
         <p className="text-muted-foreground mt-1 text-xs font-semibold uppercase tracking-wider">
           Patron Loyalty
         </p>

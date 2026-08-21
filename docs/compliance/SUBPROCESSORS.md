@@ -1,7 +1,7 @@
 # Patron Loyalty Subprocessor Register
 
 This register lists key subprocessors used to operate **Patron Loyalty** in production and to develop and support the platform.
-**QlessQ does not sell personal information.**
+**QPlatform does not sell personal information.**
 
 > **Mirror note:** Authoritative source is `apps/loyalty/src/content/legal/loyalty-subprocessors.ts`. Edit that file first, then sync this markdown. See `COMPLIANCE_NEXT_STEPS.md`.
 

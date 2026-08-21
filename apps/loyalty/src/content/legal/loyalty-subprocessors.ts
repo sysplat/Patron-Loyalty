@@ -2,7 +2,7 @@ import type { LegalDocumentContent } from './types';
 
 export const loyaltySubprocessorsContent: LegalDocumentContent = {
   intro:
-    'This register lists key subprocessors QlessQ uses to operate Patron Loyalty in production environments and to develop and support the platform. QlessQ does not sell personal information. It is updated when vendors are added, removed, or materially repurposed; material changes are communicated to organization account owners as described in our Privacy Policy and DPA overview.',
+    'This register lists key subprocessors QPlatform uses to operate Patron Loyalty in production environments and to develop and support the platform. QPlatform does not sell personal information. It is updated when vendors are added, removed, or materially repurposed; material changes are communicated to organization account owners as described in our Privacy Policy and DPA overview.',
   sections: [
     {
       id: 'messaging',
@@ -27,12 +27,12 @@ export const loyaltySubprocessorsContent: LegalDocumentContent = {
     {
       id: 'analytics-crm',
       title: '5. Internal Analytics and CRM (when used)',
-      body: "CRM and business analytics platforms — internal relationship management and analysis of service usage, support interactions, and aggregated operational trends. Data categories: tenant account and contact information, support history, and aggregated or operational metrics. Used only for QlessQ's own business operations and service improvement; not for sale of personal information or third-party advertising lists.",
+      body: "CRM and business analytics platforms — internal relationship management and analysis of service usage, support interactions, and aggregated operational trends. Data categories: tenant account and contact information, support history, and aggregated or operational metrics. Used only for QPlatform's own business operations and service improvement; not for sale of personal information or third-party advertising lists.",
     },
     {
       id: 'ai-tooling',
       title: '6. AI-Assisted Development and Support',
-      body: 'AI development and support platforms (including Cursor and comparable IDE copilots) and the large language model providers they use — software development, debugging, database schema and migration work, and customer support assistance for the Loyalty Service. Data categories: limited source code and configuration; database schema and migration content; operational and support-related content submitted by QlessQ personnel when investigating or resolving issues. End-user passwords and password hashes are not shared with these tools. Processing is subject to vendor confidentiality terms and, where available, privacy or zero-retention settings that limit storage and model training on submitted content.',
+      body: 'AI development and support platforms (including Cursor and comparable IDE copilots) and the large language model providers they use — software development, debugging, database schema and migration work, and customer support assistance for the Loyalty Service. Data categories: limited source code and configuration; database schema and migration content; operational and support-related content submitted by QPlatform personnel when investigating or resolving issues. End-user passwords and password hashes are not shared with these tools. Processing is subject to vendor confidentiality terms and, where available, privacy or zero-retention settings that limit storage and model training on submitted content.',
     },
     {
       id: 'versioning',

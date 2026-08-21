@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { PRODUCT_SKUS } from '@queueplatform/shared';
 import { api } from '@/lib/api';
 import { validateRegister } from '@/lib/validation';
-import { QlessqBrand } from '@/components/brand';
+import { QPlatformBrand } from '@/components/brand';
 
 export default function LoyaltySignupPage() {
   const [form, setForm] = useState({
@@ -77,7 +77,7 @@ export default function LoyaltySignupPage() {
     return (
       <div className="bg-muted/50 flex min-h-screen items-center justify-center px-4">
         <div className="bg-card w-full max-w-md space-y-6 rounded-lg border p-8 text-center shadow-sm">
-          <QlessqBrand href="/" markSize={52} wordmarkHeight={28} className="mx-auto" priority />
+          <QPlatformBrand href="/" markSize={52} wordmarkHeight={28} className="mx-auto" priority />
           <h1 className="text-2xl font-bold">Check your email</h1>
           <p className="text-muted-foreground text-sm">
             We sent a verification link to{' '}
@@ -99,7 +99,7 @@ export default function LoyaltySignupPage() {
     <div className="bg-muted/50 flex min-h-screen items-center justify-center px-4 py-12">
       <div className="bg-card w-full max-w-md space-y-8 rounded-lg border p-8 shadow-sm">
         <div className="flex flex-col items-center gap-3 text-center">
-          <QlessqBrand href="/login" markSize={52} wordmarkHeight={28} priority />
+          <QPlatformBrand href="/login" markSize={52} wordmarkHeight={28} priority />
           <div>
             <h1 className="text-2xl font-bold">Start Patron Loyalty</h1>
             <p className="text-muted-foreground mt-2 text-sm">

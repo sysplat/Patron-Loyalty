@@ -77,7 +77,7 @@ export class AuthPasswordService {
       .send(user.orgId, {
         channel: 'email',
         to: user.email,
-        subject: 'Reset your password — QlessQ',
+        subject: 'Reset your password — QPlatform',
         body: [
           `Hello ${user.firstName || ''},`,
           '',
@@ -87,7 +87,7 @@ export class AuthPasswordService {
           '',
           'This link expires in 1 hour. If you did not request this, you can safely ignore this email.',
           '',
-          '— The QlessQ Team',
+          '— The QPlatform Team',
         ].join('\n'),
       })
       .catch((err) => {

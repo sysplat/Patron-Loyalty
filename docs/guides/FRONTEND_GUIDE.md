@@ -2,7 +2,7 @@
 
 > **QMS-only:** Route groups `(kiosk)`, `(display)`, `(track)` live under **`apps/web` in sibling `../QMS`**. Patron Loyalty UI is **`apps/loyalty`** in this repo (staff dashboard + public portal/card/refer). See [architecture/REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md).
 
-This guide covers Next.js frontend standards for **`apps/web`** in the QlessQ (QMS) repository.
+This guide covers Next.js frontend standards for **`apps/web`** in the QPlatform (QMS) repository.
 
 ---
 

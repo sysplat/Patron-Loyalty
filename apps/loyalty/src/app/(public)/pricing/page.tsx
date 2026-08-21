@@ -6,13 +6,13 @@ import { PublicHeader } from '@/components/marketing/public-header';
 
 const ADD_ONS = [
   {
-    name: 'QlessQ Bundle',
+    name: 'QPlatform Bundle',
     price: 'Contact us',
     period: 'queue + loyalty',
     description: 'Run walk-in queues and loyalty on the same patron identity.',
     features: [
       'Everything in Loyalty Starter',
-      'QlessQ queue & kiosk (separate product)',
+      'QPlatform queue & kiosk (separate product)',
       'Automatic points on completed visits',
       'Unified patron record',
     ],
@@ -112,8 +112,8 @@ export default function PricingPage() {
             <ShieldCheck className="text-primary mx-auto h-8 w-8" />
             <h2 className="mt-3 text-lg font-bold">Own your patron data scope</h2>
             <p className="text-muted-foreground mx-auto mt-2 max-w-xl text-sm">
-              Loyalty signup accepts Patron Loyalty Terms and Privacy — separate from QlessQ queue
-              check-in notices. Counsel review recommended before production launch.
+              Loyalty signup accepts Patron Loyalty Terms and Privacy — separate from QPlatform
+              queue check-in notices. Counsel review recommended before production launch.
             </p>
           </div>
         </div>

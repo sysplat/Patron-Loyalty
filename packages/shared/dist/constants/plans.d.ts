@@ -9,7 +9,7 @@ export interface PlanDefinition {
     limits: PlanLimits;
 }
 export declare const PLANS: Record<string, PlanDefinition>;
-/** Standalone Patron Loyalty (LMS) — sold without QlessQ queue. */
+/** Standalone Patron Loyalty (LMS) — sold without QPlatform queue. */
 export declare const LOYALTY_STARTER: PlanDefinition;
 export declare const PLAN_SLUGS: string[];
 export declare const ALL_PLAN_SLUGS: string[];

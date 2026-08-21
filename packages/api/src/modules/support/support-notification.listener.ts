@@ -132,7 +132,7 @@ export class SupportNotificationListener {
             to,
             subject: `Re: [QMS Support] ${ticket.subject}`,
             body: [
-              'QlessQ Support has replied to your ticket:',
+              'QPlatform Support has replied to your ticket:',
               '',
               event.message,
               '',

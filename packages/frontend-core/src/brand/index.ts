@@ -1,7 +1,7 @@
 export { BRAND, WORDMARK_ASPECT } from './brand-assets';
-export { QlessqBrand } from './qlessq-brand';
-export { QlessqLogoMark } from './qlessq-logo-mark';
-export { QlessqWordmark } from './qlessq-wordmark';
+export { QPlatformBrand } from './qplatform-brand';
+export { QPlatformLogoMark } from './qplatform-logo-mark';
+export { QPlatformWordmark } from './qplatform-wordmark';
 export {
   PatronOrganizationBrand,
   type PatronOrganizationBrandProps,

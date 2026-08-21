@@ -1,5 +1,5 @@
 /**
- * Acceptable-use prohibition shared by QlessQ queue and Patron Loyalty products.
+ * Acceptable-use prohibition shared by QPlatform queue and Patron Loyalty products.
  * Counsel must review before relying on this language in production contracts.
  */
 export const PROHIBITED_BUSINESS_CATEGORIES_CLAUSE =

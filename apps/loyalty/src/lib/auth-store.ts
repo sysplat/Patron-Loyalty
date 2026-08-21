@@ -14,7 +14,7 @@ export type AuthUser = {
   orgTimezone?: string;
   role: string;
   twoFactorEnabled: boolean;
-  /** From API: QlessQ platform operator (internal org or env allowlist). */
+  /** From API: QPlatform platform operator (internal org or env allowlist). */
   platformOperator?: boolean;
   /** True while using a short-lived impersonation JWT (platform operators only). */
   impersonation?: boolean;

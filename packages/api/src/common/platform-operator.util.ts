@@ -1,7 +1,7 @@
 import { INTERNAL_PLATFORM_ORG_SLUG } from '@queueplatform/shared';
 
 /**
- * Who may act as a QlessQ platform operator (cross-tenant ops).
+ * Who may act as a QPlatform platform operator (cross-tenant ops).
  *
  * Primary rule: membership in {@link INTERNAL_PLATFORM_ORG_SLUG} (no env needed for dashboard-created admins).
  * Optional env allowlist: `PLATFORM_OPERATOR_EMAILS` / `PLATFORM_OPERATOR_USER_IDS` for bootstrap or break-glass.

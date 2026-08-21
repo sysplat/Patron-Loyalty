@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { loyaltyGet } from '@/lib/api-response';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
-import { QlessqLogoMark } from '@/components/brand';
+import { QPlatformLogoMark } from '@/components/brand';
 
 type ActivationStatus = {
   organizationName?: string;
@@ -81,7 +81,7 @@ export function LoyaltyActivationGate({ onActivated }: { onActivated: () => void
     <div className="bg-muted/30 flex min-h-screen items-center justify-center p-6 dark:bg-gradient-to-br dark:from-slate-950 dark:via-[#0c1528] dark:to-[#070b14]">
       <div className="bg-card/80 w-full max-w-lg rounded-xl border p-8 shadow-lg backdrop-blur-md">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <QlessqLogoMark size={48} />
+          <QPlatformLogoMark size={48} />
           <h1 className="text-xl font-semibold">Activate Patron Loyalty</h1>
           <p className="text-muted-foreground text-sm">
             {hasQueue

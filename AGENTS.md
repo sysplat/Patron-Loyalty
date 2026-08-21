@@ -1,6 +1,6 @@
 # Patron Loyalty (LMS) — agent guide
 
-Standalone patron loyalty product (CRM, points, tiers, campaigns). **Not** the QlessQ queue/kiosk app.
+Standalone patron loyalty product (CRM, points, tiers, campaigns). **Not** the QPlatform queue/kiosk app.
 
 Requires **Node >= 20** and **pnpm >= 9**.
 
@@ -34,8 +34,8 @@ packages/e2e/            Playwright smoke
 ## Boundaries
 
 - **LMS UI** → `apps/loyalty` only (no kiosk, serve, or platform admin UI in this repo).
-- **QlessQ UI** → sibling `../QMS` repo (`apps/web`, `apps/admin`) — see [REPO_BOUNDARIES.md](docs/architecture/REPO_BOUNDARIES.md).
-- **QlessQ connection** → optional; queue events via Integration API (`docs/architecture/qlessq-integration.md`).
+- **QPlatform UI** → sibling `../QMS` repo (`apps/web`, `apps/admin`) — see [REPO_BOUNDARIES.md](docs/architecture/REPO_BOUNDARIES.md).
+- **QPlatform connection** → optional; queue events via Integration API (`docs/architecture/qplatform-integration.md`).
 - **Platform admin** → not in this repo.
 
 ## Key docs
@@ -47,12 +47,12 @@ packages/e2e/            Playwright smoke
 | [REPO_BOUNDARIES.md](docs/architecture/REPO_BOUNDARIES.md)                       | LMS vs QMS surfaces, deploy profile           |
 | [LOYALTY_AUTH_BFF.md](docs/architecture/LOYALTY_AUTH_BFF.md)                     | Cookie-only staff auth                        |
 | [adr/](docs/architecture/adr/README.md)                                          | Architecture decision records                 |
-| [QLESSQ_CONNECTOR_OPS.md](docs/operations/QLESSQ_CONNECTOR_OPS.md)               | Connector ops + Sentry                        |
+| [QPLATFORM_CONNECTOR_OPS.md](docs/operations/QPLATFORM_CONNECTOR_OPS.md)         | Connector ops + Sentry                        |
 
 ## Prisma
 
 Schema in `packages/database/prisma/` (multi-file). After changes: migrate, then `pnpm db:generate`.
 
-## Integration with QlessQ
+## Integration with QPlatform
 
-QlessQ emits visit/appointment events; LMS earns points via `POST /loyalty/integrations/v1/queue-events`. See `docs/architecture/qlessq-integration.md`.
+QPlatform emits visit/appointment events; LMS earns points via `POST /loyalty/integrations/v1/queue-events`. See `docs/architecture/qplatform-integration.md`.

@@ -117,7 +117,7 @@ export class NotificationTwilioWebhookService {
     const isHelp = text === 'HELP';
 
     if (isHelp) {
-      return '<Response><Message>QlessQ alerts: reply STOP (or ARRET) to opt out, START to opt back in. For assistance, contact the organization that invited you to this queue.</Message></Response>';
+      return '<Response><Message>QPlatform alerts: reply STOP (or ARRET) to opt out, START to opt back in. For assistance, contact the organization that invited you to this queue.</Message></Response>';
     }
 
     if (!isOptOut && !isOptIn) {

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { LEGAL_CONTACT_EMAIL, LOYALTY_LEGAL_DOCUMENTS } from '@queueplatform/shared';
 import type { LegalDocumentContent } from '@/content/legal/types';
-import { QlessqBrand } from '@/components/brand';
+import { QPlatformBrand } from '@/components/brand';
 
 interface LegalDocumentLayoutProps {
   documentKey: keyof typeof LOYALTY_LEGAL_DOCUMENTS;
@@ -21,7 +21,7 @@ export function LegalDocumentLayout({ documentKey, content }: LegalDocumentLayou
           <Link href="/login" className="text-primary text-sm font-medium hover:underline">
             ← Back to sign in
           </Link>
-          <QlessqBrand href="/login" markSize={46} wordmarkHeight={28} priority />
+          <QPlatformBrand href="/login" markSize={46} wordmarkHeight={28} priority />
         </div>
       </header>
 

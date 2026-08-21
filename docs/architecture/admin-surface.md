@@ -1,8 +1,8 @@
 # Admin surface architecture
 
-> **QMS-only:** `apps/web` and `apps/admin` ship from sibling repo **`../QMS`**, not this Patron Loyalty workspace. This doc describes QlessQ frontends; LMS operators use **`apps/loyalty`** here. See [REPO_BOUNDARIES.md](./REPO_BOUNDARIES.md).
+> **QMS-only:** `apps/web` and `apps/admin` ship from sibling repo **`../QMS`**, not this Patron Loyalty workspace. This doc describes QPlatform frontends; LMS operators use **`apps/loyalty`** here. See [REPO_BOUNDARIES.md](./REPO_BOUNDARIES.md).
 
-QlessQ ships two Next.js frontends. This document is the ownership map for Phase 3 of the [architecture hardening plan](./10-10-plan.md) (phases 1–5 complete as of 2026-06-04).
+QPlatform ships two Next.js frontends. This document is the ownership map for Phase 3 of the [architecture hardening plan](./10-10-plan.md) (phases 1–5 complete as of 2026-06-04).
 
 ## Apps and audiences
 
@@ -51,7 +51,7 @@ Duplicated hooks and Centrifugo bootstrapping live in **`packages/frontend-core`
 | `useTabVisible`                                            | web, admin                                        |
 | `useRealtimeRecovery`                                      | web (via thin wrapper binding `getCentrifuge`)    |
 | `getCentrifuge`, `disconnectCentrifuge`, channel listeners | web, admin                                        |
-| `QlessqBrand`, `QlessqLogoMark`, `QlessqWordmark`          | web, admin (re-exported via `@/components/brand`) |
+| `QPlatformBrand`, `QPlatformLogoMark`, `QPlatformWordmark` | web, admin (re-exported via `@/components/brand`) |
 
 App-local `@/lib/*` files may re-export from `@queueplatform/frontend-core` to preserve import paths.
 

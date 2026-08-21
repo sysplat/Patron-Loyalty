@@ -4,13 +4,13 @@ Quick reference for on-call and platform admins when customers report API or UI 
 
 ## Incident runbooks (Patron Loyalty)
 
-| Scenario             | Doc                                                                    |
-| -------------------- | ---------------------------------------------------------------------- |
-| Staff auth outage    | [incidents/LOYALTY_AUTH_OUTAGE.md](./incidents/LOYALTY_AUTH_OUTAGE.md) |
-| Connector 4xx spike  | [incidents/CONNECTOR_4XX_SPIKE.md](./incidents/CONNECTOR_4XX_SPIKE.md) |
-| Migration failure    | [incidents/MIGRATION_FAILURE.md](./incidents/MIGRATION_FAILURE.md)     |
-| Redis down           | [incidents/REDIS_DOWN.md](./incidents/REDIS_DOWN.md)                   |
-| QlessQ connector ops | [QLESSQ_CONNECTOR_OPS.md](./QLESSQ_CONNECTOR_OPS.md)                   |
+| Scenario                | Doc                                                                    |
+| ----------------------- | ---------------------------------------------------------------------- |
+| Staff auth outage       | [incidents/LOYALTY_AUTH_OUTAGE.md](./incidents/LOYALTY_AUTH_OUTAGE.md) |
+| Connector 4xx spike     | [incidents/CONNECTOR_4XX_SPIKE.md](./incidents/CONNECTOR_4XX_SPIKE.md) |
+| Migration failure       | [incidents/MIGRATION_FAILURE.md](./incidents/MIGRATION_FAILURE.md)     |
+| Redis down              | [incidents/REDIS_DOWN.md](./incidents/REDIS_DOWN.md)                   |
+| QPlatform connector ops | [QPLATFORM_CONNECTOR_OPS.md](./QPLATFORM_CONNECTOR_OPS.md)             |
 
 Legacy QMS-wide notes remain in sections below where still applicable (`qms-api` naming).
 

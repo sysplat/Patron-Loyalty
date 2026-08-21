@@ -1,12 +1,12 @@
 'use client';
 
 import { LOYALTY_PRODUCT_NAME } from '@queueplatform/shared';
-import { QlessqBrand } from '@/components/brand';
+import { QPlatformBrand } from '@/components/brand';
 
 const HIGHLIGHTS = [
   { icon: '★', text: 'Points, tiers, and rewards catalog' },
   { icon: '🎯', text: 'Segments, campaigns, and win-back automation' },
-  { icon: '🔗', text: 'Optional QlessQ visit sync or POS integration' },
+  { icon: '🔗', text: 'Optional QPlatform visit sync or POS integration' },
 ] as const;
 
 export function AuthMarketingPanel() {
@@ -21,7 +21,7 @@ export function AuthMarketingPanel() {
         }}
       />
       <div className="relative z-10 flex flex-col justify-between p-12 text-white">
-        <QlessqBrand
+        <QPlatformBrand
           href="/"
           markSize={54}
           wordmarkHeight={32}
@@ -39,7 +39,7 @@ export function AuthMarketingPanel() {
           </h2>
           <p className="text-lg leading-relaxed text-white/60">
             A standalone suite for CRM, loyalty points, patron portal, and marketing. Integrates
-            seamlessly with QlessQ to sync customer visit and check-in data.
+            seamlessly with QPlatform to sync customer visit and check-in data.
           </p>
           <div className="space-y-3 pt-4">
             {HIGHLIGHTS.map((item) => (
@@ -50,7 +50,7 @@ export function AuthMarketingPanel() {
             ))}
           </div>
         </div>
-        <p className="text-xs text-white/40">Powered by QlessQ platform infrastructure</p>
+        <p className="text-xs text-white/40">Powered by QPlatform platform infrastructure</p>
       </div>
     </div>
   );

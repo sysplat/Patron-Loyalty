@@ -1,4 +1,4 @@
-# QlessQ connector — LMS ops runbook
+# QPlatform connector — LMS ops runbook
 
 Patron Loyalty ingests normalized queue events at `POST /api/v1/loyalty/integrations/v1/queue-events` (API key: `X-Loyalty-Api-Key`).
 
@@ -73,16 +73,16 @@ Confirm `release` in `/api/v1/health/meta` matches the deployed git SHA.
 When `loyalty_connector_4xx_spike` fires:
 
 1. Identify org (`orgId`) and route (usually `queue-events`).
-2. Check recent QlessQ connector config (`apiBaseUrl`, rotated API key).
+2. Check recent QPlatform connector config (`apiBaseUrl`, rotated API key).
 3. Replay a single event with curl + valid key; confirm 200 vs 400 validation error.
-4. If key rotation mismatch: regenerate LMS integration key in staff UI, update QlessQ `integrations.config.apiKey`.
+4. If key rotation mismatch: regenerate LMS integration key in staff UI, update QPlatform `integrations.config.apiKey`.
 5. Optional: Redis key `loyalty:connector:4xx:{orgId}:{route}` (TTL 1h).
 
 ## Connector version
 
-Payload field `connectorVersion` (default **1**) allows schema evolution without breaking older QlessQ forwarders.
+Payload field `connectorVersion` (default **1**) allows schema evolution without breaking older QPlatform forwarders.
 
-## QlessQ sibling responsibilities
+## QPlatform sibling responsibilities
 
 - Retry POST with exponential backoff on 5xx / network errors.
 - Treat `{ idempotent: true }` as success (no re-earn).

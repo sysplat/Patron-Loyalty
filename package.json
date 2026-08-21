@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "UNLICENSED",
-  "description": "Patron Loyalty (LMS) — CRM, points, tiers, campaigns. Optional integration with QlessQ queue.",
+  "description": "Patron Loyalty (LMS) — CRM, points, tiers, campaigns. Optional integration with QPlatform queue.",
   "scripts": {
     "start": "pnpm dev:full",
     "setup:env-local": "bash scripts/ensure-env-local.sh",

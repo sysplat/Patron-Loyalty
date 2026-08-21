@@ -1,5 +1,5 @@
 import { cn } from './cn';
-import { QlessqBrand } from './qlessq-brand';
+import { QPlatformBrand } from './qplatform-brand';
 
 type PatronPoweredByProps = {
   className?: string;
@@ -18,7 +18,7 @@ export function PatronPoweredBy({
   const wordmarkHeight = compact ? 24 : 28;
 
   const brand = (
-    <QlessqBrand
+    <QPlatformBrand
       href={null}
       markSize={markSize}
       wordmarkHeight={wordmarkHeight}
@@ -47,7 +47,7 @@ export function PatronPoweredBy({
   return (
     <div
       className={cn('border-border/60 flex items-center gap-2 border-l pl-2.5', className)}
-      aria-label="Powered by QlessQ"
+      aria-label="Powered by QPlatform"
     >
       {label}
       {brand}

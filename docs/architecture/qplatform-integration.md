@@ -1,38 +1,38 @@
-# QlessQ ↔ Patron Loyalty integration
+# QPlatform ↔ Patron Loyalty integration
 
-Patron Loyalty (this repo) and QlessQ (sibling `../QMS`) are **separate products** that can run independently or together.
+Patron Loyalty (this repo) and QPlatform (sibling `../QMS`) are **separate products** that can run independently or together.
 
 ## When both are licensed
 
 ```text
 ┌──────────────────┐   POST /loyalty/integrations/v1/queue-events   ┌─────────────────────┐
-│  QlessQ API      │   X-Loyalty-Api-Key + normalized payload      │  Patron Loyalty API │
+│  QPlatform API      │   X-Loyalty-Api-Key + normalized payload      │  Patron Loyalty API │
 │  ticket.completed│ ────────────────────────────────────────────► │  earn points        │
 │  appointment.*   │                                               │  segments, campaigns│
 │  review.created  │                                               │  churn / no-show    │
 └──────────────────┘                                               └─────────────────────┘
 ```
 
-### QlessQ → LMS (inbound to LMS)
+### QPlatform → LMS (inbound to LMS)
 
-| Mechanism                                        | Use                                                                                                |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| **`GET /loyalty/integrations/v1/ping`**          | QlessQ connector health: validates `X-Loyalty-Api-Key` and returns `{ ok: true, orgId }`.          |
-| **`POST /loyalty/integrations/v1/queue-events`** | Primary path when QlessQ and LMS deploy separately. QlessQ HTTP forwarder sends normalized events. |
-| **Integration API** (`X-Loyalty-Api-Key`)        | POS/e-commerce: `points/earn`, `customers/upsert`, coupons, wallet.                                |
-| **In-process listener**                          | Same monorepo + shared Postgres: `loyalty.listener.ts` handles events locally (no HTTP).           |
-| **Tenant linking**                               | QlessQ org stores `integrations` row `type: patron_loyalty` with LMS API URL + key.                |
+| Mechanism                                        | Use                                                                                                      |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| **`GET /loyalty/integrations/v1/ping`**          | QPlatform connector health: validates `X-Loyalty-Api-Key` and returns `{ ok: true, orgId }`.             |
+| **`POST /loyalty/integrations/v1/queue-events`** | Primary path when QPlatform and LMS deploy separately. QPlatform HTTP forwarder sends normalized events. |
+| **Integration API** (`X-Loyalty-Api-Key`)        | POS/e-commerce: `points/earn`, `customers/upsert`, coupons, wallet.                                      |
+| **In-process listener**                          | Same monorepo + shared Postgres: `loyalty.listener.ts` handles events locally (no HTTP).                 |
+| **Tenant linking**                               | QPlatform org stores `integrations` row `type: patron_loyalty` with LMS API URL + key.                   |
 
 ### LMS → external systems (outbound)
 
 | Mechanism                    | Use                                                                     |
 | ---------------------------- | ----------------------------------------------------------------------- |
 | **`LOYALTY_WEBHOOK_EVENTS`** | Tenant-configured webhooks: points earned, tier upgraded, no-show, etc. |
-| **Integration API**          | POS/e-commerce calls LMS directly (no QlessQ required).                 |
+| **Integration API**          | POS/e-commerce calls LMS directly (no QPlatform required).              |
 
 ## Tenant linking (bundle)
 
-On **QlessQ**, staff with CRM permissions configure the forwarder:
+On **QPlatform**, staff with CRM permissions configure the forwarder:
 
 ```http
 GET  /api/v1/loyalty/connector
@@ -52,14 +52,14 @@ Body for `POST /loyalty/connector`:
 
 Stored as `integrations.type = patron_loyalty`. When linked:
 
-- QlessQ **skips** in-process `LoyaltyListener` for that org.
+- QPlatform **skips** in-process `LoyaltyListener` for that org.
 - `LoyaltyConnectorListener` **forwards** events to LMS `queue-events`.
 
 On **LMS**, generate the API key under **Integrations** (`/integrations` in the staff app). The key scopes all Integration API calls (including `queue-events`) to the LMS org.
 
 ### Customer identity across deploys
 
-QlessQ sends `customer.externalId` = QlessQ `Customer.id`. LMS upserts patrons by `externalId` in customer metadata so IDs can differ per database.
+QPlatform sends `customer.externalId` = QPlatform `Customer.id`. LMS upserts patrons by `externalId` in customer metadata so IDs can differ per database.
 
 ## Queue event payload
 
@@ -70,7 +70,7 @@ QlessQ sends `customer.externalId` = QlessQ `Customer.id`. LMS upserts patrons b
   "branchId": "branch-uuid",
   "serviceId": "service-uuid",
   "customer": {
-    "externalId": "qlessq-customer-uuid",
+    "externalId": "qplatform-customer-uuid",
     "name": "Jane Patron",
     "email": "jane@example.com",
     "phone": "+15551234567"
@@ -88,7 +88,7 @@ QlessQ sends `customer.externalId` = QlessQ `Customer.id`. LMS upserts patrons b
 | `review.submitted`      | Review bonus points                       |
 | `customer.created`      | Ensure loyalty account + welcome campaign |
 
-Idempotency: earn ledger dedupes on `(orgId, accountId, sourceType, sourceId)` for `earn` / `bonus` rows. QlessQ connector retries and duplicate `queue-events` deliveries return `{ ok: true, idempotent: true }` without re-awarding points, incrementing visits, or firing gamification side effects. Enforced in application code and by partial unique index `loyalty_point_ledger_earn_source_idempotent_idx`.
+Idempotency: earn ledger dedupes on `(orgId, accountId, sourceType, sourceId)` for `earn` / `bonus` rows. QPlatform connector retries and duplicate `queue-events` deliveries return `{ ok: true, idempotent: true }` without re-awarding points, incrementing visits, or firing gamification side effects. Enforced in application code and by partial unique index `loyalty_point_ledger_earn_source_idempotent_idx`.
 
 ### Connector verification (LMS)
 
@@ -101,19 +101,19 @@ Sends a synthetic `ticket.completed`, asserts `{ ok: true }`, then retries the s
 
 ## Loyalty-only tenants
 
-No QlessQ connection required. Patron data from staff UI, patron portal, Integration API, or imports.
+No QPlatform connection required. Patron data from staff UI, patron portal, Integration API, or imports.
 
 ## Environment
 
 ### LMS (this repo)
 
 ```bash
-# Optional: future LMS → QlessQ callbacks
-QLESSQ_INTEGRATION_URL=https://qms-api.example.com/api/v1
-QLESSQ_INTEGRATION_API_KEY=
+# Optional: future LMS → QPlatform callbacks
+QPLATFORM_INTEGRATION_URL=https://qms-api.example.com/api/v1
+QPLATFORM_INTEGRATION_API_KEY=
 ```
 
-### QlessQ (sibling `../QMS`)
+### QPlatform (sibling `../QMS`)
 
 ```bash
 LOYALTY_INTEGRATION_URL=https://pl-api-production-a528.up.railway.app/api/v1
@@ -132,7 +132,7 @@ LOYALTY_URL=https://loyalty.example.com
 | Webhook emitter         | `loyalty-webhook.service.ts`                                                    |
 | Shared contract         | `packages/shared` → `loyalty-connector.ts`, `loyalty-integration.validators.ts` |
 
-## Code locations (QlessQ sibling)
+## Code locations (QPlatform sibling)
 
 | Piece                      | Path                                                                                    |
 | -------------------------- | --------------------------------------------------------------------------------------- |
@@ -144,13 +144,13 @@ LOYALTY_URL=https://loyalty.example.com
 ## Local dev (both products)
 
 ```bash
-# Terminal 1 — QlessQ
+# Terminal 1 — QPlatform
 cd ../QMS && pnpm dev:api
 
 # Terminal 2 — LMS
 pnpm start
 
-# Point QlessQ org connector at http://localhost:4000/api/v1 with LMS integration API key
+# Point QPlatform org connector at http://localhost:4000/api/v1 with LMS integration API key
 ```
 
 Shared Postgres during transition: leave connector **disconnected**; in-process listener handles events.

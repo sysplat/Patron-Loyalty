@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // ─── Configuration ──────────────────────────────────────────────────────
-const QLESSQ_DB_URL =
+const QPLATFORM_DB_URL =
   'postgresql://postgres:VQNivofSODMbUDGykbJgOdXJdKNTQKUd@nozomi.proxy.rlwy.net:32755/railway';
 const PL_API_URL =
   'https://pl-api-production-a528.up.railway.app/api/v1/loyalty/integrations/v1/queue-events';
@@ -107,13 +107,13 @@ function newStats(): SyncStats {
 // ─── Main ───────────────────────────────────────────────────────────────
 async function main() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
-  console.log('║   QlessQ → Patron Loyalty: Complete Data Sync              ║');
+  console.log('║   QPlatform → Patron Loyalty: Complete Data Sync              ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
   console.log(`\nTarget org: ${ORG_ID}`);
   console.log(`PL API: ${PL_API_URL}\n`);
 
   const prisma = new PrismaClient({
-    datasources: { db: { url: QLESSQ_DB_URL } },
+    datasources: { db: { url: QPLATFORM_DB_URL } },
   });
 
   try {
@@ -313,7 +313,7 @@ async function main() {
           customerPhone: a.customerPhone || undefined,
           customerEmail: a.customerEmail || undefined,
           occurredAt: a.createdAt.toISOString(),
-          // Note: appointment has no customerId in QlessQ!
+          // Note: appointment has no customerId in QPlatform!
           // so we just pass phone/email.
           customer: undefined,
         },

@@ -17,8 +17,8 @@ function hasLegacySmsComplianceSuffix(body) {
     upper.includes('MSG&DATA RATES') ||
     upper.includes('QUEUEPLATFORM ALERTS') ||
     upper.includes('ALERTS VIA QUEUEPLATFORM') ||
-    upper.includes('QLESSQ ALERTS') ||
-    upper.includes('ALERTS VIA QLESSQ') ||
+    upper.includes('QPLATFORM ALERTS') ||
+    upper.includes('ALERTS VIA QPLATFORM') ||
     upper.includes('QLEESQ ALERTS') ||
     upper.includes('ALERTS VIA QLEESQ')
   );
@@ -29,8 +29,8 @@ function stripLegacySmsComplianceSuffix(body) {
   if (!result) return result;
   if (!hasLegacySmsComplianceSuffix(result)) return result;
 
-  result = result.replace(/\s*alerts via (?:QueuePlatform|QlessQ|QleesQ)\.?\s*/gi, ' ');
-  result = result.replace(/\s*(?:QueuePlatform|QlessQ|QleesQ) alerts\.?\s*/gi, ' ');
+  result = result.replace(/\s*alerts via (?:QueuePlatform|QPlatform|QleesQ)\.?\s*/gi, ' ');
+  result = result.replace(/\s*(?:QueuePlatform|QPlatform|QleesQ) alerts\.?\s*/gi, ' ');
   result = result.replace(/\s*Msg&data rates may apply\.?\s*/gi, ' ');
   result = result.replace(/\s*Reply STOP to opt out(?:,\s*HELP for help)?\.?\s*$/gi, '');
   return result.trim();

@@ -34,19 +34,19 @@ Prefix commits and PR titles with phase IDs for traceability:
 
 ## Scorecard (now → target)
 
-| Dimension                     | Now | Target | Primary phase |
-| ----------------------------- | --- | ------ | ------------- |
-| Multi-tenancy & security      | 10  | 10     | 1             |
-| Integration design (QlessQ)   | 10  | 10     | 2             |
-| Shared contracts              | 10  | 10     | 2             |
-| Event-driven design           | 10  | 10     | 3             |
-| Frontend (loyalty app)        | 10  | 10     | 4             |
-| API modularity & cohesion     | 10  | 10     | 1             |
-| Data layer                    | 10  | 10     | 1             |
-| Service sizing (1k-line rule) | 10  | 10     | 1             |
-| Test pyramid                  | 10  | 10     | 3             |
-| Docs ↔ repo truth             | 10  | 10     | 6             |
-| Operability & release         | 10  | 10     | 5             |
+| Dimension                      | Now | Target | Primary phase |
+| ------------------------------ | --- | ------ | ------------- |
+| Multi-tenancy & security       | 10  | 10     | 1             |
+| Integration design (QPlatform) | 10  | 10     | 2             |
+| Shared contracts               | 10  | 10     | 2             |
+| Event-driven design            | 10  | 10     | 3             |
+| Frontend (loyalty app)         | 10  | 10     | 4             |
+| API modularity & cohesion      | 10  | 10     | 1             |
+| Data layer                     | 10  | 10     | 1             |
+| Service sizing (1k-line rule)  | 10  | 10     | 1             |
+| Test pyramid                   | 10  | 10     | 3             |
+| Docs ↔ repo truth              | 10  | 10     | 6             |
+| Operability & release          | 10  | 10     | 5             |
 
 ---
 
@@ -70,17 +70,17 @@ Prefix commits and PR titles with phase IDs for traceability:
 
 ## Phase 2 — Integration & contract fortress
 
-**Goal:** The QlessQ connector is boringly reliable; every external write path is machine-verified.
+**Goal:** The QPlatform connector is boringly reliable; every external write path is machine-verified.
 
 **Duration:** 2–3 weeks
 
-| Workstream                     | Actions                                                                                                                                               | Exit criterion                                             |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| **HTTP contract suite**        | Extend supertest coverage to all `/loyalty/integrations/v1/*` routes (redeem, wallet, coupons); negative paths per Zod field                          | 100% integration routes have ≥1 happy + ≥1 validation test |
-| **Golden-path integration**    | DB-backed tests: queue-events idempotency, earn replay, external_id lookup (with `INTEGRATION_DATABASE_URL`)                                          | CI job optional but documented; runs in pre-release audit  |
-| **API key lifecycle**          | Rotation endpoint, `lastUsedAt` on key hash, staff UI surfacing prefix + rotation                                                                     | Operators rotate keys without downtime; audit log entry    |
-| **Connector observability v2** | Wire `recordClientError` on guard + validation failures; ingest metrics query doc in [QLESSQ_CONNECTOR_OPS.md](../operations/QLESSQ_CONNECTOR_OPS.md) | 4xx spikes fire on bad payloads, not only handler errors   |
-| **QlessQ sibling contract**    | Document retry/backoff, `{ idempotent: true }` semantics, `connectorVersion` bump process in shared + both repos                                      | Single source of truth in `@queueplatform/shared`          |
+| Workstream                     | Actions                                                                                                                                                     | Exit criterion                                             |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| **HTTP contract suite**        | Extend supertest coverage to all `/loyalty/integrations/v1/*` routes (redeem, wallet, coupons); negative paths per Zod field                                | 100% integration routes have ≥1 happy + ≥1 validation test |
+| **Golden-path integration**    | DB-backed tests: queue-events idempotency, earn replay, external_id lookup (with `INTEGRATION_DATABASE_URL`)                                                | CI job optional but documented; runs in pre-release audit  |
+| **API key lifecycle**          | Rotation endpoint, `lastUsedAt` on key hash, staff UI surfacing prefix + rotation                                                                           | Operators rotate keys without downtime; audit log entry    |
+| **Connector observability v2** | Wire `recordClientError` on guard + validation failures; ingest metrics query doc in [QPLATFORM_CONNECTOR_OPS.md](../operations/QPLATFORM_CONNECTOR_OPS.md) | 4xx spikes fire on bad payloads, not only handler errors   |
+| **QPlatform sibling contract** | Document retry/backoff, `{ idempotent: true }` semantics, `connectorVersion` bump process in shared + both repos                                            | Single source of truth in `@queueplatform/shared`          |
 
 **Score impact:** Integration 8.8 → 10, Shared contracts 8.5 → 10
 
@@ -96,7 +96,7 @@ Prefix commits and PR titles with phase IDs for traceability:
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | **Unit coverage**        | Specs for every loyalty service without one: gamification edge cases, campaign dispatch, wallet, catalog redeem paths | `pnpm test` loyalty module coverage ≥ 80% lines (vitest coverage gate) |
 | **Portal & staff flows** | Playwright: patron portal redeem, profile update, staff reward catalog edit, integrations page API key copy           | 5+ E2E specs in `@queueplatform/e2e`; run in CI `test-e2e-loyalty`     |
-| **Queue-events matrix**  | Unit tests for all 6 QlessQ event types + skip/idempotent branches in `loyalty-queue-events.service.spec.ts`          | Event switch exhaustively tested (`never` default)                     |
+| **Queue-events matrix**  | Unit tests for all 6 QPlatform event types + skip/idempotent branches in `loyalty-queue-events.service.spec.ts`       | Event switch exhaustively tested (`never` default)                     |
 | **RLS regression**       | `tenant-isolation.spec.ts` runs in CI when secrets available; loyalty-specific models added to policy checks          | No new loyalty table without RLS policy test                           |
 | **Release gate**         | `pnpm test:ci` includes loyalty coverage threshold; `audit:patron-loyalty` runs full unit suite                       | Single command blocks release                                          |
 
@@ -178,7 +178,7 @@ flowchart LR
 ```
 
 1. **Phase 1** — highest structural ROI (unblocks clean tests and docs).
-2. **Phase 2** — protects QlessQ revenue path while Phase 1 lands.
+2. **Phase 2** — protects QPlatform revenue path while Phase 1 lands.
 3. **Phase 3** — lock in behavior before UI churn.
 4. **Phase 4** — parallelizable once auth/BFF stable (Phase 1 partial).
 5. **Phase 5** — after tests exist to catch regressions during observability work.

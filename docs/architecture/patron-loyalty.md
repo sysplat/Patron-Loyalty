@@ -1,8 +1,8 @@
 # Patron Loyalty & CRM — separate product architecture
 
-> **Repo:** This is the standalone **Patron Loyalty (LMS)** monorepo. QlessQ queue product lives in sibling `../QMS`. Integration: `qlessq-integration.md`.
+> **Repo:** This is the standalone **Patron Loyalty (LMS)** monorepo. QPlatform queue product lives in sibling `../QMS`. Integration: `qplatform-integration.md`.
 
-Patron Loyalty (LMS) is a **separately sellable product** from QlessQ queue management. It can run **standalone** (loyalty-only SKU), as an **add-on** to QMS, or as a **bundle**—with its own billing, terms, and richer patron data collection. It may **connect to QlessQ** when both are licensed on the same org to consume visit/appointment/review events, but it is not a feature flag bolted onto the kiosk.
+Patron Loyalty (LMS) is a **separately sellable product** from QPlatform queue management. It can run **standalone** (loyalty-only SKU), as an **add-on** to QMS, or as a **bundle**—with its own billing, terms, and richer patron data collection. It may **connect to QPlatform** when both are licensed on the same org to consume visit/appointment/review events, but it is not a feature flag bolted onto the kiosk.
 
 This document is the ownership map for building toward the [Loyalty Management System SRS](https://github.com/parsasamandi/QMS) scope without bloating kiosk or serve consoles.
 
@@ -18,7 +18,7 @@ This document is the ownership map for building toward the [Loyalty Management S
 
 - **Different purchase** — loyalty has its own Stripe plan (`loyalty-starter`); signup at `apps/loyalty` uses `productSku: loyalty`.
 - **Different terms** — tenant signup and patron-facing flows for LMS must use **LMS-specific Terms and Privacy** (not QMS kiosk copy). Patron portal/profile may collect **more personal data** (birthday, gender, city, marketing preferences) than queue check-in; consent and published legal pages must reflect that.
-- **Optional QlessQ connection** — when both products share an org, loyalty **reads** queue outcomes via domain events (`ticket.completed`, `appointment.*`, `review.created`, no-show) and shared `Customer` identity. Loyalty-only orgs use the **Integration API** (`X-Loyalty-Api-Key`), POS imports, or manual entry—no queue UI required.
+- **Optional QPlatform connection** — when both products share an org, loyalty **reads** queue outcomes via domain events (`ticket.completed`, `appointment.*`, `review.created`, no-show) and shared `Customer` identity. Loyalty-only orgs use the **Integration API** (`X-Loyalty-Api-Key`), POS imports, or manual entry—no queue UI required.
 - **Thin coupling** — queue modules emit events; loyalty modules subscribe. Do not embed loyalty business rules in ticket/kiosk code paths.
 
 **Agent rule of thumb:** treat `apps/loyalty` + `packages/api/.../loyalty/` as a product boundary—billing, legal, UI, and PII scope are LMS concerns even when code lives in the same monorepo.
@@ -78,7 +78,7 @@ When both products are licensed, patron loyalty **consumes** queue events; it do
 
 ```text
 ┌─────────────────┐     events (optional)      ┌──────────────────────┐
-│  QlessQ (queue) │ ─────────────────────────► │  Patron Loyalty      │
+│  QPlatform (queue) │ ─────────────────────────► │  Patron Loyalty      │
 │  ticket.completed│     customerId, branchId   │  earn points         │
 │  appointment.*  │     serviceId, timestamps  │  segments, campaigns │
 │  review.created │                            │  full patron profile │

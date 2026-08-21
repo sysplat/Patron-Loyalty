@@ -129,7 +129,7 @@ export class PlatformAdminsController {
       const ok = await bcrypt.compare(body.password, existingAccount.passwordHash);
       if (!ok) {
         throw new BadRequestException(
-          'Password does not match your existing QlessQ account for this email.',
+          'Password does not match your existing QPlatform account for this email.',
         );
       }
       user = await this.prisma.withBypassRls((tx) =>

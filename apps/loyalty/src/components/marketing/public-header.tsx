@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { QlessqBrand } from '@/components/brand';
+import { QPlatformBrand } from '@/components/brand';
 
 export function PublicHeader({ active }: { active?: 'pricing' }) {
   return (
@@ -7,7 +7,7 @@ export function PublicHeader({ active }: { active?: 'pricing' }) {
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-10">
-            <QlessqBrand href="/" markSize={46} wordmarkHeight={28} priority />
+            <QPlatformBrand href="/" markSize={46} wordmarkHeight={28} priority />
             <nav className="hidden items-center gap-8 lg:flex">
               <Link
                 href="/#features"
@@ -19,7 +19,7 @@ export function PublicHeader({ active }: { active?: 'pricing' }) {
                 href="/#integration"
                 className="text-muted-foreground hover:text-foreground text-sm font-medium transition-all"
               >
-                QlessQ
+                QPlatform
               </Link>
               <Link
                 href="/pricing"

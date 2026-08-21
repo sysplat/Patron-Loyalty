@@ -109,7 +109,7 @@ LOYALTY_SMOKE_EMAIL=... LOYALTY_SMOKE_PASSWORD=... \
 | `test-notifications-smoke` | notifications package                                                  |
 | `docker`                   | API image build on `main`                                              |
 
-QMS-only jobs (`test-e2e-admin`, `test-e2e-realtime`, `apps/web`, `apps/admin`) are **not** run in this repo — see QlessQ sibling repo.
+QMS-only jobs (`test-e2e-admin`, `test-e2e-realtime`, `apps/web`, `apps/admin`) are **not** run in this repo — see QPlatform sibling repo.
 
 ## Pre-release operator checklist
 
@@ -120,7 +120,7 @@ pnpm audit:patron-loyalty                # Railway linked, prod smoke
 pnpm audit:staging-soak                  # boundary curls (no Actions minutes)
 ```
 
-**QlessQ split-deploy connector** (requires `LOYALTY_API_URL` + `LOYALTY_INTEGRATION_API_KEY`):
+**QPlatform split-deploy connector** (requires `LOYALTY_API_URL` + `LOYALTY_INTEGRATION_API_KEY`):
 
 ```bash
 pnpm audit:loyalty-queue-events-smoke

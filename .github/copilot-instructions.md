@@ -7,7 +7,7 @@ Read and follow all of them on every prompt — they are not optional.
 
 ## Project Overview
 
-**QlessQ (QMS)** is a multi-tenant SaaS queue management system.
+**QPlatform (QMS)** is a multi-tenant SaaS queue management system.
 
 - **Backend API**: NestJS + Prisma + BullMQ + PostgreSQL — in `packages/api/`
 - **Frontend**: Next.js 14 App Router + TailwindCSS + shadcn/ui — in `apps/web/`

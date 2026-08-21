@@ -139,7 +139,7 @@ export class AuthLoginService {
 
       if (user.organization.status === 'suspended') {
         throw new UnauthorizedException(
-          'Your organization has been suspended. Please contact QlessQ support.',
+          'Your organization has been suspended. Please contact QPlatform support.',
         );
       }
 
@@ -289,7 +289,7 @@ export class AuthLoginService {
 
       if (user.organization.status === 'suspended') {
         throw new UnauthorizedException(
-          'Your organization has been suspended. Please contact QlessQ support.',
+          'Your organization has been suspended. Please contact QPlatform support.',
         );
       }
 

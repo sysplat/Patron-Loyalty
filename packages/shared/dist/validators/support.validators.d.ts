@@ -19,7 +19,7 @@ export declare const supportMessageSchema: z.ZodObject<{
     message: z.ZodString;
     /** Platform-operator internal note (platform admin API only). */
     isInternal: z.ZodOptional<z.ZodBoolean>;
-    /** Org-only note; not sent to QlessQ support. */
+    /** Org-only note; not sent to QPlatform support. */
     isOrgInternal: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
     message: string;

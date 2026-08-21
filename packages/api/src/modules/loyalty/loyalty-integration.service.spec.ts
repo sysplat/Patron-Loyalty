@@ -153,10 +153,10 @@ describe('LoyaltyIntegrationService lookupCustomer externalId', () => {
   });
 
   it('looks up patron by indexed externalId column', async () => {
-    const result = await service.lookupCustomer('org-1', { externalId: 'qlessq-cust-99' });
+    const result = await service.lookupCustomer('org-1', { externalId: 'qplatform-cust-99' });
 
     expect(customerFindFirst).toHaveBeenCalledWith({
-      where: { orgId: 'org-1', externalId: 'qlessq-cust-99' },
+      where: { orgId: 'org-1', externalId: 'qplatform-cust-99' },
     });
     expect(result).toEqual(
       expect.objectContaining({

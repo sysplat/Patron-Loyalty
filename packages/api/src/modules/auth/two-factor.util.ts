@@ -4,7 +4,7 @@ import * as bcrypt from 'bcrypt';
 
 authenticator.options = { window: 1 };
 
-const DEFAULT_ISSUER = 'QlessQ';
+const DEFAULT_ISSUER = 'QPlatform';
 
 export function generateTotpSecret(): string {
   return authenticator.generateSecret();

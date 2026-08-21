@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { cn } from './cn';
 import type { BrandTone } from './brand-assets';
-import { QlessqLogoMark } from './qlessq-logo-mark';
-import { QlessqWordmark } from './qlessq-wordmark';
+import { QPlatformLogoMark } from './qplatform-logo-mark';
+import { QPlatformWordmark } from './qplatform-wordmark';
 
-type QlessqBrandProps = {
+type QPlatformBrandProps = {
   href?: string | null;
   markSize?: number;
   wordmarkHeight?: number;
@@ -18,7 +18,7 @@ type QlessqBrandProps = {
   tone?: BrandTone;
 };
 
-export function QlessqBrand({
+export function QPlatformBrand({
   href = '/',
   markSize = 36,
   wordmarkHeight = 22,
@@ -29,14 +29,19 @@ export function QlessqBrand({
   wordmarkClassName,
   priority,
   tone = 'default',
-}: QlessqBrandProps) {
+}: QPlatformBrandProps) {
   const content = (
     <>
       {showMark ? (
-        <QlessqLogoMark size={markSize} className={markClassName} priority={priority} tone={tone} />
+        <QPlatformLogoMark
+          size={markSize}
+          className={markClassName}
+          priority={priority}
+          tone={tone}
+        />
       ) : null}
       {showWordmark ? (
-        <QlessqWordmark
+        <QPlatformWordmark
           height={wordmarkHeight}
           className={wordmarkClassName}
           priority={priority}

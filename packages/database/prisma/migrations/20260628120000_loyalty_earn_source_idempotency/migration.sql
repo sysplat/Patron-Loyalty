@@ -5,7 +5,7 @@ ALTER TABLE "loyalty_point_ledger"
 ALTER TABLE "loyalty_wallet_transactions"
   ALTER COLUMN "source_id" TYPE VARCHAR(100) USING "source_id"::text;
 
--- Idempotent earn ledger: one earn/bonus row per org + account + source (QlessQ connector retries).
+-- Idempotent earn ledger: one earn/bonus row per org + account + source (QPlatform connector retries).
 -- Ledger types are uppercase (EARN, BONUS) per LOYALTY_POINT_LEDGER_TYPES.
 DROP INDEX IF EXISTS "loyalty_point_ledger_earn_source_idempotent_idx";
 

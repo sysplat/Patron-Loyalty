@@ -3,12 +3,12 @@ import { PROHIBITED_BUSINESS_CATEGORIES_CLAUSE } from '@queueplatform/shared';
 
 export const loyaltyTermsContent: LegalDocumentContent = {
   intro:
-    'These Patron Loyalty Terms of Service ("Terms") govern your access to and use of the Patron Loyalty customer relationship and loyalty management service (the "Loyalty Service") provided by QlessQ. By creating a Patron Loyalty account, you agree to these Terms on behalf of yourself and the organization you represent.',
+    'These Patron Loyalty Terms of Service ("Terms") govern your access to and use of the Patron Loyalty customer relationship and loyalty management service (the "Loyalty Service") provided by QPlatform. By creating a Patron Loyalty account, you agree to these Terms on behalf of yourself and the organization you represent.',
   sections: [
     {
       id: 'service',
       title: '1. Description of the Loyalty Service',
-      body: 'Patron Loyalty is a separately licensed product from QlessQ queue management. It provides tools to manage patron profiles, loyalty points, tiers, rewards, coupons, referrals, marketing campaigns, and related analytics. The Loyalty Service may optionally connect to QlessQ queue data when both products are licensed for your organization; loyalty-only accounts may ingest patron activity through imports, staff entry, or the Integration API.',
+      body: 'Patron Loyalty is a separately licensed product from QPlatform queue management. It provides tools to manage patron profiles, loyalty points, tiers, rewards, coupons, referrals, marketing campaigns, and related analytics. The Loyalty Service may optionally connect to QPlatform queue data when both products are licensed for your organization; loyalty-only accounts may ingest patron activity through imports, staff entry, or the Integration API.',
     },
     {
       id: 'accounts',
@@ -18,7 +18,7 @@ export const loyaltyTermsContent: LegalDocumentContent = {
     {
       id: 'patron-data',
       title: '3. Patron and Customer Data',
-      body: 'You retain ownership of patron data you submit ("Patron Data"), including contact details, loyalty balances, campaign audiences, and profile fields such as birthday or location when collected through the Loyalty Service. You grant us a limited license to host, process, and transmit Patron Data to provide the Loyalty Service. You are the data controller for your patrons; QlessQ acts as your service provider (processor) for Patron Data unless otherwise agreed in writing. You must provide appropriate privacy notices to patrons—including links to our Loyalty Program Privacy Notice and Terms—and obtain any required consent before sending marketing messages or collecting optional profile fields.',
+      body: 'You retain ownership of patron data you submit ("Patron Data"), including contact details, loyalty balances, campaign audiences, and profile fields such as birthday or location when collected through the Loyalty Service. You grant us a limited license to host, process, and transmit Patron Data to provide the Loyalty Service. You are the data controller for your patrons; QPlatform acts as your service provider (processor) for Patron Data unless otherwise agreed in writing. You must provide appropriate privacy notices to patrons—including links to our Loyalty Program Privacy Notice and Terms—and obtain any required consent before sending marketing messages or collecting optional profile fields.',
     },
     {
       id: 'marketing-compliance',

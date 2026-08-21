@@ -21,7 +21,7 @@ model SupportRequest {
   id                     String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   orgId                  String           @map("org_id") @db.Uuid
   createdByUserId        String           @map("created_by_user_id") @db.Uuid
-  /// Org member authorized to reply to QlessQ on this ticket (defaults to creator; reassignable by owner/admin).
+  /// Org member authorized to reply to QPlatform on this ticket (defaults to creator; reassignable by owner/admin).
   contactUserId          String           @map("contact_user_id") @db.Uuid
   assignedToUserId       String?          @map("assigned_to_user_id") @db.Uuid
   subject                String           @db.VarChar(200)
@@ -53,7 +53,7 @@ model SupportMessage {
   authorUserId     String         @map("author_user_id") @db.Uuid
   body             String
   isInternal       Boolean        @default(false) @map("is_internal")
-  /// Visible to org members only; never sent to QlessQ platform support.
+  /// Visible to org members only; never sent to QPlatform platform support.
   isOrgInternal    Boolean        @default(false) @map("is_org_internal")
   createdAt        DateTime       @default(now()) @map("created_at")
   author           User           @relation(fields: [authorUserId], references: [id], onDelete: Cascade)

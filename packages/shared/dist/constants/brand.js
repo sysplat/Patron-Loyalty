@@ -2,7 +2,7 @@
 /** Product display name and default contact addresses (override via env where noted). */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DEFAULT_LEGAL_EMAIL = exports.DEFAULT_SUPPORT_EMAIL = exports.DEFAULT_NOREPLY_EMAIL = exports.LOYALTY_PRODUCT_NAME = exports.PRODUCT_NAME = void 0;
-exports.PRODUCT_NAME = 'QlessQ';
+exports.PRODUCT_NAME = 'QPlatform';
 /** Public-facing name for the Patron Loyalty / LMS product. */
 exports.LOYALTY_PRODUCT_NAME = 'Patron Loyalty';
 /** Default transactional from-address when EMAIL_FROM is unset. */

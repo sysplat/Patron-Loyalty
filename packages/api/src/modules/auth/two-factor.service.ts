@@ -37,7 +37,7 @@ export class TwoFactorService {
     if (channel === 'admin_dashboard') {
       const resolved = await this.bypass((tx) => loadAdminTwoFactorMemberships(tx, userId));
       if (!resolved) throw new BadRequestException('User not found');
-      const iss = issuer ?? 'QlessQ Admin';
+      const iss = issuer ?? 'QPlatform Admin';
       return {
         enabled: resolved.enabled,
         enrollmentPending: resolved.enrollmentPending,
@@ -92,7 +92,7 @@ export class TwoFactorService {
           adminTwoFactorBackupHashes: Prisma.DbNull,
         }),
       );
-      const iss = issuer ?? 'QlessQ Admin';
+      const iss = issuer ?? 'QPlatform Admin';
       return { secret, otpauthUrl: buildOtpauthUrl(resolved.email, secret, iss) };
     }
 

@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { cn } from './cn';
 import { BRAND, BRAND_WHITE_FILTER, type BrandTone } from './brand-assets';
 
-type QlessqLogoMarkProps = {
+type QPlatformLogoMarkProps = {
   size?: number;
   className?: string;
   priority?: boolean;
@@ -10,12 +10,12 @@ type QlessqLogoMarkProps = {
   tone?: BrandTone;
 };
 
-export function QlessqLogoMark({
+export function QPlatformLogoMark({
   size = 32,
   className,
   priority,
   tone = 'default',
-}: QlessqLogoMarkProps) {
+}: QPlatformLogoMarkProps) {
   const onDark = tone === 'onDark';
   return (
     <Image

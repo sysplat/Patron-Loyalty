@@ -8,7 +8,7 @@ import {
   type BrandTone,
 } from './brand-assets';
 
-type QlessqWordmarkProps = {
+type QPlatformWordmarkProps = {
   height?: number;
   className?: string;
   priority?: boolean;
@@ -16,12 +16,12 @@ type QlessqWordmarkProps = {
   tone?: BrandTone;
 };
 
-export function QlessqWordmark({
+export function QPlatformWordmark({
   height = 24,
   className,
   priority,
   tone = 'default',
-}: QlessqWordmarkProps) {
+}: QPlatformWordmarkProps) {
   const onDark = tone === 'onDark';
   const width = Math.round(height * (onDark ? WORDMARK_WHITE_ASPECT : WORDMARK_ASPECT));
 

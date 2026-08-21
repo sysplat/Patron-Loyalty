@@ -13,7 +13,7 @@ Operational checklist after legal document updates. **Not published to tenants.*
 | `/dpa`            | `apps/loyalty/src/content/legal/loyalty-dpa-overview.ts`   | `CURRENT_LOYALTY_PRIVACY_VERSION`        |
 | `/subprocessors`  | `apps/loyalty/src/content/legal/loyalty-subprocessors.ts`  | `CURRENT_LOYALTY_PRIVACY_VERSION`        |
 
-**Prohibited businesses:** `packages/shared/src/constants/prohibited-businesses.ts` — must stay aligned with QlessQ queue Terms.
+**Prohibited businesses:** `packages/shared/src/constants/prohibited-businesses.ts` — must stay aligned with QPlatform queue Terms.
 
 **Counsel brief:** `docs/compliance/COUNSEL_REVIEW_BRIEF_LOYALTY.md`
 

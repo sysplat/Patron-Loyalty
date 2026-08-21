@@ -121,7 +121,7 @@ async function waitForHealth(maxAttempts = 15) {
 async function main() {
   const stamp = Date.now();
   console.log(`\n${'═'.repeat(60)}`);
-  console.log(`  QlessQ Full Matrix Smoke`);
+  console.log(`  QPlatform Full Matrix Smoke`);
   console.log(`  Target  : ${API_BASE}`);
   console.log(`  SMS to  : ${SMS_NUMBER || '(skip)'}`);
   console.log(`  Email to: ${EMAIL_TO || '(skip)'}`);

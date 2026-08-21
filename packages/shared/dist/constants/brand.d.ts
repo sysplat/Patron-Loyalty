@@ -1,5 +1,5 @@
 /** Product display name and default contact addresses (override via env where noted). */
-export declare const PRODUCT_NAME = "QlessQ";
+export declare const PRODUCT_NAME = "QPlatform";
 /** Public-facing name for the Patron Loyalty / LMS product. */
 export declare const LOYALTY_PRODUCT_NAME = "Patron Loyalty";
 /** Default transactional from-address when EMAIL_FROM is unset. */

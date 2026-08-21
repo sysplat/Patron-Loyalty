@@ -29,8 +29,8 @@ import {
   PanelLeftOpen,
 } from 'lucide-react';
 import {
-  QlessqLogoMark,
-  QlessqWordmark,
+  QPlatformLogoMark,
+  QPlatformWordmark,
   useDashboardTheme,
   type DashboardTheme,
 } from '@queueplatform/frontend-core';
@@ -223,13 +223,13 @@ function LoyaltySidebar({
               unoptimized
             />
           ) : (
-            <QlessqLogoMark size={44} />
+            <QPlatformLogoMark size={44} />
           )}
         </div>
         {!collapsed && (
           <div className="min-w-0">
             <Link href="/" className="block min-w-0" onClick={onCloseMobile}>
-              <QlessqWordmark height={24} />
+              <QPlatformWordmark height={24} />
             </Link>
             <p className="text-muted-foreground truncate text-[10px] font-semibold uppercase tracking-wider">
               Loyalty
@@ -324,7 +324,7 @@ function LoyaltySidebar({
 export function LoyaltyBootShell({ message = 'Loading…' }: { message?: string }) {
   return (
     <div className="bg-muted/40 flex min-h-screen flex-col items-center justify-center gap-4 px-6 dark:bg-gradient-to-br dark:from-slate-950 dark:via-[#0c1528] dark:to-[#070b14]">
-      <QlessqLogoMark size={48} priority />
+      <QPlatformLogoMark size={48} priority />
       <div className="text-muted-foreground flex items-center gap-3 text-sm">
         <div
           className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"
