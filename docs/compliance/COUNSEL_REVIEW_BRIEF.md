@@ -43,7 +43,7 @@
 - `docs/compliance/GLOBAL_COMPLIANCE_PROGRAM.md` — SMS/consent roadmap
 - `docs/compliance/INCIDENT_RESPONSE_RUNBOOK.md`
 
-**Legal contact on site:** `legal@queueplatform.com` (`packages/shared/src/constants/brand.ts`)
+**Legal contact on site:** `sysplatco@gmail.com` (`packages/shared/src/constants/brand.ts`)
 
 **Registration audit:** Signup records `LegalAcceptance` with `CURRENT_TERMS_VERSION` / `CURRENT_PRIVACY_VERSION` (`packages/api/src/modules/auth/auth-registration.service.ts`).
 

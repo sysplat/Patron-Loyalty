@@ -7,5 +7,5 @@ export declare const DEFAULT_NOREPLY_EMAIL = "no-reply@loyalty.sysplat.com";
 /** Default inbox for tenant support requests when SUPPORT_CONTACT_EMAIL is unset. */
 export declare const DEFAULT_SUPPORT_EMAIL = "sysplatco@gmail.com";
 /** Public legal / privacy contact (shown on legal pages). */
-export declare const DEFAULT_LEGAL_EMAIL = "legal@sysplat.com";
+export declare const DEFAULT_LEGAL_EMAIL = "sysplatco@gmail.com";
 //# sourceMappingURL=brand.d.ts.map

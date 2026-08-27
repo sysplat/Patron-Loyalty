@@ -12,4 +12,4 @@ export const DEFAULT_NOREPLY_EMAIL = 'no-reply@loyalty.sysplat.com';
 export const DEFAULT_SUPPORT_EMAIL = 'sysplatco@gmail.com';
 
 /** Public legal / privacy contact (shown on legal pages). */
-export const DEFAULT_LEGAL_EMAIL = 'legal@sysplat.com';
+export const DEFAULT_LEGAL_EMAIL = 'sysplatco@gmail.com';

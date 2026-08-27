@@ -10,5 +10,5 @@ exports.DEFAULT_NOREPLY_EMAIL = 'no-reply@loyalty.sysplat.com';
 /** Default inbox for tenant support requests when SUPPORT_CONTACT_EMAIL is unset. */
 exports.DEFAULT_SUPPORT_EMAIL = 'sysplatco@gmail.com';
 /** Public legal / privacy contact (shown on legal pages). */
-exports.DEFAULT_LEGAL_EMAIL = 'legal@sysplat.com';
+exports.DEFAULT_LEGAL_EMAIL = 'sysplatco@gmail.com';
 //# sourceMappingURL=brand.js.map

@@ -2,7 +2,7 @@
 
 **One-page handout for counsel.** Not legal advice. Companion to `COUNSEL_REVIEW_BRIEF.md` and `/loyalty-integration`.
 
-**Prepared:** 2026-08-27 · **Contact:** legal@sysplat.com
+**Prepared:** 2026-08-27 · **Contact:** sysplatco@gmail.com
 
 ---
 
