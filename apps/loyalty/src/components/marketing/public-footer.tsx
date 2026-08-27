@@ -28,6 +28,9 @@ export function PublicFooter() {
           <Link href="/dpa" className="hover:text-foreground">
             DPA
           </Link>
+          <Link href="/subprocessors" className="hover:text-foreground">
+            Subprocessors
+          </Link>
         </nav>
       </div>
     </footer>
