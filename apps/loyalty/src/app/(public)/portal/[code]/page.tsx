@@ -264,12 +264,7 @@ export default function PatronPortalPage() {
         </header>
 
         <section className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-          <p className="text-white/90">
-            This loyalty portal may collect optional profile information (such as birthday) and
-            process your points activity separately from queue check-in. Review how your data is
-            used before redeeming rewards or saving your profile.
-          </p>
-          <label className="mt-3 flex cursor-pointer items-start gap-2">
+          <label className="flex cursor-pointer items-start gap-2">
             <input
               type="checkbox"
               checked={acceptLegal}

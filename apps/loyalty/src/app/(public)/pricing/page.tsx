@@ -110,10 +110,24 @@ export default function PricingPage() {
 
           <div className="bg-muted/50 mt-12 rounded-2xl border p-6 text-center">
             <ShieldCheck className="text-primary mx-auto h-8 w-8" />
-            <h2 className="mt-3 text-lg font-bold">Own your patron data scope</h2>
+            <h2 className="mt-3 text-lg font-bold">Legal</h2>
             <p className="text-muted-foreground mx-auto mt-2 max-w-xl text-sm">
-              Loyalty signup accepts Patron Loyalty Terms and Privacy — separate from QPlatform
-              queue check-in notices. Counsel review recommended before production launch.
+              By signing up you agree to the{' '}
+              <Link href="/terms" className="text-primary font-medium hover:underline">
+                Patron Loyalty Terms
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="text-primary font-medium hover:underline">
+                Privacy Policy
+              </Link>
+              . Queue connection terms:{' '}
+              <Link
+                href="/qplatform-integration"
+                className="text-primary font-medium hover:underline"
+              >
+                QPlatform Integration Addendum
+              </Link>
+              .
             </p>
           </div>
         </div>
