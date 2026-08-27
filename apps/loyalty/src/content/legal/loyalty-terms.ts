@@ -3,12 +3,12 @@ import { PROHIBITED_BUSINESS_CATEGORIES_CLAUSE } from '@queueplatform/shared';
 
 export const loyaltyTermsContent: LegalDocumentContent = {
   intro:
-    'These Patron Loyalty Terms of Service ("Terms") govern your access to and use of the Patron Loyalty customer relationship and loyalty management service (the "Loyalty Service") provided by QPlatform. By creating a Patron Loyalty account, you agree to these Terms on behalf of yourself and the organization you represent.',
+    'These Patron Loyalty Terms of Service ("Terms") govern your access to and use of the Sysplat Patron Loyalty customer relationship and loyalty management service (the "Loyalty Service") provided by Sysplat. By creating a Patron Loyalty account, you agree to these Terms on behalf of yourself and the organization you represent.',
   sections: [
     {
       id: 'service',
       title: '1. Description of the Loyalty Service',
-      body: 'Patron Loyalty is a separately licensed product from QPlatform queue management. It provides tools to manage patron profiles, loyalty points, tiers, rewards, coupons, referrals, marketing campaigns, and related analytics. The Loyalty Service may optionally connect to QPlatform queue data when both products are licensed for your organization; loyalty-only accounts may ingest patron activity through imports, staff entry, or the Integration API.',
+      body: 'Patron Loyalty is a separately licensed product from Sysplat QPlatform queue management. It provides tools to manage patron profiles, loyalty points, tiers, rewards, coupons, referrals, marketing campaigns, and related analytics. The Loyalty Service may optionally connect to QPlatform queue data when both products are licensed for your organization; loyalty-only accounts may ingest patron activity through imports, staff entry, or the Integration API. Optional connection terms are summarized in the QPlatform Integration Addendum at /qplatform-integration.',
     },
     {
       id: 'accounts',
@@ -18,12 +18,12 @@ export const loyaltyTermsContent: LegalDocumentContent = {
     {
       id: 'patron-data',
       title: '3. Patron and Customer Data',
-      body: 'You retain ownership of patron data you submit ("Patron Data"), including contact details, loyalty balances, campaign audiences, and profile fields such as birthday or location when collected through the Loyalty Service. You grant us a limited license to host, process, and transmit Patron Data to provide the Loyalty Service. You are the data controller for your patrons; QPlatform acts as your service provider (processor) for Patron Data unless otherwise agreed in writing. You must provide appropriate privacy notices to patrons—including links to our Loyalty Program Privacy Notice and Terms—and obtain any required consent before sending marketing messages or collecting optional profile fields.',
+      body: 'You retain ownership of patron data you submit ("Patron Data"), including contact details, loyalty balances, campaign audiences, and profile fields such as birthday or location when collected through the Loyalty Service, and queue outcomes received when you link QPlatform. You grant us a limited license to host, process, and transmit Patron Data to provide the Loyalty Service. You are the data controller for your patrons; Sysplat acts as your service provider (processor) for Patron Data unless otherwise agreed in writing. You must provide appropriate privacy notices to patrons—including links to our Loyalty Program Privacy Notice and Terms—and obtain any required consent before sending marketing messages or collecting optional profile fields. When QPlatform is linked, apply access, correction, and deletion requests across both products as described at /qplatform-integration.',
     },
     {
       id: 'marketing-compliance',
       title: '4. Marketing and Messaging Compliance',
-      body: 'Campaigns, SMS, email, and other outreach sent through Patron Loyalty must comply with applicable law, including CASL and similar anti-spam rules where your patrons are located. You are responsible for documenting consent, honouring opt-outs, and ensuring message content is accurate. Transactional loyalty messages (for example reward confirmations) should be distinguished from promotional messages in your patron notices.',
+      body: 'Campaigns, SMS, email, and other outreach sent through Patron Loyalty must comply with applicable law, including CASL and similar anti-spam rules where your patrons are located. You are responsible for documenting consent, honouring opt-outs, and ensuring message content is accurate. Transactional loyalty messages (for example reward confirmations) should be distinguished from promotional messages in your patron notices. Queue SMS or marketing consent collected in QPlatform is not automatically treated as loyalty-campaign consent unless you configure and disclose that clearly.',
     },
     {
       id: 'acceptable-use',
@@ -43,7 +43,7 @@ export const loyaltyTermsContent: LegalDocumentContent = {
     {
       id: 'termination',
       title: '8. Termination',
-      body: 'You may stop using the Loyalty Service at any time. We may suspend or terminate access for breach of these Terms or non-payment. Provisions that should survive termination (including data responsibilities and limitations of liability) will survive.',
+      body: 'You may stop using the Loyalty Service at any time. We may suspend or terminate access for breach of these Terms or non-payment. Disconnecting the QPlatform connector stops new queue-event transfers but does not by itself erase Patron Data already stored in the Loyalty Service. Provisions that should survive termination (including data responsibilities and limitations of liability) will survive.',
     },
   ],
 };

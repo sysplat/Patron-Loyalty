@@ -2,7 +2,7 @@ import type { LegalDocumentContent } from './types';
 
 export const loyaltySubprocessorsContent: LegalDocumentContent = {
   intro:
-    'This register lists key subprocessors QPlatform uses to operate Patron Loyalty in production environments and to develop and support the platform. QPlatform does not sell personal information. It is updated when vendors are added, removed, or materially repurposed; material changes are communicated to organization account owners as described in our Privacy Policy and DPA overview.',
+    'This register lists key third-party subprocessors Sysplat uses to operate Patron Loyalty in production environments and to develop and support the platform. Sysplat does not sell personal information. It is updated when vendors are added, removed, or materially repurposed; material changes are communicated to organization account owners as described in our Privacy Policy and DPA overview. Optional QPlatform queue linkage is affiliated product processing—not a third-party subprocessor relationship—and is described at /qplatform-integration.',
   sections: [
     {
       id: 'messaging',
@@ -20,24 +20,29 @@ export const loyaltySubprocessorsContent: LegalDocumentContent = {
       body: 'Railway — application hosting and runtime infrastructure. Data categories: application logs, operational metadata, persisted service data.\n\nPostgreSQL (managed database) — primary data store for organizations, patrons, loyalty accounts, campaigns, and related records. Data categories: Patron Data and account data stored by the Loyalty Service.\n\nRedis — caching, job queues, session and rate-limiting metadata. Data categories: operational metadata; limited transient application data.\n\nCentrifugo — real-time event delivery to connected clients. Data categories: operational event metadata required for live dashboard updates.',
     },
     {
+      id: 'qplatform-link',
+      title: '4. Affiliated Product Processing (Sysplat QPlatform)',
+      body: 'Sysplat QPlatform is an affiliated queue product of the same platform provider—not an independent third-party subprocessor. When a tenant links the connector, QPlatform may transfer patron contact details and visit or appointment outcomes (including historical backfill on first connect) under the tenant’s instructions. Full terms: /qplatform-integration. Marketing consent history is not transferred by default.',
+    },
+    {
       id: 'observability',
-      title: '4. Observability (when enabled)',
+      title: '5. Observability (when enabled)',
       body: 'Error and performance monitoring providers (for example Sentry, when configured) — application error reporting and performance diagnostics. Data categories: technical logs, stack traces, and operational metadata; configured to minimize personal information where practicable.',
     },
     {
       id: 'analytics-crm',
-      title: '5. Internal Analytics and CRM (when used)',
-      body: "CRM and business analytics platforms — internal relationship management and analysis of service usage, support interactions, and aggregated operational trends. Data categories: tenant account and contact information, support history, and aggregated or operational metrics. Used only for QPlatform's own business operations and service improvement; not for sale of personal information or third-party advertising lists.",
+      title: '6. Internal Analytics and CRM (when used)',
+      body: "CRM and business analytics platforms — internal relationship management and analysis of service usage, support interactions, and aggregated operational trends. Data categories: tenant account and contact information, support history, and aggregated or operational metrics. Used only for Sysplat's own business operations and service improvement; not for sale of personal information or third-party advertising lists.",
     },
     {
       id: 'ai-tooling',
-      title: '6. AI-Assisted Development and Support',
-      body: 'AI development and support platforms (including Cursor and comparable IDE copilots) and the large language model providers they use — software development, debugging, database schema and migration work, and customer support assistance for the Loyalty Service. Data categories: limited source code and configuration; database schema and migration content; operational and support-related content submitted by QPlatform personnel when investigating or resolving issues. End-user passwords and password hashes are not shared with these tools. Processing is subject to vendor confidentiality terms and, where available, privacy or zero-retention settings that limit storage and model training on submitted content.',
+      title: '7. AI-Assisted Development and Support',
+      body: 'AI development and support platforms (including Cursor and comparable IDE copilots) and the large language model providers they use — software development, debugging, database schema and migration work, and customer support assistance for the Loyalty Service. Data categories: limited source code and configuration; database schema and migration content; operational and support-related content submitted by Sysplat personnel when investigating or resolving issues. End-user passwords and password hashes are not shared with these tools. Processing is subject to vendor confidentiality terms and, where available, privacy or zero-retention settings that limit storage and model training on submitted content.',
     },
     {
       id: 'versioning',
-      title: '7. Versioning and Ownership',
-      body: 'Last reviewed: June 17, 2026.\nOwner: Platform engineering and legal.\nMaterial changes to this register are reflected in the published version date above and communicated to organization account owners when required.',
+      title: '8. Versioning and Ownership',
+      body: 'Last reviewed: August 27, 2026.\nOwner: Platform engineering and legal.\nMaterial changes to this register are reflected in the published version date above and communicated to organization account owners when required.',
     },
   ],
 };

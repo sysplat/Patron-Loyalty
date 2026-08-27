@@ -2,17 +2,17 @@ import type { LegalDocumentContent } from './types';
 
 export const loyaltyPrivacyContent: LegalDocumentContent = {
   intro:
-    'This Patron Loyalty Privacy Policy describes how QPlatform ("we," "us") collects, uses, and discloses information when you register for and use the Patron Loyalty service (the "Loyalty Service"). It applies to organization administrators and staff. Patron-facing collection is controlled by your organization; see the Loyalty Program Privacy Notice for end patrons.',
+    'This Patron Loyalty Privacy Policy describes how Sysplat ("we," "us") collects, uses, and discloses information when you register for and use the Sysplat Patron Loyalty service (the "Loyalty Service"). It applies to organization administrators and staff. Patron-facing collection is controlled by your organization; see the Loyalty Program Privacy Notice for end patrons.',
   sections: [
     {
       id: 'scope',
       title: '1. Scope',
-      body: 'This policy covers the Patron Loyalty product only. If you also use QPlatform queue management, our general Privacy Policy at queueplatform.com may apply to that product separately. Patron Loyalty may process richer patron profile data than queue check-in (for example birthday, gender, city, marketing preferences, loyalty history).',
+      body: 'This policy covers the Patron Loyalty product only. If you also use Sysplat QPlatform queue management, QPlatform’s Privacy Policy applies to that product separately. Patron Loyalty may process richer patron profile data than queue check-in (for example birthday, gender, city, marketing preferences, loyalty history).',
     },
     {
       id: 'information-we-collect',
       title: '2. Information We Collect',
-      body: 'Account information: administrator name, email, organization name, credentials, and billing contact details. Loyalty configuration: tiers, earn rules, rewards, coupons, campaigns, segments, and integration settings. Patron Data you submit or sync: names, contact details, loyalty points and redemptions, wallet balances, referral codes, staff tasks, campaign engagement, and optional profile fields patrons provide through your loyalty portal or staff forms. Technical data: IP address, browser type, usage logs, and security events. Payment data is processed by our payment provider; we do not store full card numbers.',
+      body: 'Account information: administrator name, email, organization name, credentials, and billing contact details. Loyalty configuration: tiers, earn rules, rewards, coupons, campaigns, segments, and integration settings. Patron Data you submit or sync: names, contact details, loyalty points and redemptions, wallet balances, referral codes, staff tasks, campaign engagement, optional profile fields patrons provide through your loyalty portal or staff forms, and queue or appointment outcomes when QPlatform is linked. Technical data: IP address, browser type, usage logs, and security events. Payment data is processed by our payment provider; we do not store full card numbers.',
     },
     {
       id: 'how-we-use',
@@ -22,17 +22,17 @@ export const loyaltyPrivacyContent: LegalDocumentContent = {
     {
       id: 'qplatform-connection',
       title: '4. Optional QPlatform Connection',
-      body: 'When your organization licenses both QPlatform and Patron Loyalty, we may process queue and appointment outcomes (for example completed visits or no-shows) to update loyalty balances and segments. That processing uses shared patron identity where you have linked records. Loyalty-only organizations are not required to use QPlatform; patron activity may be imported or entered manually.',
+      body: 'When your organization licenses both Sysplat QPlatform and Patron Loyalty and links the connector, we may process queue and appointment outcomes (for example completed visits, no-shows, and reviews)—including a one-time historical backfill on first connect—to update loyalty balances and segments. That processing uses shared patron identity where you have linked records and is described in the QPlatform Integration Addendum at /qplatform-integration. QPlatform and Patron Loyalty are affiliated products of the same platform provider acting as your service provider; linking is not a sale of Patron Data to an independent third party. Marketing consent history is not transferred from QPlatform by default. Loyalty-only organizations are not required to use QPlatform; patron activity may be imported or entered manually. Disconnecting the connector stops new transfers; existing loyalty records remain until you delete them under your retention practices.',
     },
     {
       id: 'sharing',
       title: '5. How We Share Information',
-      body: 'We share information with service providers that help us operate the Loyalty Service, with professional advisers when required by law, and with successors in a merger or acquisition. We process Patron Data on your instructions as your service provider. A subprocessor register is available on request or through your QPlatform agreements.',
+      body: 'We share information with service providers that help us operate the Loyalty Service, with professional advisers when required by law, and with successors in a merger or acquisition. We process Patron Data on your instructions as your service provider. A subprocessor register is published at /subprocessors.',
     },
     {
       id: 'retention',
       title: '6. Retention and Security',
-      body: 'We retain account and Patron Data while your subscription is active and for a reasonable period afterward for backup, audit, and legal compliance. You are responsible for retention settings and patron deletion requests that apply to your patrons. We implement administrative, technical, and organizational safeguards designed to protect information.',
+      body: 'We retain account and Patron Data while your subscription is active and for a reasonable period afterward for backup, audit, and legal compliance. You are responsible for retention settings and patron deletion requests that apply to your patrons, including coordinating requests across QPlatform and Patron Loyalty when both hold related records. We implement administrative, technical, and organizational safeguards designed to protect information. Confirmed personal-data incidents are notified as required by law and contract.',
     },
     {
       id: 'rights',

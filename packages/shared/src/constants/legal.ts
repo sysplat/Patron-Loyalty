@@ -19,16 +19,16 @@ export const CURRENT_PATRON_PRIVACY_VERSION = '2026-06-05';
 export const CURRENT_PATRON_TERMS_VERSION = '2026-06-05';
 
 /** ISO date — Patron Loyalty tenant Terms of Service. */
-export const CURRENT_LOYALTY_TERMS_VERSION = '2026-06-17';
+export const CURRENT_LOYALTY_TERMS_VERSION = '2026-08-27';
 
 /** ISO date — Patron Loyalty tenant Privacy Policy. */
-export const CURRENT_LOYALTY_PRIVACY_VERSION = '2026-06-17';
+export const CURRENT_LOYALTY_PRIVACY_VERSION = '2026-08-27';
 
 /** ISO date — Patron Loyalty end-user (patron portal) privacy notice. */
-export const CURRENT_LOYALTY_PATRON_PRIVACY_VERSION = '2026-06-17';
+export const CURRENT_LOYALTY_PATRON_PRIVACY_VERSION = '2026-08-27';
 
 /** ISO date — Patron Loyalty end-user (patron portal) terms. */
-export const CURRENT_LOYALTY_PATRON_TERMS_VERSION = '2026-06-17';
+export const CURRENT_LOYALTY_PATRON_TERMS_VERSION = '2026-08-27';
 
 /** Combined patron portal legal bundle — bump when patron Terms or Privacy change materially. */
 export const CURRENT_LOYALTY_PATRON_LEGAL_CONSENT_VERSION = `${CURRENT_LOYALTY_PATRON_TERMS_VERSION}/${CURRENT_LOYALTY_PATRON_PRIVACY_VERSION}`;
@@ -44,6 +44,7 @@ export const LEGAL_DOCUMENT_TYPES = {
   LOYALTY_PATRON_TERMS: 'loyalty_patron_terms',
   DPA_OVERVIEW: 'dpa_overview',
   SUBPROCESSORS: 'subprocessors',
+  QPLATFORM_INTEGRATION_ADDENDUM: 'qplatform_integration_addendum',
 } as const;
 
 export type LegalDocumentType = (typeof LEGAL_DOCUMENT_TYPES)[keyof typeof LEGAL_DOCUMENT_TYPES];
@@ -100,41 +101,48 @@ export const LOYALTY_LEGAL_DOCUMENTS = {
     title: 'Patron Loyalty Terms of Service',
     path: '/terms',
     version: CURRENT_LOYALTY_TERMS_VERSION,
-    lastUpdated: 'June 17, 2026',
+    lastUpdated: 'August 27, 2026',
   },
   loyaltyPrivacyPolicy: {
     type: LEGAL_DOCUMENT_TYPES.LOYALTY_PRIVACY_POLICY,
     title: 'Patron Loyalty Privacy Policy',
     path: '/privacy',
     version: CURRENT_LOYALTY_PRIVACY_VERSION,
-    lastUpdated: 'June 17, 2026',
+    lastUpdated: 'August 27, 2026',
   },
   loyaltyPatronPrivacy: {
     type: LEGAL_DOCUMENT_TYPES.LOYALTY_PATRON_PRIVACY,
     title: 'Loyalty Program Privacy Notice',
     path: '/patron-privacy',
     version: CURRENT_LOYALTY_PATRON_PRIVACY_VERSION,
-    lastUpdated: 'June 17, 2026',
+    lastUpdated: 'August 27, 2026',
   },
   loyaltyPatronTerms: {
     type: LEGAL_DOCUMENT_TYPES.LOYALTY_PATRON_TERMS,
     title: 'Loyalty Program Terms',
     path: '/patron-terms',
     version: CURRENT_LOYALTY_PATRON_TERMS_VERSION,
-    lastUpdated: 'June 17, 2026',
+    lastUpdated: 'August 27, 2026',
   },
   loyaltyDpaOverview: {
     type: LEGAL_DOCUMENT_TYPES.DPA_OVERVIEW,
     title: 'Data Processing Addendum Overview',
     path: '/dpa',
     version: CURRENT_LOYALTY_PRIVACY_VERSION,
-    lastUpdated: 'June 17, 2026',
+    lastUpdated: 'August 27, 2026',
   },
   loyaltySubprocessors: {
     type: LEGAL_DOCUMENT_TYPES.SUBPROCESSORS,
     title: 'Subprocessor Register',
     path: '/subprocessors',
     version: CURRENT_LOYALTY_PRIVACY_VERSION,
-    lastUpdated: 'June 17, 2026',
+    lastUpdated: 'August 27, 2026',
+  },
+  qplatformIntegrationAddendum: {
+    type: LEGAL_DOCUMENT_TYPES.QPLATFORM_INTEGRATION_ADDENDUM,
+    title: 'QPlatform Integration Addendum',
+    path: '/qplatform-integration',
+    version: CURRENT_LOYALTY_PRIVACY_VERSION,
+    lastUpdated: 'August 27, 2026',
   },
 } as const;

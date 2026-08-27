@@ -21,7 +21,7 @@ See [TESTING.md](../operations/TESTING.md) for full matrix.
 - [ ] Apply redlines in `apps/loyalty/src/content/legal/*.ts`
 - [ ] Bump `CURRENT_LOYALTY_*` versions in `packages/shared/src/constants/legal.ts`
 - [ ] Run `node scripts/compliance/check-legal-placeholders.mjs`
-- [ ] Spot-check production URLs: `/terms`, `/privacy`, `/patron-terms`, `/patron-privacy`, `/dpa`, `/subprocessors`
+- [ ] Spot-check production URLs: `/terms`, `/privacy`, `/patron-terms`, `/patron-privacy`, `/dpa`, `/subprocessors`, `/qplatform-integration`
 
 ## 2. Patron-Loyalty Railway (`Patron-Loyalty` project)
 
