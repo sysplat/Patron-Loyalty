@@ -18,6 +18,7 @@ const publicPaths = [
   '/subprocessors',
   '/patron-privacy',
   '/patron-terms',
+  '/qplatform-integration',
   '/forgot-password',
   '/verify-email',
   '/reset-password',

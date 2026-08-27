@@ -22,6 +22,12 @@ export function PublicFooter() {
           <Link href="/patron-terms" className="hover:text-foreground">
             Patron terms
           </Link>
+          <Link href="/qplatform-integration" className="hover:text-foreground">
+            QPlatform integration
+          </Link>
+          <Link href="/dpa" className="hover:text-foreground">
+            DPA
+          </Link>
         </nav>
       </div>
     </footer>
