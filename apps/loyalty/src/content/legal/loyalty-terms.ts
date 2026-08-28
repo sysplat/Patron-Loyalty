@@ -36,13 +36,18 @@ export const loyaltyTermsContent: LegalDocumentContent = {
       body: 'Paid loyalty plans, billing cycles, and trials are described at signup or on our pricing page. Fees are non-refundable except where required by law. Failure to pay may result in suspension.',
     },
     {
+      id: 'availability-support',
+      title: '7. Service Availability and Support',
+      body: 'The Loyalty Service may be unavailable from time to time due to maintenance, updates, bugs, infrastructure or third-party provider failures, or events outside our reasonable control. We use monitoring and work to investigate and restore material outages as promptly as practicable. We may perform scheduled maintenance with reasonable advance notice when practicable; emergency maintenance may occur without notice. Support is provided on a best-effort basis during business hours (Monday–Friday, excluding statutory holidays, Pacific Time). We aim to respond to support requests within two (2) business days; issues that materially impair production use of the Loyalty Service are prioritized. This section does not create a service level agreement; uptime and response times are targets only unless a separate written SLA applies.',
+    },
+    {
       id: 'disclaimers',
-      title: '7. Disclaimers and Liability',
+      title: '8. Disclaimers and Liability',
       body: 'THE LOYALTY SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND. POINTS BALANCES, TIER STATUS, CAMPAIGN DELIVERY, AND REWARD FULFILMENT DEPEND ON YOUR CONFIGURATION AND OPERATIONS; WE DO NOT GUARANTEE SPECIFIC MARKETING OUTCOMES. TO THE MAXIMUM EXTENT PERMITTED BY LAW, OUR TOTAL LIABILITY SHALL NOT EXCEED AMOUNTS YOU PAID FOR PATRON LOYALTY IN THE TWELVE (12) MONTHS BEFORE THE CLAIM.',
     },
     {
       id: 'termination',
-      title: '8. Termination',
+      title: '9. Termination',
       body: 'You may stop using the Loyalty Service at any time. We may suspend or terminate access for breach of these Terms or non-payment. Disconnecting the QPlatform connector stops new queue-event transfers but does not by itself erase Patron Data already stored in the Loyalty Service. Provisions that should survive termination (including data responsibilities and limitations of liability) will survive.',
     },
   ],

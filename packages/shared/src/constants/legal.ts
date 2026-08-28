@@ -19,7 +19,7 @@ export const CURRENT_PATRON_PRIVACY_VERSION = '2026-06-05';
 export const CURRENT_PATRON_TERMS_VERSION = '2026-06-05';
 
 /** ISO date — Patron Loyalty tenant Terms of Service. */
-export const CURRENT_LOYALTY_TERMS_VERSION = '2026-08-27';
+export const CURRENT_LOYALTY_TERMS_VERSION = '2026-08-27-2';
 
 /** ISO date — Patron Loyalty tenant Privacy Policy. */
 export const CURRENT_LOYALTY_PRIVACY_VERSION = '2026-08-27';
