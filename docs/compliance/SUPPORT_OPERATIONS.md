@@ -86,12 +86,30 @@ When performing tenant-requested changes:
 ## Escalation
 
 - Suspected data breach or cross-tenant leak: follow `INCIDENT_RESPONSE_RUNBOOK.md`.
-- Legal or DSAR requests: coordinate with legal contact; use DSAR/anonymization workflows rather than ad-hoc AI-assisted deletion unless approved.
+- Legal or DSAR requests: coordinate with legal contact; use DSAR/anonymization workflows rather than ad-hoc AI-assisted deletion unless approved. For orgs linked to QPlatform, follow cross-product privacy ops in the QPlatform repo (`CROSS_PRODUCT_PRIVACY_OPS.md`).
+
+## Support severity triage (internal only)
+
+Published Patron Loyalty Terms describe **best-effort** support during Pacific business hours and prioritize **production-impairing** issues. They do **not** publish numeric first-response or fix-time targets. That is intentional for the current solo-operator stage and is **not** an SLA.
+
+Use the table below for **internal triage only**. Do not paste these per-severity numbers into marketing or Terms unless counsel approves a version bump and you can meet them consistently.
+
+| Severity     | Examples                                                                                                                            | First-response target (internal)                                                                          | Resolution language (internal)                                                      |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **Critical** | Loyalty app/API down; points/rewards broken for live tenants; marketing send path broken; data leak / security incident             | Same day when alerted; start investigation ASAP during support hours (or immediately for security/breach) | Work to restore as promptly as practicable — **no** fixed “fixed in 1 hour” promise |
+| **High**     | Major feature broken for one tenant (patron CRM unusable, campaign composer broken, portal login down); widespread non-total outage | Aim for **1 business day** first response                                                                 | Best effort                                                                         |
+| **Normal**   | How-to questions, non-blocking bugs, config/customization requests, documentation                                                   | Aim for **2–3 business days** first reply                                                                 | Best effort                                                                         |
+
+**Support hours:** Monday–Friday, Pacific Time, excluding statutory holidays. Not 24/7 human coverage unless staffing changes.
+
+**Production-impairing (public “prioritized” bucket)** includes: cannot sign in to the Loyalty dashboard, patron portal unavailable for the org, points/rewards cannot be awarded or redeemed, campaign SMS/email cannot send for live programs.
+
+When in doubt, triage up (Critical/High) rather than down. Log ticket ID, severity chosen, and first action in the support thread.
 
 ## Review
 
 - **Owner:** Platform engineering + legal
 - **Cadence:** Review quarterly or when adding a new AI vendor, CRM, or changing production access patterns
-- **Last updated:** 2026-06-04
+- **Last updated:** 2026-08-30
 - **See also:** `COMPLIANCE_NEXT_STEPS.md` for vendor adoption, subprocessor notice, and counsel review checklist
 - **Related:** `AUDIT_EVIDENCE_PACK.md` for enterprise audit packaging

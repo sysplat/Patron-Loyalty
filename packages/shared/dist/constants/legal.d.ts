@@ -10,7 +10,7 @@ export declare const CURRENT_PATRON_PRIVACY_VERSION = "2026-06-05";
 /** ISO date identifying the published patron End-User Terms revision. */
 export declare const CURRENT_PATRON_TERMS_VERSION = "2026-06-05";
 /** ISO date — Patron Loyalty tenant Terms of Service. */
-export declare const CURRENT_LOYALTY_TERMS_VERSION = "2026-08-27-2";
+export declare const CURRENT_LOYALTY_TERMS_VERSION = "2026-08-30";
 /** ISO date — Patron Loyalty tenant Privacy Policy. */
 export declare const CURRENT_LOYALTY_PRIVACY_VERSION = "2026-08-27";
 /** ISO date — Patron Loyalty end-user (patron portal) privacy notice. */
@@ -83,8 +83,8 @@ export declare const LOYALTY_LEGAL_DOCUMENTS: {
         readonly type: "loyalty_terms_of_service";
         readonly title: "Patron Loyalty Terms of Service";
         readonly path: "/terms";
-        readonly version: "2026-08-27-2";
-        readonly lastUpdated: "August 27, 2026";
+        readonly version: "2026-08-30";
+        readonly lastUpdated: "August 30, 2026";
     };
     readonly loyaltyPrivacyPolicy: {
         readonly type: "loyalty_privacy_policy";
