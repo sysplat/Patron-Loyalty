@@ -7,7 +7,9 @@ import {
   type ApplyPointsTxResult,
   type LoyaltyApplyPointsResult,
   type LoyaltyPointsTx,
+  isDebitLedgerType,
   isEarnSourceIdempotentType,
+  isLifetimeEarnType,
 } from './loyalty-points.types';
 
 @Injectable()
@@ -30,6 +32,10 @@ export class LoyaltyPointsLedgerService {
       incrementVisit?: boolean;
     },
   ): Promise<ApplyPointsTxResult> {
+    if (points <= 0) {
+      throw new BadRequestException('Points amount must be positive');
+    }
+
     if (isEarnSourceIdempotentType(type) && opts.sourceType && opts.sourceId) {
       const existing = await this.findExistingEarnLedger(
         tx,
@@ -55,23 +61,35 @@ export class LoyaltyPointsLedgerService {
       }
     }
 
-    const isBurn = type === LOYALTY_POINT_LEDGER_TYPES.BURN;
+    const debit = isDebitLedgerType(type);
     let delta: number;
     let balanceAfter: number;
     let lifetimeEarned: number;
     let customerId: string;
     let updatedTierId: string | null;
 
-    if (isBurn) {
+    if (debit) {
+      // BURN and EXPIRE both remove balance atomically. Only BURN counts toward lifetime burned.
       const burned = await tx.loyaltyAccount.updateMany({
         where: { id: accountId, orgId, pointsBalance: { gte: points } },
         data: {
           pointsBalance: { decrement: points },
-          lifetimePointsBurned: { increment: points },
+          ...(type === LOYALTY_POINT_LEDGER_TYPES.BURN
+            ? { lifetimePointsBurned: { increment: points } }
+            : {}),
         },
       });
       if (burned.count === 0) {
-        throw new BadRequestException('Insufficient points balance');
+        const exists = await tx.loyaltyAccount.findFirst({
+          where: { id: accountId, orgId },
+          select: { id: true },
+        });
+        if (!exists) throw new NotFoundException('Loyalty account not found');
+        throw new BadRequestException(
+          type === LOYALTY_POINT_LEDGER_TYPES.EXPIRE
+            ? 'Insufficient points balance to expire'
+            : 'Insufficient points balance',
+        );
       }
       const accountAfter = await tx.loyaltyAccount.findFirstOrThrow({
         where: { id: accountId, orgId },
@@ -83,31 +101,27 @@ export class LoyaltyPointsLedgerService {
       customerId = accountAfter.customerId;
       updatedTierId = accountAfter.tierId;
     } else {
-      const account = await tx.loyaltyAccount.findFirst({
+      // EARN / BONUS / ADJUST: atomic increment avoids lost updates under concurrent earns.
+      const credited = await tx.loyaltyAccount.updateMany({
         where: { id: accountId, orgId },
-      });
-      if (!account) throw new NotFoundException('Loyalty account not found');
-
-      delta = points;
-      balanceAfter = account.pointsBalance + points;
-      lifetimeEarned =
-        type === LOYALTY_POINT_LEDGER_TYPES.EARN || type === LOYALTY_POINT_LEDGER_TYPES.BONUS
-          ? account.lifetimePointsEarned + points
-          : account.lifetimePointsEarned;
-      const lifetimeBurned = account.lifetimePointsBurned;
-
-      const updated = await tx.loyaltyAccount.update({
-        where: { id: accountId },
         data: {
-          pointsBalance: balanceAfter,
-          lifetimePointsEarned: lifetimeEarned,
-          lifetimePointsBurned: lifetimeBurned,
-          totalVisits: opts.incrementVisit ? { increment: 1 } : undefined,
+          pointsBalance: { increment: points },
+          ...(isLifetimeEarnType(type) ? { lifetimePointsEarned: { increment: points } } : {}),
+          ...(opts.incrementVisit ? { totalVisits: { increment: 1 } } : {}),
         },
+      });
+      if (credited.count === 0) {
+        throw new NotFoundException('Loyalty account not found');
+      }
+      const accountAfter = await tx.loyaltyAccount.findFirstOrThrow({
+        where: { id: accountId, orgId },
         include: { tier: true },
       });
-      customerId = account.customerId;
-      updatedTierId = updated.tierId;
+      delta = points;
+      balanceAfter = accountAfter.pointsBalance;
+      lifetimeEarned = accountAfter.lifetimePointsEarned;
+      customerId = accountAfter.customerId;
+      updatedTierId = accountAfter.tierId;
     }
 
     await tx.loyaltyPointLedger.create({
@@ -183,9 +197,16 @@ export class LoyaltyPointsLedgerService {
     type: string,
     opts: { sourceType?: string; sourceId?: string },
   ): boolean {
+    const KnownRequestError = Prisma.PrismaClientKnownRequestError;
+    const isPrismaConflict =
+      typeof KnownRequestError === 'function' && err instanceof KnownRequestError
+        ? err.code === 'P2002'
+        : typeof err === 'object' &&
+          err !== null &&
+          'code' in err &&
+          (err as { code?: string }).code === 'P2002';
     return (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === 'P2002' &&
+      isPrismaConflict &&
       isEarnSourceIdempotentType(type) &&
       Boolean(opts.sourceType && opts.sourceId)
     );

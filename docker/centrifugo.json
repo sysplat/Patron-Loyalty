@@ -11,7 +11,7 @@
       "https://qms-web-production.up.railway.app",
       "https://qms-admin-production.up.railway.app",
       "https://pl-loyalty-production.up.railway.app",
-      "https://lms.sysplat.com"
+      "https://loyalty.sysplat.com"
     ]
   },
   "http_api": {

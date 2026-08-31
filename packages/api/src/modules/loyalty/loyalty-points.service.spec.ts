@@ -26,9 +26,10 @@ describe('LoyaltyPointsService applyPoints idempotency', () => {
 
   const ledgerFindFirst = vi.fn();
   const ledgerCreate = vi.fn();
-  const accountFindFirst = vi.fn();
-  const accountUpdate = vi.fn();
+  const accountUpdateMany = vi.fn();
+  const accountFindFirstOrThrow = vi.fn();
   const accountFindUniqueOrThrow = vi.fn();
+  const accountUpdate = vi.fn();
 
   let service: LoyaltyPointsService;
 
@@ -36,17 +37,20 @@ describe('LoyaltyPointsService applyPoints idempotency', () => {
     vi.clearAllMocks();
     ledgerFindFirst.mockResolvedValue(null);
     ledgerCreate.mockResolvedValue({ id: 'ledger-1' });
-    accountFindFirst.mockResolvedValue({ ...baseAccount });
-    accountUpdate.mockResolvedValue({
+    accountUpdateMany.mockResolvedValue({ count: 1 });
+    accountFindFirstOrThrow.mockResolvedValue({
       ...baseAccount,
       pointsBalance: 20,
+      lifetimePointsEarned: 20,
       tierId: null,
       tier: null,
     });
     accountFindUniqueOrThrow.mockResolvedValue({
       ...baseAccount,
       pointsBalance: 20,
+      lifetimePointsEarned: 20,
     });
+    accountUpdate.mockResolvedValue({});
 
     prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
       fn({
@@ -55,9 +59,11 @@ describe('LoyaltyPointsService applyPoints idempotency', () => {
           create: ledgerCreate,
         },
         loyaltyAccount: {
-          findFirst: accountFindFirst,
-          update: accountUpdate,
+          updateMany: accountUpdateMany,
+          findFirst: accountFindFirstOrThrow,
+          findFirstOrThrow: accountFindFirstOrThrow,
           findUniqueOrThrow: accountFindUniqueOrThrow,
+          update: accountUpdate,
         },
         loyaltyTier: { findFirst: vi.fn().mockResolvedValue(null) },
         ticket: { findFirst: vi.fn().mockResolvedValue(null) },
@@ -84,7 +90,14 @@ describe('LoyaltyPointsService applyPoints idempotency', () => {
 
     expect(result.idempotent).toBe(false);
     expect(ledgerCreate).toHaveBeenCalledOnce();
-    expect(accountUpdate).toHaveBeenCalled();
+    expect(accountUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          pointsBalance: { increment: 10 },
+          lifetimePointsEarned: { increment: 10 },
+        }),
+      }),
+    );
     expect(loyaltyWebhook.dispatch).toHaveBeenCalled();
   });
 
@@ -101,7 +114,7 @@ describe('LoyaltyPointsService applyPoints idempotency', () => {
 
     expect(result.idempotent).toBe(true);
     expect(ledgerCreate).not.toHaveBeenCalled();
-    expect(accountUpdate).not.toHaveBeenCalled();
+    expect(accountUpdateMany).not.toHaveBeenCalled();
     expect(loyaltyWebhook.dispatch).not.toHaveBeenCalled();
   });
 

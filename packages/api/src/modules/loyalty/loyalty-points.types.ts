@@ -21,6 +21,15 @@ export function isEarnSourceIdempotentType(type: string): boolean {
   return type === LOYALTY_POINT_LEDGER_TYPES.EARN || type === LOYALTY_POINT_LEDGER_TYPES.BONUS;
 }
 
+/** Debits that must atomically decrement balance (never credit). */
+export function isDebitLedgerType(type: string): boolean {
+  return type === LOYALTY_POINT_LEDGER_TYPES.BURN || type === LOYALTY_POINT_LEDGER_TYPES.EXPIRE;
+}
+
+export function isLifetimeEarnType(type: string): boolean {
+  return type === LOYALTY_POINT_LEDGER_TYPES.EARN || type === LOYALTY_POINT_LEDGER_TYPES.BONUS;
+}
+
 export type LoyaltyPointsTx = Parameters<Parameters<PrismaService['withTenant']>[1]>[0];
 
 export type ApplyPointsTxResult = {
