@@ -112,6 +112,10 @@ export const loyaltyPortalGamePlaySchema = z.object({
   gameType: z.enum(['spin_wheel', 'scratch_card']),
 });
 
+export const loyaltyPortalOtpVerifySchema = z.object({
+  otp: z.string().regex(/^\d{6}$/, 'OTP must be a 6-digit code'),
+});
+
 export const loyaltyPublicReferralJoinSchema = z
   .object({
     name: z.string().min(1).max(200),

@@ -10,6 +10,7 @@ import {
   loyaltyPortalRedeemSchema,
   loyaltyPortalLegalConsentSchema,
   loyaltyPortalGamePlaySchema,
+  loyaltyPortalOtpVerifySchema,
 } from '@queueplatform/shared';
 
 export class LoyaltyIntegrationUpsertCustomerDto extends createZodDto(
@@ -30,3 +31,4 @@ export class LoyaltyPortalRedeemDto extends createZodDto(loyaltyPortalRedeemSche
 export class LoyaltyPortalProfileDto extends createZodDto(loyaltyPortalProfileSchema) {}
 export class LoyaltyPortalLegalConsentDto extends createZodDto(loyaltyPortalLegalConsentSchema) {}
 export class LoyaltyPortalGamePlayDto extends createZodDto(loyaltyPortalGamePlaySchema) {}
+export class LoyaltyPortalOtpVerifyDto extends createZodDto(loyaltyPortalOtpVerifySchema) {}

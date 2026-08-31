@@ -155,6 +155,26 @@ export const LOYALTY_PATRON_GAME_TYPES = {
 export type LoyaltyPatronGameType =
   (typeof LOYALTY_PATRON_GAME_TYPES)[keyof typeof LOYALTY_PATRON_GAME_TYPES];
 
+export const LOYALTY_REDEMPTION_STATUSES = {
+  PENDING: 'pending',
+  FULFILLED: 'fulfilled',
+  CANCELLED: 'cancelled',
+} as const;
+
+export type LoyaltyRedemptionStatus =
+  (typeof LOYALTY_REDEMPTION_STATUSES)[keyof typeof LOYALTY_REDEMPTION_STATUSES];
+
+export const LOYALTY_CAMPAIGN_SEND_STATUSES = {
+  QUEUED: 'queued',
+  SENDING: 'sending',
+  SENT: 'sent',
+  FAILED: 'failed',
+  SKIPPED: 'skipped',
+} as const;
+
+export type LoyaltyCampaignSendStatus =
+  (typeof LOYALTY_CAMPAIGN_SEND_STATUSES)[keyof typeof LOYALTY_CAMPAIGN_SEND_STATUSES];
+
 /** Earn-rule condition keys stored in LoyaltyEarnRule.conditions JSON (SRS §6 rule builder). */
 export interface LoyaltyEarnRuleConditions {
   minPurchaseCents?: number;

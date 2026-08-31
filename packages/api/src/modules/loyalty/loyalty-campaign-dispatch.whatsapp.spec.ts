@@ -45,6 +45,7 @@ describe('LoyaltyCampaignDispatchService WhatsApp', () => {
     prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => Promise<void>) =>
       fn({
         loyaltyCampaignSend: {
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
           update: vi.fn().mockResolvedValue({}),
         },
       }),
@@ -70,7 +71,7 @@ describe('LoyaltyCampaignDispatchService WhatsApp', () => {
       },
     );
 
-    expect(result).toBe('sent');
+    expect(result).toBe('queued');
     expect(notifications.send).toHaveBeenCalledWith(
       'org-1',
       expect.objectContaining({

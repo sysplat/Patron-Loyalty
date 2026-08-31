@@ -61,6 +61,26 @@ export class LoyaltyCatalogController {
     return this.catalog.redeemReward(user.orgId, body.customerId, body.rewardId);
   }
 
+  @Get('redemptions')
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  listRedemptions(@CurrentUser() user: AuthenticatedUser, @Query('status') status?: string) {
+    return this.catalog.listRedemptions(user.orgId, status);
+  }
+
+  @Post('redemptions/:id/fulfill')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'customer', action: 'update' })
+  fulfillRedemption(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    return this.catalog.fulfillRedemption(user.orgId, id);
+  }
+
+  @Post('redemptions/:id/cancel')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions({ resource: 'customer', action: 'update' })
+  cancelRedemption(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    return this.catalog.cancelRedemption(user.orgId, id);
+  }
+
   @Get('coupons')
   @RequirePermissions({ resource: 'customer', action: 'read' })
   listCoupons(@CurrentUser() user: AuthenticatedUser) {

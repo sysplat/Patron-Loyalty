@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { BadRequestException } from '@nestjs/common';
 import { LOYALTY_PATRON_GAME_TYPES } from '@queueplatform/shared';
 import { LoyaltyGamificationService } from './loyalty-gamification.service';
 
@@ -229,14 +230,14 @@ describe('LoyaltyGamificationService playPatronGame', () => {
     let call = 0;
     prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) => {
       call += 1;
-      if (call === 1 || call === 2) {
-        return fn({ loyaltyPatronGamePlay: { findFirst: gamePlayFindFirst } });
-      }
-      if (call === 3) {
+      if (call === 1) {
         return fn({ loyaltyAccount: { findFirst: accountFindFirst } });
       }
       return fn({
-        loyaltyPatronGamePlay: { create: gamePlayCreate },
+        loyaltyPatronGamePlay: {
+          findFirst: gamePlayFindFirst,
+          create: gamePlayCreate,
+        },
       });
     });
 
@@ -260,6 +261,7 @@ describe('LoyaltyGamificationService playPatronGame', () => {
       LOYALTY_PATRON_GAME_TYPES.SPIN_WHEEL,
     );
 
+    expect(gamePlayFindFirst).toHaveBeenCalledOnce();
     expect(gamePlayCreate).toHaveBeenCalledOnce();
     expect(accounts.adjustPoints).toHaveBeenCalledWith(
       'org-1',
@@ -270,5 +272,17 @@ describe('LoyaltyGamificationService playPatronGame', () => {
     );
     expect(accounts.dispatchApplyPointsSideEffects).toHaveBeenCalledOnce();
     expect(result.pointsAwarded).toBe(10);
+  });
+
+  it('rejects when cooldown is still active inside the play transaction', async () => {
+    gamePlayFindFirst.mockImplementation(async () => ({
+      playedAt: new Date(Date.now() - 86_400_000), // 1 day ago; spin cooldown is 7 days
+    }));
+
+    await expect(
+      service.playPatronGame('org-1', 'acc-1', LOYALTY_PATRON_GAME_TYPES.SPIN_WHEEL),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(gamePlayCreate).not.toHaveBeenCalled();
+    expect(accounts.adjustPoints).not.toHaveBeenCalled();
   });
 });

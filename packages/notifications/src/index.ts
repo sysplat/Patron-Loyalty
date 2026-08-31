@@ -87,6 +87,7 @@ const worker = new Worker(
       requestId,
       applyTransactionalSmsFooter,
       organizationNameForSms,
+      metadata,
     } = job.data;
     logger.info({ notificationId, orgId, channel, to, requestId }, 'Processing notification');
 
@@ -138,12 +139,12 @@ const worker = new Worker(
           result = await smsProvider.sendWhatsApp({ to, body: finalBody ?? '' });
           break;
         case 'push':
-          // Push notifications are not yet implemented — log and mark as delivered
+          // Push is not implemented — fail explicitly so callers do not treat it as delivered.
           logger.warn(
             { notificationId, orgId, requestId },
-            'Push notification requested but not implemented; marking as delivered (noop)',
+            'Push notification requested but not implemented',
           );
-          result = { success: true, providerMessageId: 'push-noop' };
+          result = { success: false, error: 'Push provider not configured' };
           break;
         default:
           result = { success: false, error: `Unknown channel: ${channel}` };
@@ -172,6 +173,41 @@ const worker = new Worker(
           ...(result.providerMessageId ? { providerMessageId: result.providerMessageId } : {}),
         },
       });
+
+      const campaignSendId =
+        typeof metadata?.loyaltyCampaignSendId === 'string' ? metadata.loyaltyCampaignSendId : null;
+      if (campaignSendId && orgId) {
+        // RLS on loyalty_* requires session vars in the same transaction as the writes.
+        // WITH CHECK still needs current_org_id even when bypass_rls is on (wave policy shape).
+        await prisma.$transaction(async (tx) => {
+          await tx.$executeRawUnsafe(`SELECT set_config('app.bypass_rls', 'on', true)`);
+          await tx.$executeRawUnsafe(`SELECT set_config('app.current_org_id', $1, true)`, orgId);
+          await tx.loyaltyCampaignSend.updateMany({
+            where: {
+              id: campaignSendId,
+              orgId,
+              status: { in: ['sending', 'queued'] },
+            },
+            data: {
+              status: result.success ? 'sent' : 'failed',
+              sentAt: result.success ? new Date() : undefined,
+              error: result.error ?? null,
+            },
+          });
+          if (result.success) {
+            const send = await tx.loyaltyCampaignSend.findFirst({
+              where: { id: campaignSendId, orgId },
+              select: { campaignId: true },
+            });
+            if (send) {
+              await tx.loyaltyCampaign.update({
+                where: { id: send.campaignId },
+                data: { sentCount: { increment: 1 } },
+              });
+            }
+          }
+        });
+      }
 
       if (
         channel === 'sms' &&

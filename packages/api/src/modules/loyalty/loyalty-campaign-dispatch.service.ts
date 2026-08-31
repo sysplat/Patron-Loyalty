@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { LOYALTY_CAMPAIGN_CHANNELS } from '@queueplatform/shared';
+import { LOYALTY_CAMPAIGN_CHANNELS, LOYALTY_CAMPAIGN_SEND_STATUSES } from '@queueplatform/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationService } from '../notification/notification.service';
 
@@ -23,7 +23,7 @@ export class LoyaltyCampaignDispatchService {
 
     const sends = await this.prisma.withTenant(orgId, (tx) =>
       tx.loyaltyCampaignSend.findMany({
-        where: { orgId, campaignId, status: 'queued' },
+        where: { orgId, campaignId, status: LOYALTY_CAMPAIGN_SEND_STATUSES.QUEUED },
         include: {
           account: {
             include: {
@@ -54,16 +54,26 @@ export class LoyaltyCampaignDispatchService {
         const result = await this.dispatchOne(orgId, campaign, send.id, customer);
         if (result === 'sent') sent += 1;
         else if (result === 'skipped') skipped += 1;
+        else if (result === 'queued') {
+          // Enqueued for provider delivery; worker will flip sending → sent/failed.
+        }
       } catch (err) {
         failed += 1;
         const message = err instanceof Error ? err.message : 'Send failed';
         this.logger.warn({ campaignId, sendId: send.id, message }, 'Campaign send failed');
-        await this.markSend(orgId, send.id, 'failed', message);
+        await this.markSend(orgId, send.id, LOYALTY_CAMPAIGN_SEND_STATUSES.FAILED, message);
       }
     }
 
     const remaining = await this.prisma.withTenant(orgId, (tx) =>
-      tx.loyaltyCampaignSend.count({ where: { campaignId, status: 'queued' } }),
+      tx.loyaltyCampaignSend.count({
+        where: {
+          campaignId,
+          status: {
+            in: [LOYALTY_CAMPAIGN_SEND_STATUSES.QUEUED, LOYALTY_CAMPAIGN_SEND_STATUSES.SENDING],
+          },
+        },
+      }),
     );
     if (remaining === 0) {
       await this.prisma.withTenant(orgId, (tx) =>
@@ -81,7 +91,7 @@ export class LoyaltyCampaignDispatchService {
     orgId: string,
     campaignId: string,
     accountId: string,
-  ): Promise<'sent' | 'skipped' | 'failed'> {
+  ): Promise<'sent' | 'skipped' | 'failed' | 'queued'> {
     const campaign = await this.prisma.withTenant(orgId, (tx) =>
       tx.loyaltyCampaign.findFirst({ where: { id: campaignId, orgId, status: 'active' } }),
     );
@@ -109,7 +119,12 @@ export class LoyaltyCampaignDispatchService {
 
     const send = await this.prisma.withTenant(orgId, (tx) =>
       tx.loyaltyCampaignSend.create({
-        data: { orgId, campaignId, accountId, status: 'queued' },
+        data: {
+          orgId,
+          campaignId,
+          accountId,
+          status: LOYALTY_CAMPAIGN_SEND_STATUSES.QUEUED,
+        },
       }),
     );
 
@@ -127,9 +142,62 @@ export class LoyaltyCampaignDispatchService {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Send failed';
       this.logger.warn({ campaignId, sendId: send.id, message }, 'Automated campaign send failed');
-      await this.markSend(orgId, send.id, 'failed', message);
+      await this.markSend(orgId, send.id, LOYALTY_CAMPAIGN_SEND_STATUSES.FAILED, message);
       return 'failed';
     }
+  }
+
+  /** Called by notifications worker when a campaign send reaches terminal provider status. */
+  async finalizeSendFromNotification(
+    orgId: string,
+    sendId: string,
+    status: 'sent' | 'failed',
+    error?: string,
+  ): Promise<void> {
+    const claimed = await this.prisma.withTenant(orgId, (tx) =>
+      tx.loyaltyCampaignSend.updateMany({
+        where: {
+          id: sendId,
+          orgId,
+          status: {
+            in: [LOYALTY_CAMPAIGN_SEND_STATUSES.SENDING, LOYALTY_CAMPAIGN_SEND_STATUSES.QUEUED],
+          },
+        },
+        data: {
+          status,
+          sentAt: status === 'sent' ? new Date() : undefined,
+          error: error ?? null,
+        },
+      }),
+    );
+    if (claimed.count === 0) return;
+
+    if (status === 'sent') {
+      const send = await this.prisma.withTenant(orgId, (tx) =>
+        tx.loyaltyCampaignSend.findFirst({
+          where: { id: sendId, orgId },
+          select: { campaignId: true },
+        }),
+      );
+      if (send) {
+        await this.prisma.withTenant(orgId, (tx) =>
+          tx.loyaltyCampaign.update({
+            where: { id: send.campaignId },
+            data: { sentCount: { increment: 1 } },
+          }),
+        );
+      }
+    }
+  }
+
+  private async claimSend(orgId: string, sendId: string): Promise<boolean> {
+    const claimed = await this.prisma.withTenant(orgId, (tx) =>
+      tx.loyaltyCampaignSend.updateMany({
+        where: { id: sendId, orgId, status: LOYALTY_CAMPAIGN_SEND_STATUSES.QUEUED },
+        data: { status: LOYALTY_CAMPAIGN_SEND_STATUSES.SENDING },
+      }),
+    );
+    return claimed.count > 0;
   }
 
   private async dispatchOne(
@@ -150,7 +218,12 @@ export class LoyaltyCampaignDispatchService {
       marketingSmsConsent: string;
       marketingEmailConsent: string;
     },
-  ): Promise<'sent' | 'skipped'> {
+  ): Promise<'sent' | 'skipped' | 'queued'> {
+    const claimed = await this.claimSend(orgId, sendId);
+    if (!claimed) {
+      return 'skipped';
+    }
+
     const channel = campaign.channel.toUpperCase();
     const body = (campaign.body ?? '').trim() || `Message from your loyalty program.`;
     const subject = campaign.subject?.trim() || campaign.name;
@@ -161,7 +234,7 @@ export class LoyaltyCampaignDispatchService {
     };
 
     if (channel === LOYALTY_CAMPAIGN_CHANNELS.IN_APP) {
-      await this.markSend(orgId, sendId, 'sent');
+      await this.markSend(orgId, sendId, LOYALTY_CAMPAIGN_SEND_STATUSES.SENT);
       return 'sent';
     }
 
@@ -169,19 +242,29 @@ export class LoyaltyCampaignDispatchService {
       await this.markSend(
         orgId,
         sendId,
-        'skipped',
-        'Push provider not configured — use IN_APP channel',
+        LOYALTY_CAMPAIGN_SEND_STATUSES.SKIPPED,
+        'Push provider not configured — use IN_APP, SMS, or EMAIL',
       );
       return 'skipped';
     }
 
     if (channel === LOYALTY_CAMPAIGN_CHANNELS.WHATSAPP) {
       if (customer.marketingSmsConsent !== 'GRANTED') {
-        await this.markSend(orgId, sendId, 'skipped', 'Marketing WhatsApp/SMS not consented');
+        await this.markSend(
+          orgId,
+          sendId,
+          LOYALTY_CAMPAIGN_SEND_STATUSES.SKIPPED,
+          'Marketing WhatsApp/SMS not consented',
+        );
         return 'skipped';
       }
       if (!customer.phone?.trim()) {
-        await this.markSend(orgId, sendId, 'skipped', 'No phone on file');
+        await this.markSend(
+          orgId,
+          sendId,
+          LOYALTY_CAMPAIGN_SEND_STATUSES.SKIPPED,
+          'No phone on file',
+        );
         return 'skipped';
       }
       await this.notifications.send(orgId, {
@@ -192,17 +275,26 @@ export class LoyaltyCampaignDispatchService {
         messageCategory: 'marketing',
         metadata,
       });
-      await this.markSend(orgId, sendId, 'sent');
-      return 'sent';
+      return 'queued';
     }
 
     if (channel === LOYALTY_CAMPAIGN_CHANNELS.SMS) {
       if (customer.marketingSmsConsent !== 'GRANTED') {
-        await this.markSend(orgId, sendId, 'skipped', 'Marketing SMS not consented');
+        await this.markSend(
+          orgId,
+          sendId,
+          LOYALTY_CAMPAIGN_SEND_STATUSES.SKIPPED,
+          'Marketing SMS not consented',
+        );
         return 'skipped';
       }
       if (!customer.phone?.trim()) {
-        await this.markSend(orgId, sendId, 'skipped', 'No phone on file');
+        await this.markSend(
+          orgId,
+          sendId,
+          LOYALTY_CAMPAIGN_SEND_STATUSES.SKIPPED,
+          'No phone on file',
+        );
         return 'skipped';
       }
       await this.notifications.send(orgId, {
@@ -213,17 +305,26 @@ export class LoyaltyCampaignDispatchService {
         messageCategory: 'marketing',
         metadata,
       });
-      await this.markSend(orgId, sendId, 'sent');
-      return 'sent';
+      return 'queued';
     }
 
     if (channel === LOYALTY_CAMPAIGN_CHANNELS.EMAIL) {
       if (customer.marketingEmailConsent !== 'GRANTED') {
-        await this.markSend(orgId, sendId, 'skipped', 'Marketing email not consented');
+        await this.markSend(
+          orgId,
+          sendId,
+          LOYALTY_CAMPAIGN_SEND_STATUSES.SKIPPED,
+          'Marketing email not consented',
+        );
         return 'skipped';
       }
       if (!customer.email?.trim()) {
-        await this.markSend(orgId, sendId, 'skipped', 'No email on file');
+        await this.markSend(
+          orgId,
+          sendId,
+          LOYALTY_CAMPAIGN_SEND_STATUSES.SKIPPED,
+          'No email on file',
+        );
         return 'skipped';
       }
       await this.notifications.send(orgId, {
@@ -234,11 +335,15 @@ export class LoyaltyCampaignDispatchService {
         messageCategory: 'marketing',
         metadata,
       });
-      await this.markSend(orgId, sendId, 'sent');
-      return 'sent';
+      return 'queued';
     }
 
-    await this.markSend(orgId, sendId, 'skipped', `Unsupported channel: ${channel}`);
+    await this.markSend(
+      orgId,
+      sendId,
+      LOYALTY_CAMPAIGN_SEND_STATUSES.SKIPPED,
+      `Unsupported channel: ${channel}`,
+    );
     return 'skipped';
   }
 
@@ -253,7 +358,7 @@ export class LoyaltyCampaignDispatchService {
         where: { id: sendId },
         data: {
           status,
-          sentAt: status === 'sent' ? new Date() : undefined,
+          sentAt: status === LOYALTY_CAMPAIGN_SEND_STATUSES.SENT ? new Date() : undefined,
           error: error ?? null,
         },
       }),

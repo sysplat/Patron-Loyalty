@@ -193,10 +193,12 @@ export class LoyaltyGamificationService {
 
   async playPatronGame(orgId: string, accountId: string, gameType: LoyaltyPatronGameType) {
     await this.patronCrmFeature.requireEnabled(orgId);
-    const status = await this.getPatronGameStatus(orgId, accountId);
-    if (!status[gameType]?.canPlay) {
-      throw new BadRequestException('Game not available yet');
-    }
+
+    const cooldownDays: Record<LoyaltyPatronGameType, number> = {
+      [LOYALTY_PATRON_GAME_TYPES.SPIN_WHEEL]: 7,
+      [LOYALTY_PATRON_GAME_TYPES.SCRATCH_CARD]: 3,
+    };
+    const days = cooldownDays[gameType];
 
     const account = await this.prisma.withTenant(orgId, (tx) =>
       tx.loyaltyAccount.findFirst({
@@ -212,6 +214,18 @@ export class LoyaltyGamificationService {
         : this.scratchOutcomes[Math.floor(Math.random() * this.scratchOutcomes.length)];
 
     const pointsResult = await this.prisma.withTenant(orgId, async (tx) => {
+      // Re-check cooldown inside the same transaction to close the race window.
+      const last = await tx.loyaltyPatronGamePlay.findFirst({
+        where: { orgId, accountId, gameType },
+        orderBy: { playedAt: 'desc' },
+      });
+      if (last && days > 0) {
+        const nextEligible = new Date(last.playedAt.getTime() + days * 86_400_000);
+        if (nextEligible > new Date()) {
+          throw new BadRequestException('Game not available yet');
+        }
+      }
+
       await tx.loyaltyPatronGamePlay.create({
         data: {
           orgId,

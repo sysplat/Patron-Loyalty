@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { LOYALTY_WEBHOOK_EVENTS } from '@queueplatform/shared';
+import { LOYALTY_WEBHOOK_EVENTS, LOYALTY_REDEMPTION_STATUSES } from '@queueplatform/shared';
+
 import { PrismaService } from '../../prisma/prisma.service';
 import { PatronCrmFeatureService } from '../../common/features/patron-crm-feature.service';
 import { ApplyPointsTxResult, LoyaltyAccountService } from './loyalty-account.service';
@@ -133,7 +134,7 @@ export class LoyaltyCatalogService {
           accountId: account.id,
           rewardId,
           pointsSpent: reward.pointsCost,
-          status: 'pending',
+          status: LOYALTY_REDEMPTION_STATUSES.PENDING,
         },
         include: { reward: true },
       });
@@ -157,6 +158,105 @@ export class LoyaltyCatalogService {
     });
 
     return redemption;
+  }
+
+  async listRedemptions(orgId: string, status?: string) {
+    await this.requireLoyalty(orgId);
+    return this.prisma.withTenant(orgId, (tx) =>
+      tx.loyaltyRedemption.findMany({
+        where: {
+          orgId,
+          ...(status ? { status } : {}),
+        },
+        include: {
+          reward: { select: { id: true, name: true, type: true } },
+          account: {
+            select: {
+              id: true,
+              referralCode: true,
+              customer: { select: { id: true, name: true, phone: true } },
+            },
+          },
+        },
+        orderBy: { redeemedAt: 'desc' },
+        take: 100,
+      }),
+    );
+  }
+
+  async fulfillRedemption(orgId: string, redemptionId: string) {
+    await this.requireLoyalty(orgId);
+    const updated = await this.prisma.withTenant(orgId, async (tx) => {
+      const existing = await tx.loyaltyRedemption.findFirst({
+        where: { id: redemptionId, orgId },
+      });
+      if (!existing) throw new NotFoundException('Redemption not found');
+      if (existing.status !== LOYALTY_REDEMPTION_STATUSES.PENDING) {
+        throw new BadRequestException(`Redemption is already ${existing.status}`);
+      }
+      const result = await tx.loyaltyRedemption.updateMany({
+        where: {
+          id: redemptionId,
+          orgId,
+          status: LOYALTY_REDEMPTION_STATUSES.PENDING,
+        },
+        data: { status: LOYALTY_REDEMPTION_STATUSES.FULFILLED, fulfilledAt: new Date() },
+      });
+      if (result.count === 0) {
+        throw new BadRequestException('Redemption is already fulfilled or cancelled');
+      }
+      return tx.loyaltyRedemption.findFirstOrThrow({
+        where: { id: redemptionId, orgId },
+        include: { reward: true },
+      });
+    });
+    return updated;
+  }
+
+  async cancelRedemption(orgId: string, redemptionId: string) {
+    await this.requireLoyalty(orgId);
+    return this.prisma.withTenant(orgId, async (tx) => {
+      const existing = await tx.loyaltyRedemption.findFirst({
+        where: { id: redemptionId, orgId },
+        include: { reward: true, account: { select: { customerId: true } } },
+      });
+      if (!existing) throw new NotFoundException('Redemption not found');
+      if (existing.status !== LOYALTY_REDEMPTION_STATUSES.PENDING) {
+        throw new BadRequestException(`Redemption is already ${existing.status}`);
+      }
+
+      const claimed = await tx.loyaltyRedemption.updateMany({
+        where: {
+          id: redemptionId,
+          orgId,
+          status: LOYALTY_REDEMPTION_STATUSES.PENDING,
+        },
+        data: { status: LOYALTY_REDEMPTION_STATUSES.CANCELLED },
+      });
+      if (claimed.count === 0) {
+        throw new BadRequestException('Redemption is already fulfilled or cancelled');
+      }
+
+      // Restore points and stock when cancelling a pending redemption.
+      await this.accounts.adjustPoints(
+        orgId,
+        existing.account.customerId,
+        existing.pointsSpent,
+        `Cancelled redemption: ${existing.reward.name}`,
+        tx,
+      );
+      if (existing.reward.stock !== null) {
+        await tx.loyaltyReward.updateMany({
+          where: { id: existing.rewardId, orgId },
+          data: { stock: { increment: 1 } },
+        });
+      }
+
+      return tx.loyaltyRedemption.findFirstOrThrow({
+        where: { id: redemptionId, orgId },
+        include: { reward: true },
+      });
+    });
   }
 
   async listCoupons(orgId: string) {

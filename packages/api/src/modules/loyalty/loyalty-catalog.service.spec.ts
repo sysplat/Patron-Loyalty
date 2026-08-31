@@ -443,3 +443,85 @@ describe('LoyaltyCatalogService redeemCoupon', () => {
     );
   });
 });
+
+describe('LoyaltyCatalogService fulfill and cancel redemption', () => {
+  const patronCrmFeature = { requireEnabled: vi.fn().mockResolvedValue(undefined) };
+  const prisma = { withTenant: vi.fn() };
+  const accounts = {
+    adjustPoints: vi.fn().mockResolvedValue({ idempotent: false }),
+    dispatchApplyPointsSideEffects: vi.fn(),
+  };
+  const loyaltyWebhook = { dispatch: vi.fn() };
+
+  let service: LoyaltyCatalogService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    service = new LoyaltyCatalogService(
+      prisma as never,
+      patronCrmFeature as never,
+      accounts as never,
+      loyaltyWebhook as never,
+    );
+  });
+
+  it('fulfills a pending redemption', async () => {
+    const updateMany = vi.fn().mockResolvedValue({ count: 1 });
+    const findFirstOrThrow = vi.fn().mockResolvedValue({
+      id: 'red-1',
+      status: 'fulfilled',
+      reward: { name: 'Coffee' },
+    });
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({
+        loyaltyRedemption: {
+          findFirst: vi.fn().mockResolvedValue({ id: 'red-1', status: 'pending' }),
+          updateMany,
+          findFirstOrThrow,
+        },
+      }),
+    );
+
+    const result = await service.fulfillRedemption('org-1', 'red-1');
+    expect(updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'red-1', orgId: 'org-1', status: 'pending' },
+        data: expect.objectContaining({ status: 'fulfilled' }),
+      }),
+    );
+    expect(result.status).toBe('fulfilled');
+  });
+
+  it('cancels pending redemption and restores points', async () => {
+    const updateMany = vi.fn().mockResolvedValue({ count: 1 });
+    const rewardUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({
+        loyaltyRedemption: {
+          findFirst: vi.fn().mockResolvedValue({
+            id: 'red-1',
+            status: 'pending',
+            pointsSpent: 100,
+            rewardId: 'reward-1',
+            reward: { name: 'Coffee', stock: 3 },
+            account: { customerId: 'cust-1' },
+          }),
+          updateMany,
+          findFirstOrThrow: vi.fn().mockResolvedValue({ id: 'red-1', status: 'cancelled' }),
+        },
+        loyaltyReward: { updateMany: rewardUpdateMany },
+      }),
+    );
+
+    await service.cancelRedemption('org-1', 'red-1');
+
+    expect(accounts.adjustPoints).toHaveBeenCalledWith(
+      'org-1',
+      'cust-1',
+      100,
+      expect.stringContaining('Cancelled redemption'),
+      expect.any(Object),
+    );
+    expect(rewardUpdateMany).toHaveBeenCalled();
+  });
+});

@@ -40,6 +40,16 @@ interface Reward {
   stock: number | null;
 }
 
+interface PendingRedemption {
+  id: string;
+  pointsSpent: number;
+  redeemedAt: string;
+  reward: { id: string; name: string };
+  account: {
+    customer: { name: string | null; phone: string | null } | null;
+  };
+}
+
 export default function RewardsPage() {
   const token = useAuthStore((s) => s.accessToken);
   const qc = useQueryClient();
@@ -53,6 +63,12 @@ export default function RewardsPage() {
   const { data: rewards = [], isLoading } = useQuery({
     queryKey: ['loyalty', 'rewards'],
     queryFn: () => loyaltyGet<Reward[]>('/loyalty/rewards?all=true', token!),
+    enabled: !!token,
+  });
+
+  const { data: pendingRedemptions = [] } = useQuery({
+    queryKey: ['loyalty', 'redemptions', 'pending'],
+    queryFn: () => loyaltyGet<PendingRedemption[]>('/loyalty/redemptions?status=pending', token!),
     enabled: !!token,
   });
 
@@ -96,6 +112,25 @@ export default function RewardsPage() {
     onError: () => toast.error('Failed to delete reward'),
   });
 
+  const fulfillRedemption = useMutation({
+    mutationFn: (id: string) => loyaltyPost(`/loyalty/redemptions/${id}/fulfill`, token!, {}),
+    onSuccess: () => {
+      toast.success('Redemption fulfilled');
+      qc.invalidateQueries({ queryKey: ['loyalty', 'redemptions'] });
+    },
+    onError: () => toast.error('Failed to fulfill redemption'),
+  });
+
+  const cancelRedemption = useMutation({
+    mutationFn: (id: string) => loyaltyPost(`/loyalty/redemptions/${id}/cancel`, token!, {}),
+    onSuccess: () => {
+      toast.success('Redemption cancelled — points restored');
+      qc.invalidateQueries({ queryKey: ['loyalty', 'redemptions'] });
+      qc.invalidateQueries({ queryKey: ['loyalty', 'rewards'] });
+    },
+    onError: () => toast.error('Failed to cancel redemption'),
+  });
+
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -111,6 +146,56 @@ export default function RewardsPage() {
           </Button>
         )}
       </div>
+
+      {pendingRedemptions.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Pending redemptions</CardTitle>
+            <CardDescription>
+              Mark rewards as fulfilled when handed to the patron, or cancel to restore points.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {pendingRedemptions.map((r) => {
+              const c = r.account.customer;
+              const patron = c?.name || c?.phone || 'Patron';
+              return (
+                <div
+                  key={r.id}
+                  className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium">{r.reward.name}</p>
+                    <p className="text-muted-foreground text-sm">
+                      {patron} · {r.pointsSpent} pts · {new Date(r.redeemedAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => fulfillRedemption.mutate(r.id)}
+                      disabled={fulfillRedemption.isPending || cancelRedemption.isPending}
+                    >
+                      Fulfill
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        if (!confirm('Cancel this redemption and restore points?')) return;
+                        cancelRedemption.mutate(r.id);
+                      }}
+                      disabled={fulfillRedemption.isPending || cancelRedemption.isPending}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {showBuilder && (
         <Card className="border-primary/20 shadow-md">

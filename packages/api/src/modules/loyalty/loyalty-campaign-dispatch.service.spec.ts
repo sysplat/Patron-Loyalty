@@ -77,6 +77,7 @@ describe('LoyaltyCampaignDispatchService', () => {
 
   it('sendToAccount marks IN_APP channel as sent', async () => {
     const sendUpdate = vi.fn().mockResolvedValue({});
+    const sendUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
     const campaignUpdate = vi.fn().mockResolvedValue({});
     let callCount = 0;
     prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) => {
@@ -119,6 +120,9 @@ describe('LoyaltyCampaignDispatchService', () => {
         });
       }
       if (callCount === 4) {
+        return fn({ loyaltyCampaignSend: { updateMany: sendUpdateMany } });
+      }
+      if (callCount === 5) {
         return fn({ loyaltyCampaignSend: { update: sendUpdate } });
       }
       return fn({ loyaltyCampaign: { update: campaignUpdate } });
@@ -150,13 +154,16 @@ describe('LoyaltyCampaignDispatchService', () => {
             marketingSmsConsent: string;
             marketingEmailConsent: string;
           },
-        ) => Promise<'sent' | 'skipped'>;
+        ) => Promise<'sent' | 'skipped' | 'queued'>;
       }
     ).dispatchOne.bind(service);
 
     prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
       fn({
-        loyaltyCampaignSend: { update: vi.fn().mockResolvedValue({}) },
+        loyaltyCampaignSend: {
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+          update: vi.fn().mockResolvedValue({}),
+        },
       }),
     );
 
@@ -184,8 +191,127 @@ describe('LoyaltyCampaignDispatchService', () => {
     expect(notifications.send).not.toHaveBeenCalled();
   });
 
+  it('sendToAccount queues SMS without marking sent on enqueue', async () => {
+    const dispatchOne = (
+      service as unknown as {
+        dispatchOne: (
+          orgId: string,
+          campaign: {
+            id: string;
+            channel: string;
+            subject: string | null;
+            body: string | null;
+            name: string;
+          },
+          sendId: string,
+          customer: {
+            id: string;
+            name: string;
+            phone: string | null;
+            email: string | null;
+            marketingSmsConsent: string;
+            marketingEmailConsent: string;
+          },
+        ) => Promise<'sent' | 'skipped' | 'queued'>;
+      }
+    ).dispatchOne.bind(service);
+
+    const sendUpdate = vi.fn();
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({
+        loyaltyCampaignSend: {
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+          update: sendUpdate,
+        },
+      }),
+    );
+
+    const result = await dispatchOne(
+      ORG_ID,
+      {
+        id: CAMPAIGN_ID,
+        channel: LOYALTY_CAMPAIGN_CHANNELS.SMS,
+        subject: 'Promo',
+        body: 'Save today',
+        name: 'SMS',
+      },
+      'send-1',
+      {
+        id: 'cust-1',
+        name: 'Patron',
+        phone: '+14155550100',
+        email: null,
+        marketingSmsConsent: 'GRANTED',
+        marketingEmailConsent: 'REVOKED',
+      },
+    );
+
+    expect(result).toBe('queued');
+    expect(notifications.send).toHaveBeenCalledOnce();
+    expect(sendUpdate).not.toHaveBeenCalled();
+  });
+
+  it('dispatchOne skips push as not configured', async () => {
+    const dispatchOne = (
+      service as unknown as {
+        dispatchOne: (
+          orgId: string,
+          campaign: {
+            id: string;
+            channel: string;
+            subject: string | null;
+            body: string | null;
+            name: string;
+          },
+          sendId: string,
+          customer: {
+            id: string;
+            name: string;
+            phone: string | null;
+            email: string | null;
+            marketingSmsConsent: string;
+            marketingEmailConsent: string;
+          },
+        ) => Promise<'sent' | 'skipped' | 'queued'>;
+      }
+    ).dispatchOne.bind(service);
+
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({
+        loyaltyCampaignSend: {
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+      }),
+    );
+
+    const result = await dispatchOne(
+      ORG_ID,
+      {
+        id: CAMPAIGN_ID,
+        channel: LOYALTY_CAMPAIGN_CHANNELS.PUSH,
+        subject: null,
+        body: 'Hi',
+        name: 'Push',
+      },
+      'send-1',
+      {
+        id: 'cust-1',
+        name: 'Patron',
+        phone: null,
+        email: null,
+        marketingSmsConsent: 'GRANTED',
+        marketingEmailConsent: 'GRANTED',
+      },
+    );
+
+    expect(result).toBe('skipped');
+    expect(notifications.send).not.toHaveBeenCalled();
+  });
+
   it('dispatchCampaign processes queued IN_APP send', async () => {
     const sendUpdate = vi.fn().mockResolvedValue({});
+    const sendUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
     let callCount = 0;
     prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) => {
       callCount += 1;
@@ -225,9 +351,12 @@ describe('LoyaltyCampaignDispatchService', () => {
         });
       }
       if (callCount === 3) {
-        return fn({ loyaltyCampaignSend: { update: sendUpdate } });
+        return fn({ loyaltyCampaignSend: { updateMany: sendUpdateMany } });
       }
       if (callCount === 4) {
+        return fn({ loyaltyCampaignSend: { update: sendUpdate } });
+      }
+      if (callCount === 5) {
         return fn({
           loyaltyCampaignSend: { count: vi.fn().mockResolvedValue(0) },
         });

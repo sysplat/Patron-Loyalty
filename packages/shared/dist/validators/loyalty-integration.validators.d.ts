@@ -244,6 +244,13 @@ export declare const loyaltyPortalGamePlaySchema: z.ZodObject<{
 }, {
     gameType: "spin_wheel" | "scratch_card";
 }>;
+export declare const loyaltyPortalOtpVerifySchema: z.ZodObject<{
+    otp: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    otp: string;
+}, {
+    otp: string;
+}>;
 export declare const loyaltyPublicReferralJoinSchema: z.ZodEffects<z.ZodObject<{
     name: z.ZodString;
     email: z.ZodNullable<z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodLiteral<"">]>>>;

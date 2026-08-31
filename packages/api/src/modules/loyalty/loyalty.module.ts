@@ -48,9 +48,11 @@ import { LoyaltyIntegrationService } from './loyalty-integration.service';
 import { LoyaltyPointsExpiryService } from './loyalty-points-expiry.service';
 import { LoyaltyCampaignAutomationService } from './loyalty-campaign-automation.service';
 import { LoyaltyPortalService } from './loyalty-portal.service';
+import { LoyaltyPortalAuthService } from './loyalty-portal-auth.service';
 import { LoyaltyWebhookService } from './loyalty-webhook.service';
 import { LoyaltyApiKeyGuard } from './guards/loyalty-api-key.guard';
 import { LoyaltyJwtOrApiKeyGuard } from './guards/loyalty-jwt-or-api-key.guard';
+import { LoyaltyPortalSessionGuard } from './guards/loyalty-portal-session.guard';
 import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
 import { LoyaltyConnectorObservabilityService } from './loyalty-connector-observability.service';
 // POS integrations
@@ -123,9 +125,11 @@ import { LoyaltyMarketingSyncService } from './loyalty-marketing-sync.service';
     LoyaltyPointsExpiryService,
     LoyaltyCampaignAutomationService,
     LoyaltyPortalService,
+    LoyaltyPortalAuthService,
     LoyaltyWebhookService,
     LoyaltyApiKeyGuard,
     LoyaltyJwtOrApiKeyGuard,
+    LoyaltyPortalSessionGuard,
     LoyaltyQueueEventsService,
     LoyaltyConnectorObservabilityService,
     // POS integrations

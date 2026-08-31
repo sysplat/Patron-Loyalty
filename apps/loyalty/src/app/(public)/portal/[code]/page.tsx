@@ -72,6 +72,7 @@ interface PortalData {
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+const PORTAL_TOKEN_KEY = (code: string) => `loyalty-portal-token:${code}`;
 
 async function fetchPortal(code: string): Promise<PortalData> {
   const res = await fetch(`${API_BASE}/loyalty/public/portal/${encodeURIComponent(code)}`, {
@@ -81,28 +82,50 @@ async function fetchPortal(code: string): Promise<PortalData> {
   return res.json() as Promise<PortalData>;
 }
 
-async function portalPost(code: string, path: string, body: object) {
+function getPortalToken(code: string): string | null {
+  if (typeof window === 'undefined') return null;
+  return sessionStorage.getItem(PORTAL_TOKEN_KEY(code));
+}
+
+function setPortalToken(code: string, token: string) {
+  sessionStorage.setItem(PORTAL_TOKEN_KEY(code), token);
+}
+
+async function portalPost(code: string, path: string, body: object, requireAuth = false) {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (requireAuth) {
+    const token = getPortalToken(code);
+    if (!token) throw new Error('Verify your phone to continue');
+    headers.Authorization = `Bearer ${token}`;
+  }
   const res = await fetch(`${API_BASE}/loyalty/public/portal/${encodeURIComponent(code)}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { message?: string };
-    throw new Error(err.message ?? 'Request failed');
+    const err = (await res.json().catch(() => ({}))) as { message?: string | string[] };
+    const message = Array.isArray(err.message) ? err.message.join(', ') : err.message;
+    throw new Error(message ?? 'Request failed');
   }
   return res.json();
 }
 
 async function portalPatch(code: string, path: string, body: object) {
+  const token = getPortalToken(code);
+  if (!token) throw new Error('Verify your phone to continue');
   const res = await fetch(`${API_BASE}/loyalty/public/portal/${encodeURIComponent(code)}${path}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { message?: string };
-    throw new Error(err.message ?? 'Request failed');
+    const err = (await res.json().catch(() => ({}))) as { message?: string | string[] };
+    const message = Array.isArray(err.message) ? err.message.join(', ') : err.message;
+    throw new Error(message ?? 'Request failed');
   }
   return res.json();
 }
@@ -114,7 +137,14 @@ export default function PatronPortalPage() {
   const [birthday, setBirthday] = useState('');
   const [acceptLegal, setAcceptLegal] = useState(false);
   const [legalModal, setLegalModal] = useState<'terms' | 'privacy' | null>(null);
+  const [portalUnlocked, setPortalUnlocked] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [phoneMasked, setPhoneMasked] = useState<string | null>(null);
   const online = useOnlineStatus();
+
+  useEffect(() => {
+    setPortalUnlocked(Boolean(getPortalToken(code)));
+  }, [code]);
 
   const ensurePatronConsent = async (): Promise<boolean> => {
     if (!acceptLegal) {
@@ -127,6 +157,13 @@ export default function PatronPortalPage() {
       return false;
     }
     return true;
+  };
+
+  const ensurePortalSession = async (): Promise<boolean> => {
+    if (!(await ensurePatronConsent())) return false;
+    if (getPortalToken(code)) return true;
+    toast.error('Verify your phone first to unlock redeem and games');
+    return false;
   };
 
   const { data, isLoading, isError } = useQuery({
@@ -146,8 +183,28 @@ export default function PatronPortalPage() {
     }
   }, [data?.legalConsentGranted, code]);
 
+  const requestOtp = useMutation({
+    mutationFn: () => portalPost(code, '/otp/request', {}),
+    onSuccess: (result: { phoneMasked: string }) => {
+      setPhoneMasked(result.phoneMasked);
+      toast.success(`Code sent to ${result.phoneMasked}`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const verifyOtp = useMutation({
+    mutationFn: () => portalPost(code, '/otp/verify', { otp }),
+    onSuccess: (result: { accessToken: string }) => {
+      setPortalToken(code, result.accessToken);
+      setPortalUnlocked(true);
+      setOtp('');
+      toast.success('Phone verified — portal unlocked');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const redeem = useMutation({
-    mutationFn: (rewardId: string) => portalPost(code, '/redeem', { rewardId }),
+    mutationFn: (rewardId: string) => portalPost(code, '/redeem', { rewardId }, true),
     onSuccess: () => {
       toast.success('Reward redeemed!');
       qc.invalidateQueries({ queryKey: ['patron-portal', code] });
@@ -166,7 +223,7 @@ export default function PatronPortalPage() {
 
   const playGame = useMutation({
     mutationFn: (gameType: 'spin_wheel' | 'scratch_card') =>
-      portalPost(code, '/play', { gameType }),
+      portalPost(code, '/play', { gameType }, true),
     onSuccess: (result: { resultLabel: string; pointsAwarded: number }) => {
       toast.success(
         `${result.resultLabel}${result.pointsAwarded ? ` (+${result.pointsAwarded} pts)` : ''}`,
@@ -200,17 +257,17 @@ export default function PatronPortalPage() {
   });
 
   const handleSaveProfile = async () => {
-    if (!(await ensurePatronConsent())) return;
+    if (!(await ensurePortalSession())) return;
     saveProfile.mutate();
   };
 
   const handleRedeem = async (rewardId: string) => {
-    if (!(await ensurePatronConsent())) return;
+    if (!(await ensurePortalSession())) return;
     redeem.mutate(rewardId);
   };
 
   const handlePlayGame = async (gameType: 'spin_wheel' | 'scratch_card') => {
-    if (!(await ensurePatronConsent())) return;
+    if (!(await ensurePortalSession())) return;
     playGame.mutate(gameType);
   };
 
@@ -222,6 +279,11 @@ export default function PatronPortalPage() {
       setAcceptLegal(false);
       toast.error('Could not save your consent. Please try again.');
     }
+  };
+
+  const handleRequestOtp = async () => {
+    if (!(await ensurePatronConsent())) return;
+    requestOtp.mutate();
   };
 
   if (isLoading) {
@@ -291,6 +353,47 @@ export default function PatronPortalPage() {
               .
             </span>
           </label>
+        </section>
+
+        <section className="mb-6 rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 text-sm">
+          <p className="font-medium text-sky-100">
+            {portalUnlocked ? 'Phone verified' : 'Verify phone to redeem & play'}
+          </p>
+          <p className="mt-1 text-sky-100/80">
+            {portalUnlocked
+              ? 'This session stays unlocked in this browser tab for about 30 minutes.'
+              : phoneMasked
+                ? `Enter the 6-digit code sent to ${phoneMasked}.`
+                : 'We text a one-time code to the phone on your loyalty account.'}
+          </p>
+          {!portalUnlocked ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold disabled:opacity-50"
+                disabled={requestOtp.isPending}
+                onClick={() => void handleRequestOtp()}
+              >
+                {requestOtp.isPending ? 'Sending…' : 'Send code'}
+              </button>
+              <input
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="6-digit code"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="w-28 rounded-lg border border-white/20 bg-black/30 px-2 py-2 text-xs"
+              />
+              <button
+                type="button"
+                className="rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold disabled:opacity-50"
+                disabled={otp.length !== 6 || verifyOtp.isPending}
+                onClick={() => verifyOtp.mutate()}
+              >
+                {verifyOtp.isPending ? 'Checking…' : 'Verify'}
+              </button>
+            </div>
+          ) : null}
         </section>
 
         <section className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur">
