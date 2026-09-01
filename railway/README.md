@@ -2,6 +2,34 @@
 
 This folder contains Railway configuration files for each deployable service in the monorepo.
 
+## Patron Loyalty production domains (sysplat.com)
+
+| Surface        | Canonical host                                      | Railway service |
+| -------------- | --------------------------------------------------- | --------------- |
+| Staff + portal | `https://loyalty.sysplat.com`                       | pl-loyalty      |
+| REST API       | `https://loyalty-api.sysplat.com`                   | pl-api          |
+| WebSocket      | `wss://loyalty-ws.sysplat.com/connection/websocket` | pl-centrifugo   |
+
+Set on **pl-loyalty** before build (Next inlines `NEXT_PUBLIC_*`):
+
+```bash
+API_URL=https://loyalty-api.sysplat.com
+NEXT_PUBLIC_API_URL=https://loyalty-api.sysplat.com/api/v1
+NEXT_PUBLIC_CENTRIFUGO_WS_URL=wss://loyalty-ws.sysplat.com/connection/websocket
+```
+
+Set on **pl-api**:
+
+```bash
+API_URL=https://loyalty-api.sysplat.com
+TWILIO_STATUS_CALLBACK_URL=https://loyalty-api.sysplat.com/api/v1/notifications/webhook/twilio-status
+APP_ALLOWED_ORIGINS=https://loyalty.sysplat.com
+```
+
+Legacy `lms-api.sysplat.com` is **301-redirected** to `loyalty-api` at Cloudflare (Railway custom domain removed). Do not re-add `lms-*` hosts on Railway.
+
+**Railway custom-domain verification:** each new host needs a `_railway-verify.<subdomain>` TXT record (see `railway domain status <host> --json` → `verification.token`) in addition to the CNAME Railway provides.
+
 ## Services
 
 | File                          | Service                    | Runtime                                                                       |
