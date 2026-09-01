@@ -26,6 +26,14 @@ const accountRow = {
   wallet: { id: 'w-1', balanceCents: 500, currency: 'USD' },
 };
 
+const portalSession = {
+  typ: 'loyalty_portal' as const,
+  aid: 'acc-1',
+  oid: 'org-1',
+  cid: 'cust-1',
+  code: 'REF1',
+};
+
 describe('LoyaltyPortalService', () => {
   const prisma = {
     withBypassRls: vi.fn(),
@@ -134,7 +142,7 @@ describe('LoyaltyPortalService', () => {
       }),
     );
 
-    const result = await service.redeemReward('REF1', 'reward-1');
+    const result = await service.redeemReward(portalSession, 'reward-1');
     expect(catalog.redeemReward).toHaveBeenCalledWith('org-1', 'cust-1', 'reward-1');
     expect(result).toMatchObject({ success: true });
   });
@@ -149,7 +157,7 @@ describe('LoyaltyPortalService', () => {
       }),
     );
 
-    await expect(service.redeemReward('REF1', 'reward-1')).rejects.toBeInstanceOf(
+    await expect(service.redeemReward(portalSession, 'reward-1')).rejects.toBeInstanceOf(
       ForbiddenException,
     );
   });
@@ -166,7 +174,7 @@ describe('LoyaltyPortalService', () => {
       }),
     );
 
-    await service.updateProfile('REF1', { birthday: '1990-01-15' });
+    await service.updateProfile(portalSession, { birthday: '1990-01-15' });
     expect(customerUpdate).toHaveBeenCalled();
   });
 
@@ -199,7 +207,7 @@ describe('LoyaltyPortalService', () => {
         loyaltyAccount: { findFirst: vi.fn().mockResolvedValue(null) },
       }),
     );
-    await expect(service.playPatronGame('BAD', 'spin_wheel')).rejects.toBeInstanceOf(
+    await expect(service.playPatronGame(portalSession, 'spin_wheel')).rejects.toBeInstanceOf(
       NotFoundException,
     );
   });

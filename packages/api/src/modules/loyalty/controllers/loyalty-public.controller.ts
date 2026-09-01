@@ -93,11 +93,11 @@ export class LoyaltyPublicController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Patron self-serve reward redemption (requires portal OTP session)' })
   publicRedeem(
-    @Param('referralCode') referralCode: string,
+    @Param('referralCode') _referralCode: string,
     @Body() body: LoyaltyPortalRedeemDto,
-    @PortalSession() _session: LoyaltyPortalTokenPayload,
+    @PortalSession() session: LoyaltyPortalTokenPayload,
   ) {
-    return this.portal.redeemReward(referralCode, body.rewardId);
+    return this.portal.redeemReward(session, body.rewardId);
   }
 
   @Public()
@@ -105,11 +105,11 @@ export class LoyaltyPublicController {
   @Patch('public/portal/:referralCode/profile')
   @ApiOperation({ summary: 'Patron self-serve profile update (requires portal OTP session)' })
   publicUpdateProfile(
-    @Param('referralCode') referralCode: string,
+    @Param('referralCode') _referralCode: string,
     @Body() body: LoyaltyPortalProfileDto,
-    @PortalSession() _session: LoyaltyPortalTokenPayload,
+    @PortalSession() session: LoyaltyPortalTokenPayload,
   ) {
-    return this.portal.updateProfile(referralCode, body);
+    return this.portal.updateProfile(session, body);
   }
 
   @Public()
@@ -129,11 +129,11 @@ export class LoyaltyPublicController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Patron spin wheel or scratch card game (requires portal OTP session)' })
   publicPlayGame(
-    @Param('referralCode') referralCode: string,
+    @Param('referralCode') _referralCode: string,
     @Body() body: LoyaltyPortalGamePlayDto,
-    @PortalSession() _session: LoyaltyPortalTokenPayload,
+    @PortalSession() session: LoyaltyPortalTokenPayload,
   ) {
-    return this.portal.playPatronGame(referralCode, body.gameType);
+    return this.portal.playPatronGame(session, body.gameType);
   }
 
   @Public()

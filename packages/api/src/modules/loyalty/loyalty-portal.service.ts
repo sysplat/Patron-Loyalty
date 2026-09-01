@@ -11,6 +11,7 @@ import {
   CURRENT_LOYALTY_PATRON_TERMS_VERSION,
   LOYALTY_STAMP_CARD_TARGET,
 } from '@queueplatform/shared';
+import type { LoyaltyPortalTokenPayload } from './loyalty-portal-auth.service';
 
 @Injectable()
 export class LoyaltyPortalService {
@@ -22,6 +23,22 @@ export class LoyaltyPortalService {
     private readonly requestContext: RequestContextService,
     private readonly gamification: LoyaltyGamificationService,
   ) {}
+
+  private async resolveAccountBySession(session: LoyaltyPortalTokenPayload) {
+    const account = await this.prisma.withBypassRls((tx) =>
+      tx.loyaltyAccount.findFirst({
+        where: {
+          id: session.aid,
+          orgId: session.oid,
+          referralCode: session.code.toUpperCase(),
+        },
+        select: { id: true, orgId: true, customerId: true },
+      }),
+    );
+    if (!account) return null;
+    const enabled = await this.patronCrmFeature.isEnabled(account.orgId);
+    return enabled ? account : null;
+  }
 
   private async resolveAccountByCode(referralCode: string) {
     const account = await this.prisma.withBypassRls((tx) =>
@@ -204,15 +221,18 @@ export class LoyaltyPortalService {
     return { found: true as const, orgName: org.name, branches };
   }
 
-  async playPatronGame(referralCode: string, gameType: 'spin_wheel' | 'scratch_card') {
-    const account = await this.resolveAccountByCode(referralCode);
+  async playPatronGame(
+    session: LoyaltyPortalTokenPayload,
+    gameType: 'spin_wheel' | 'scratch_card',
+  ) {
+    const account = await this.resolveAccountBySession(session);
     if (!account) throw new NotFoundException('Loyalty account not found');
     await this.requirePatronLegalConsent(account.orgId, account.customerId);
     return this.gamification.playPatronGame(account.orgId, account.id, gameType);
   }
 
-  async redeemReward(referralCode: string, rewardId: string) {
-    const account = await this.resolveAccountByCode(referralCode);
+  async redeemReward(session: LoyaltyPortalTokenPayload, rewardId: string) {
+    const account = await this.resolveAccountBySession(session);
     if (!account) throw new NotFoundException('Loyalty account not found');
 
     await this.requirePatronLegalConsent(account.orgId, account.customerId);
@@ -222,10 +242,10 @@ export class LoyaltyPortalService {
   }
 
   async updateProfile(
-    referralCode: string,
+    session: LoyaltyPortalTokenPayload,
     data: { birthday?: string | null; gender?: string | null; city?: string | null },
   ) {
-    const account = await this.resolveAccountByCode(referralCode);
+    const account = await this.resolveAccountBySession(session);
     if (!account) throw new NotFoundException('Loyalty account not found');
 
     await this.requirePatronLegalConsent(account.orgId, account.customerId);
