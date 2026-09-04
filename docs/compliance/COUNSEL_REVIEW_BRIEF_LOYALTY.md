@@ -30,7 +30,7 @@ Patron Loyalty uses the **same prohibited-industry list** as QPlatform queue man
 
 **Companion:** QPlatform `docs/compliance/COUNSEL_REVIEW_BRIEF.md` and `/loyalty-integration` (authoritative connector UX + addendum on the queue product domain).
 
-**Legal contact:** `sysplatco@gmail.com`
+**Legal contact:** `support@sysplat.com`
 
 **Tenant registration audit:** Signup records `LegalAcceptance` with loyalty terms/privacy versions.
 

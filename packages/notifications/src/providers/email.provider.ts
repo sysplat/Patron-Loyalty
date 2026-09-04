@@ -1,7 +1,11 @@
 import nodemailer from 'nodemailer';
 import sgMail from '@sendgrid/mail';
 import { Resend } from 'resend';
-import { DEFAULT_NOREPLY_EMAIL, LOYALTY_PRODUCT_NAME } from '@queueplatform/shared';
+import {
+  DEFAULT_NOREPLY_EMAIL,
+  DEFAULT_SUPPORT_EMAIL,
+  LOYALTY_PRODUCT_NAME,
+} from '@queueplatform/shared';
 
 /** Treat unset/blank env vars as missing (Railway often stores cleared keys as ""). */
 function nonEmptyEnv(value?: string): string | undefined {
@@ -114,7 +118,7 @@ export class EmailProvider {
     replyTo?: string;
   }): Promise<{ success: boolean; providerMessageId?: string; error?: string }> {
     const from = nonEmptyEnv(process.env.EMAIL_FROM) ?? DEFAULT_NOREPLY_EMAIL;
-    const replyTo = data.replyTo ?? process.env.SUPPORT_CONTACT_EMAIL ?? 'sysplatco@gmail.com';
+    const replyTo = data.replyTo ?? process.env.SUPPORT_CONTACT_EMAIL ?? DEFAULT_SUPPORT_EMAIL;
 
     try {
       if (this.sendGridApiKey) {
