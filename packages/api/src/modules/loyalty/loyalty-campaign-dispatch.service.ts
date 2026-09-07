@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { LOYALTY_CAMPAIGN_CHANNELS, LOYALTY_CAMPAIGN_SEND_STATUSES } from '@queueplatform/shared';
+import {
+  LOYALTY_CAMPAIGN_CHANNELS,
+  LOYALTY_CAMPAIGN_SEND_STATUSES,
+  newClientRequestId,
+} from '@queueplatform/shared';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RequestContextService } from '../../common/request-context/request-context.service';
 import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
@@ -10,12 +15,18 @@ export class LoyaltyCampaignDispatchService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationService,
+    private readonly requestContext: RequestContextService,
   ) {}
+
+  private correlationId(): string {
+    return this.requestContext.getRequestId() || newClientRequestId();
+  }
 
   async dispatchCampaign(
     orgId: string,
     campaignId: string,
   ): Promise<{ sent: number; skipped: number; failed: number }> {
+    const requestId = this.correlationId();
     const campaign = await this.prisma.withTenant(orgId, (tx) =>
       tx.loyaltyCampaign.findFirst({ where: { id: campaignId, orgId } }),
     );
@@ -51,7 +62,7 @@ export class LoyaltyCampaignDispatchService {
     for (const send of sends) {
       const customer = send.account.customer;
       try {
-        const result = await this.dispatchOne(orgId, campaign, send.id, customer);
+        const result = await this.dispatchOne(orgId, campaign, send.id, customer, requestId);
         if (result === 'sent') sent += 1;
         else if (result === 'skipped') skipped += 1;
         else if (result === 'queued') {
@@ -60,7 +71,10 @@ export class LoyaltyCampaignDispatchService {
       } catch (err) {
         failed += 1;
         const message = err instanceof Error ? err.message : 'Send failed';
-        this.logger.warn({ campaignId, sendId: send.id, message }, 'Campaign send failed');
+        this.logger.warn(
+          { campaignId, sendId: send.id, requestId, message },
+          'Campaign send failed',
+        );
         await this.markSend(orgId, send.id, LOYALTY_CAMPAIGN_SEND_STATUSES.FAILED, message);
       }
     }
@@ -128,8 +142,9 @@ export class LoyaltyCampaignDispatchService {
       }),
     );
 
+    const requestId = this.correlationId();
     try {
-      const result = await this.dispatchOne(orgId, campaign, send.id, account.customer);
+      const result = await this.dispatchOne(orgId, campaign, send.id, account.customer, requestId);
       if (result === 'sent') {
         await this.prisma.withTenant(orgId, (tx) =>
           tx.loyaltyCampaign.update({
@@ -141,7 +156,10 @@ export class LoyaltyCampaignDispatchService {
       return result;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Send failed';
-      this.logger.warn({ campaignId, sendId: send.id, message }, 'Automated campaign send failed');
+      this.logger.warn(
+        { campaignId, sendId: send.id, requestId, message },
+        'Automated campaign send failed',
+      );
       await this.markSend(orgId, send.id, LOYALTY_CAMPAIGN_SEND_STATUSES.FAILED, message);
       return 'failed';
     }
@@ -218,6 +236,7 @@ export class LoyaltyCampaignDispatchService {
       marketingSmsConsent: string;
       marketingEmailConsent: string;
     },
+    requestId: string = this.correlationId(),
   ): Promise<'sent' | 'skipped' | 'queued'> {
     const claimed = await this.claimSend(orgId, sendId);
     if (!claimed) {
@@ -231,6 +250,7 @@ export class LoyaltyCampaignDispatchService {
       loyaltyCampaignId: campaign.id,
       loyaltyCampaignSendId: sendId,
       customerId: customer.id,
+      requestId,
     };
 
     if (channel === LOYALTY_CAMPAIGN_CHANNELS.IN_APP) {

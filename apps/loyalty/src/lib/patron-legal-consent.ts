@@ -1,6 +1,7 @@
 import {
   CURRENT_LOYALTY_PATRON_PRIVACY_VERSION,
   CURRENT_LOYALTY_PATRON_TERMS_VERSION,
+  newClientRequestId,
 } from '@queueplatform/shared';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
@@ -19,9 +20,13 @@ export function storePatronConsent(code: string) {
 }
 
 export async function recordPatronLegalConsentOnServer(code: string): Promise<boolean> {
+  const requestId = newClientRequestId();
   const res = await fetch(`${API_BASE}/loyalty/public/portal/${encodeURIComponent(code)}/consent`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Request-ID': requestId,
+    },
     body: JSON.stringify({
       termsVersion: CURRENT_LOYALTY_PATRON_TERMS_VERSION,
       privacyVersion: CURRENT_LOYALTY_PATRON_PRIVACY_VERSION,

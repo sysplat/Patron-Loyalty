@@ -4,6 +4,7 @@ import {
   WEB_REFRESH_COOKIE,
   WEB_SESSION_COOKIE,
   getServerApiBase,
+  newClientRequestId,
   resolveAccessTokenTtlSeconds,
   sessionCookieOptions,
 } from '@queueplatform/shared';
@@ -65,11 +66,15 @@ function refreshSuccessBody(
 }
 
 export async function proxyLogin(request: NextRequest, apiPath: '/auth/login' | '/auth/login/2fa') {
+  const requestId = request.headers.get('x-request-id')?.trim() || newClientRequestId();
   try {
     const body = await request.json().catch(() => ({}));
     const upstream = await fetch(`${getServerApiBase()}${apiPath}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Request-ID': requestId,
+      },
       body: JSON.stringify(body),
       cache: 'no-store',
     });
@@ -83,13 +88,18 @@ export async function proxyLogin(request: NextRequest, apiPath: '/auth/login' | 
       const response = NextResponse.json(stripTokensFromLoginPayload(payload), {
         status: upstream.status,
       });
+      response.headers.set('X-Request-ID', requestId);
       setAuthCookies(response, payload.data.tokens);
       return response;
     }
-    return NextResponse.json(stripTokensFromLoginPayload(payload), { status: upstream.status });
+    const errorResponse = NextResponse.json(stripTokensFromLoginPayload(payload), {
+      status: upstream.status,
+    });
+    errorResponse.headers.set('X-Request-ID', requestId);
+    return errorResponse;
   } catch (err) {
     console.error('[auth-bff] upstream login failed', err);
-    return NextResponse.json(
+    const res = NextResponse.json(
       {
         success: false,
         message:
@@ -97,19 +107,26 @@ export async function proxyLogin(request: NextRequest, apiPath: '/auth/login' | 
       },
       { status: 503 },
     );
+    res.headers.set('X-Request-ID', requestId);
+    return res;
   }
 }
 
 export async function refreshFromCookie(request: NextRequest) {
   const refreshToken = request.cookies.get(WEB_REFRESH_COOKIE)?.value;
+  const requestId = request.headers.get('x-request-id')?.trim() || newClientRequestId();
   if (!refreshToken) {
     const res = NextResponse.json({ message: 'No refresh session' }, { status: 401 });
+    res.headers.set('X-Request-ID', requestId);
     clearAuthCookies(res);
     return res;
   }
   const upstream = await fetch(`${getServerApiBase()}/auth/refresh`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Request-ID': requestId,
+    },
     body: JSON.stringify({ refreshToken }),
     cache: 'no-store',
   });
@@ -126,6 +143,7 @@ export async function refreshFromCookie(request: NextRequest) {
         status,
       },
     );
+    res.headers.set('X-Request-ID', requestId);
     // Only wipe cookies on explicit auth rejection — not API outages (5xx).
     if (status === 401 || status === 403) {
       clearAuthCookies(res);
@@ -133,6 +151,7 @@ export async function refreshFromCookie(request: NextRequest) {
     return res;
   }
   const res = NextResponse.json(refreshSuccessBody(payload.data), { status: 200 });
+  res.headers.set('X-Request-ID', requestId);
   setAuthCookies(res, payload.data);
   return res;
 }

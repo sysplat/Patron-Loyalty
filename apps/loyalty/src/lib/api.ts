@@ -8,7 +8,8 @@ import {
   getApiErrorCode,
   getApiErrorDetails,
   getApiBase,
-  getApiRequestId,
+  newClientRequestId,
+  resolveApiRequestId,
 } from '@queueplatform/shared';
 
 const API_BASE = getApiBase();
@@ -38,12 +39,14 @@ class ApiError extends Error {
   data: any;
   code?: string;
   details?: Record<string, unknown>;
-  constructor(status: number, message: string, data?: any) {
+  requestId?: string;
+  constructor(status: number, message: string, data?: any, requestId?: string) {
     super(message);
     this.status = status;
     this.data = data;
     this.code = getApiErrorCode(data);
     this.details = getApiErrorDetails(data);
+    this.requestId = requestId;
   }
 }
 
@@ -169,9 +172,12 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
     syncSentryAuthContext(useAuthStore.getState().user);
   }
 
+  const clientRequestId = newClientRequestId();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(fetchOptions.headers as Record<string, string>),
+    // Always win so Network tab / toast / logs share the same id.
+    'X-Request-ID': clientRequestId,
   };
 
   if (token) {
@@ -245,14 +251,18 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
 
     const rawMessage = extractErrorMessage(data, res.statusText);
     const code = getApiErrorCode(data);
-    const requestId = getApiRequestId(data);
+    const requestId = resolveApiRequestId({
+      body: data,
+      responseHeaders: res.headers,
+      clientRequestId,
+    });
     const message = formatUserFacingApiError({
       status: res.status,
       message: rawMessage,
       code,
       requestId,
     });
-    const apiError = new ApiError(res.status, message, data);
+    const apiError = new ApiError(res.status, message, data, requestId);
 
     if (
       typeof window !== 'undefined' &&

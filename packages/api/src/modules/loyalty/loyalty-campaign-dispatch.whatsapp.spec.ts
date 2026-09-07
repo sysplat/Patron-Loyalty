@@ -14,7 +14,11 @@ describe('LoyaltyCampaignDispatchService WhatsApp', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new LoyaltyCampaignDispatchService(prisma as never, notifications as never);
+    service = new LoyaltyCampaignDispatchService(
+      prisma as never,
+      notifications as never,
+      { getRequestId: () => 'req-test' } as never,
+    );
   });
 
   it('dispatches WhatsApp campaigns via whatsapp notification channel', async () => {

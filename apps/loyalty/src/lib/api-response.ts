@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { getApiBase } from '@queueplatform/shared';
+import { getApiBase, newClientRequestId } from '@queueplatform/shared';
 
 /** Unwrap `{ success: true, data }` envelopes; pass through raw API payloads. */
 export function unwrapApiData<T>(payload: unknown): T {
@@ -56,10 +56,14 @@ export function fetchPaginated<T>(path: string, token: string): Promise<Paginate
 
 /** Download a CSV export from a loyalty report endpoint. */
 export async function loyaltyDownloadCsv(path: string, token: string, filename: string) {
+  const requestId = newClientRequestId();
   const res = await fetch(`${getApiBase()}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'X-Request-ID': requestId,
+    },
   });
-  if (!res.ok) throw new Error('Export failed');
+  if (!res.ok) throw new Error(`Export failed (Reference: ${requestId.slice(0, 8)})`);
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');

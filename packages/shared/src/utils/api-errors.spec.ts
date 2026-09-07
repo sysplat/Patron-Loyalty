@@ -1,10 +1,38 @@
 import { describe, expect, it } from 'vitest';
-import { formatUserFacingApiError, getApiRequestId } from './api-errors';
+import {
+  formatUserFacingApiError,
+  getApiRequestId,
+  newClientRequestId,
+  resolveApiRequestId,
+} from './api-errors';
 
 describe('api-errors', () => {
   it('extracts requestId from error body', () => {
     expect(getApiRequestId({ requestId: 'abc-123-def' })).toBe('abc-123-def');
     expect(getApiRequestId({})).toBeUndefined();
+  });
+
+  it('creates client request ids', () => {
+    const id = newClientRequestId();
+    expect(id.length).toBeGreaterThan(8);
+  });
+
+  it('resolves requestId preferring body then header then client', () => {
+    expect(
+      resolveApiRequestId({
+        body: { requestId: 'from-body' },
+        responseHeaders: { 'x-request-id': 'from-header' },
+        clientRequestId: 'from-client',
+      }),
+    ).toBe('from-body');
+    expect(
+      resolveApiRequestId({
+        body: {},
+        responseHeaders: { 'x-request-id': 'from-header' },
+        clientRequestId: 'from-client',
+      }),
+    ).toBe('from-header');
+    expect(resolveApiRequestId({ clientRequestId: 'from-client' })).toBe('from-client');
   });
 
   it('formats 5xx with reference', () => {

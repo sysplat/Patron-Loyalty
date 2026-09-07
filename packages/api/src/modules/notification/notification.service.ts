@@ -5,6 +5,7 @@ import {
   normalizeSmsRecipient,
   formatCustomerDeskLabel,
   decorateTransactionalSmsBody,
+  newClientRequestId,
 } from '@queueplatform/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RequestContextService } from '../../common/request-context/request-context.service';
@@ -140,7 +141,12 @@ export class NotificationService {
       });
     }
 
-    const requestId = this.requestContext.getRequestId();
+    const requestId =
+      this.requestContext.getRequestId() ||
+      (typeof data.metadata?.requestId === 'string' && data.metadata.requestId.trim()
+        ? data.metadata.requestId.trim()
+        : undefined) ||
+      newClientRequestId();
     const recipient = isPhoneChannel ? normalizeSmsRecipient(data.to) : data.to.trim();
     if (!recipient) {
       throw new BadRequestException(
@@ -158,7 +164,7 @@ export class NotificationService {
 
     const metadata = {
       ...(data.metadata ?? {}),
-      ...(requestId ? { requestId } : {}),
+      requestId,
     };
     const isTransactionalSms =
       data.channel === 'sms' && (data.messageCategory ?? 'transactional') === 'transactional';

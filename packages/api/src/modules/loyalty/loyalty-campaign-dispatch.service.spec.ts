@@ -13,7 +13,11 @@ describe('LoyaltyCampaignDispatchService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new LoyaltyCampaignDispatchService(prisma as never, notifications as never);
+    service = new LoyaltyCampaignDispatchService(
+      prisma as never,
+      notifications as never,
+      { getRequestId: () => 'req-test' } as never,
+    );
   });
 
   it('returns zeros when campaign not found', async () => {
