@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import {
+  Activity,
   BarChart3,
   CheckSquare,
   ChevronRight,
@@ -35,7 +36,7 @@ import {
   type DashboardTheme,
 } from '@queueplatform/frontend-core';
 import { cn } from '@/lib/utils';
-import { formatRoleLabel, formatUserDisplayName } from '@/lib/rbac-ui';
+import { formatRoleLabel, formatUserDisplayName, isOwnerOrAdmin } from '@/lib/rbac-ui';
 
 export const LOYALTY_NAV = [
   { href: '/overview', label: 'Dashboard', icon: LayoutDashboard },
@@ -51,6 +52,7 @@ export const LOYALTY_NAV = [
   { href: '/reports', label: 'Reports', icon: BarChart3 },
   { href: '/program', label: 'Program', icon: Settings2 },
   { href: '/integrations', label: 'Integrations', icon: Plug },
+  { href: '/diagnostics', label: 'Diagnostics', icon: Activity, adminOnly: true },
 ] as const;
 
 function webAppUrl(): string {
@@ -239,7 +241,9 @@ function LoyaltySidebar({
       </div>
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3" aria-label="Loyalty">
-        {LOYALTY_NAV.map(({ href, label, icon: Icon }) => {
+        {LOYALTY_NAV.filter(
+          (item) => !('adminOnly' in item && item.adminOnly) || isOwnerOrAdmin(user?.role),
+        ).map(({ href, label, icon: Icon }) => {
           const active = navItemActive(pathname, href);
           return (
             <Link

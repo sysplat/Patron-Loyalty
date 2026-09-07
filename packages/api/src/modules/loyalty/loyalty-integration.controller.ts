@@ -27,6 +27,7 @@ import { LoyaltyIntegrationQueueEventDto } from './dto/loyalty-connector.dto';
 import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
 import {
   LoyaltyConnectorObservabilityService,
+  redactConnectorPayload,
   type ConnectorIngestOutcome,
 } from './loyalty-connector-observability.service';
 
@@ -89,7 +90,42 @@ export class LoyaltyIntegrationController {
     @LoyaltyOrgId() orgId: string,
     @Body(new ZodValidationPipe(LoyaltyIntegrationEarnDto)) body: LoyaltyIntegrationEarnDto,
   ) {
-    return this.integration.earnPoints(orgId, body);
+    const started = Date.now();
+    return this.integration
+      .earnPoints(orgId, body)
+      .then((result) => {
+        const record = result as Record<string, unknown>;
+        void this.connectorObs.recordIngest({
+          orgId,
+          route: 'points/earn',
+          sourceId: body.externalTxnId,
+          durationMs: Date.now() - started,
+          outcome: deriveConnectorOutcome(record),
+          idempotent: record.idempotent === true,
+          idempotencyKey: body.externalTxnId,
+          httpStatus: 200,
+          redactedPayload: redactConnectorPayload({
+            points: body.points,
+            externalTxnId: body.externalTxnId,
+          }),
+        });
+        return result;
+      })
+      .catch((err: unknown) => {
+        void this.connectorObs.recordIngest({
+          orgId,
+          route: 'points/earn',
+          sourceId: body.externalTxnId,
+          durationMs: Date.now() - started,
+          outcome: 'error',
+          idempotencyKey: body.externalTxnId,
+          httpStatus: 500,
+          redactedPayload: {
+            error: err instanceof Error ? err.message.slice(0, 120) : 'error',
+          },
+        });
+        throw err;
+      });
   }
 
   @Post('rewards/redeem')
@@ -146,20 +182,45 @@ export class LoyaltyIntegrationController {
     body: LoyaltyIntegrationQueueEventDto,
   ) {
     const started = Date.now();
-    return this.queueEvents.processRemoteEvent(orgId, body).then((result) => {
-      const record = result as Record<string, unknown>;
-      this.connectorObs.logIngest({
-        orgId,
-        route: 'queue-events',
-        event: body.event,
-        sourceId: body.sourceId,
-        connectorVersion: body.connectorVersion,
-        durationMs: Date.now() - started,
-        outcome: deriveConnectorOutcome(record),
-        idempotent: record.idempotent === true,
-        skippedReason: typeof record.reason === 'string' ? record.reason : undefined,
+    return this.queueEvents
+      .processRemoteEvent(orgId, body)
+      .then((result) => {
+        const record = result as Record<string, unknown>;
+        void this.connectorObs.recordIngest({
+          orgId,
+          route: 'queue-events',
+          event: body.event,
+          sourceId: body.sourceId,
+          connectorVersion: body.connectorVersion,
+          durationMs: Date.now() - started,
+          outcome: deriveConnectorOutcome(record),
+          idempotent: record.idempotent === true,
+          skippedReason: typeof record.reason === 'string' ? record.reason : undefined,
+          idempotencyKey: body.sourceId,
+          httpStatus: 200,
+          redactedPayload: redactConnectorPayload({
+            event: body.event,
+            sourceId: body.sourceId,
+            connectorVersion: body.connectorVersion,
+          }),
+        });
+        return result;
+      })
+      .catch((err: unknown) => {
+        void this.connectorObs.recordIngest({
+          orgId,
+          route: 'queue-events',
+          event: body.event,
+          sourceId: body.sourceId,
+          durationMs: Date.now() - started,
+          outcome: 'error',
+          idempotencyKey: body.sourceId,
+          httpStatus: 500,
+          redactedPayload: {
+            error: err instanceof Error ? err.message.slice(0, 120) : 'error',
+          },
+        });
+        throw err;
       });
-      return result;
-    });
   }
 }

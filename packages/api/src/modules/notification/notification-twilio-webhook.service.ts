@@ -53,6 +53,20 @@ export class NotificationTwilioWebhookService {
       ? `Twilio ${payload.messageStatus} — code ${payload.errorCode}${payload.errorMessage ? ': ' + payload.errorMessage : ''}`
       : undefined;
 
+    const payloadMeta =
+      notification.payload &&
+      typeof notification.payload === 'object' &&
+      !Array.isArray(notification.payload)
+        ? (notification.payload as Record<string, unknown>)
+        : {};
+    const metadata =
+      payloadMeta.metadata &&
+      typeof payloadMeta.metadata === 'object' &&
+      !Array.isArray(payloadMeta.metadata)
+        ? (payloadMeta.metadata as Record<string, unknown>)
+        : {};
+    const requestId = typeof metadata.requestId === 'string' ? metadata.requestId : undefined;
+
     if (internalStatus) {
       await this.prisma.withBypassRls((tx) =>
         tx.notification.update({
@@ -72,6 +86,7 @@ export class NotificationTwilioWebhookService {
           event: payload.messageStatus,
           metadata: {
             messageSid: payload.messageSid,
+            ...(requestId ? { requestId } : {}),
             ...(payload.errorCode
               ? { errorCode: payload.errorCode, errorMessage: payload.errorMessage }
               : {}),
@@ -99,7 +114,11 @@ export class NotificationTwilioWebhookService {
     }
 
     this.logger.log(
-      { notificationId: notification.id, twilioStatus: payload.messageStatus },
+      {
+        notificationId: notification.id,
+        twilioStatus: payload.messageStatus,
+        ...(requestId ? { requestId } : {}),
+      },
       'Twilio status callback processed',
     );
   }

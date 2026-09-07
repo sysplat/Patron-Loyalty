@@ -510,3 +510,25 @@ model LoyaltyMarketingConnection {
   @@map("loyalty_marketing_connections")
 }
 
+/// Durable, redacted ingest log for connector / POS / integration API calls (staff Diagnostics).
+model LoyaltyIntegrationEvent {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId            String       @map("org_id") @db.Uuid
+  route            String       @db.VarChar(80)
+  event            String?      @db.VarChar(80)
+  sourceId         String?      @map("source_id") @db.VarChar(120)
+  outcome          String       @db.VarChar(30)
+  httpStatus       Int?         @map("http_status")
+  durationMs       Int?         @map("duration_ms")
+  requestId        String?      @map("request_id") @db.VarChar(80)
+  idempotencyKey   String?      @map("idempotency_key") @db.VarChar(120)
+  redactedPayload  Json?        @map("redacted_payload")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  organization     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt(sort: Desc)])
+  @@index([orgId, route, createdAt(sort: Desc)])
+  @@index([orgId, requestId])
+  @@map("loyalty_integration_events")
+}
+

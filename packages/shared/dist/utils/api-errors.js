@@ -1,14 +1,48 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.REQUEST_ID_HEADER = void 0;
+exports.newClientRequestId = newClientRequestId;
 exports.getApiRequestId = getApiRequestId;
+exports.getRequestIdFromHeaders = getRequestIdFromHeaders;
+exports.resolveApiRequestId = resolveApiRequestId;
 exports.formatRequestIdRef = formatRequestIdRef;
 exports.formatUserFacingApiError = formatUserFacingApiError;
+/** Canonical HTTP header for request correlation (client ↔ API ↔ workers). */
+exports.REQUEST_ID_HEADER = 'x-request-id';
+/** Create a new correlation id (browser or Node). */
+function newClientRequestId() {
+    if (typeof globalThis.crypto?.randomUUID === 'function') {
+        return globalThis.crypto.randomUUID();
+    }
+    return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
 /** Extract `requestId` from GlobalExceptionFilter JSON bodies. */
 function getApiRequestId(data) {
     if (!data || typeof data !== 'object')
         return undefined;
     const id = data.requestId;
     return typeof id === 'string' && id.trim() ? id.trim() : undefined;
+}
+/** Read request id from a Fetch Headers / Headers-like map (case-insensitive). */
+function getRequestIdFromHeaders(headers) {
+    if (!headers)
+        return undefined;
+    if (typeof headers.get === 'function') {
+        const value = headers.get('x-request-id') ?? headers.get('X-Request-ID');
+        return value?.trim() || undefined;
+    }
+    const record = headers;
+    const raw = record['x-request-id'] ?? record['X-Request-ID'] ?? record['X-Request-Id'];
+    if (Array.isArray(raw))
+        return raw[0]?.trim() || undefined;
+    return typeof raw === 'string' && raw.trim() ? raw.trim() : undefined;
+}
+/** Prefer body requestId, then response header, then the id the client sent. */
+function resolveApiRequestId(input) {
+    return (getApiRequestId(input.body) ||
+        getRequestIdFromHeaders(input.responseHeaders) ||
+        input.clientRequestId?.trim() ||
+        undefined);
 }
 /** Short reference for support (first 8 chars). */
 function formatRequestIdRef(requestId) {

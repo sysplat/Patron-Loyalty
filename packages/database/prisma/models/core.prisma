@@ -76,6 +76,7 @@ model Organization {
   crmSalesOpportunities CrmSalesOpportunity[]
   loyaltyPosConnections       LoyaltyPosConnection[]
   loyaltyMarketingConnections LoyaltyMarketingConnection[]
+  loyaltyIntegrationEvents    LoyaltyIntegrationEvent[]
 
   @@map("organizations")
 }

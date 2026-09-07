@@ -22,6 +22,7 @@ import { LoyaltyPublicController } from './controllers/loyalty-public.controller
 import { LoyaltyPosController } from './controllers/loyalty-pos.controller';
 import { LoyaltyMarketingController } from './controllers/loyalty-marketing.controller';
 import { LoyaltyMarketingWebhookController } from './controllers/loyalty-marketing-webhook.controller';
+import { LoyaltyDiagnosticsController } from './controllers/loyalty-diagnostics.controller';
 import { LoyaltyProgramService } from './loyalty-program.service';
 import { LoyaltyAccountService } from './loyalty-account.service';
 import { LoyaltyAccountLifecycleService } from './loyalty-account-lifecycle.service';
@@ -55,6 +56,7 @@ import { LoyaltyJwtOrApiKeyGuard } from './guards/loyalty-jwt-or-api-key.guard';
 import { LoyaltyPortalSessionGuard } from './guards/loyalty-portal-session.guard';
 import { LoyaltyQueueEventsService } from './loyalty-queue-events.service';
 import { LoyaltyConnectorObservabilityService } from './loyalty-connector-observability.service';
+import { LoyaltyDiagnosticsService } from './loyalty-diagnostics.service';
 // POS integrations
 import { LoyaltyPosConnectionService } from './loyalty-pos-connection.service';
 import { LoyaltyPosSquareService } from './loyalty-pos-square.service';
@@ -97,6 +99,7 @@ import { LoyaltyMarketingSyncService } from './loyalty-marketing-sync.service';
     LoyaltyPosController,
     LoyaltyMarketingController,
     LoyaltyMarketingWebhookController,
+    LoyaltyDiagnosticsController,
   ],
   providers: [
     LoyaltyProgramService,
@@ -132,6 +135,7 @@ import { LoyaltyMarketingSyncService } from './loyalty-marketing-sync.service';
     LoyaltyPortalSessionGuard,
     LoyaltyQueueEventsService,
     LoyaltyConnectorObservabilityService,
+    LoyaltyDiagnosticsService,
     // POS integrations
     LoyaltyPosConnectionService,
     LoyaltyPosSquareService,

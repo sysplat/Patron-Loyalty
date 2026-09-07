@@ -29,6 +29,10 @@ import { LoyaltyPosConnectionService } from '../loyalty-pos-connection.service';
 import { LoyaltyPosSquareService } from '../loyalty-pos-square.service';
 import { LoyaltyPosCloverService } from '../loyalty-pos-clover.service';
 import { LoyaltySquareConnectionDto, LoyaltyCloverConnectionDto } from '../dto/loyalty-pos.dto';
+import {
+  LoyaltyConnectorObservabilityService,
+  redactConnectorPayload,
+} from '../loyalty-connector-observability.service';
 
 @ApiTags('Loyalty POS Integrations')
 @Controller('loyalty/integrations/pos')
@@ -40,6 +44,7 @@ export class LoyaltyPosController {
     private readonly square: LoyaltyPosSquareService,
     private readonly clover: LoyaltyPosCloverService,
     private readonly config: ConfigService,
+    private readonly connectorObs: LoyaltyConnectorObservabilityService,
   ) {}
 
   // ─── OAuth Flows ────────────────────────────────────────────────────────────
@@ -214,7 +219,41 @@ export class LoyaltyPosController {
 
     const payload = JSON.parse(rawBody.toString('utf8'));
     const accessToken = this.connections.decryptAccessToken(connection);
-    return this.square.processEvent(orgId, payload, accessToken);
+    const started = Date.now();
+    try {
+      const result = await this.square.processEvent(orgId, payload, accessToken);
+      void this.connectorObs.recordIngest({
+        orgId,
+        route: 'pos/square/webhook',
+        event: typeof payload?.type === 'string' ? payload.type : undefined,
+        sourceId:
+          typeof payload?.event_id === 'string'
+            ? payload.event_id
+            : typeof payload?.merchant_id === 'string'
+              ? payload.merchant_id
+              : undefined,
+        durationMs: Date.now() - started,
+        outcome: 'ok',
+        httpStatus: 200,
+        redactedPayload: redactConnectorPayload({
+          type: payload?.type,
+          event_id: payload?.event_id,
+        }),
+      });
+      return result;
+    } catch (err) {
+      void this.connectorObs.recordIngest({
+        orgId,
+        route: 'pos/square/webhook',
+        durationMs: Date.now() - started,
+        outcome: 'error',
+        httpStatus: 500,
+        redactedPayload: {
+          error: err instanceof Error ? err.message.slice(0, 120) : 'error',
+        },
+      });
+      throw err;
+    }
   }
 
   // ─── Clover inbound webhook ───────────────────────────────────────────────
@@ -262,7 +301,32 @@ export class LoyaltyPosController {
     const payload = JSON.parse(rawBody.toString('utf8'));
     const cfg = connection.config as Record<string, string>;
     const accessToken = this.connections.decryptAccessToken(connection);
-
-    return this.clover.processEvent(orgId, payload, accessToken, cfg.merchantId);
+    const started = Date.now();
+    try {
+      const result = await this.clover.processEvent(orgId, payload, accessToken, cfg.merchantId);
+      void this.connectorObs.recordIngest({
+        orgId,
+        route: 'pos/clover/webhook',
+        event: typeof payload?.type === 'string' ? payload.type : undefined,
+        sourceId: typeof payload?.id === 'string' ? payload.id : undefined,
+        durationMs: Date.now() - started,
+        outcome: 'ok',
+        httpStatus: 200,
+        redactedPayload: redactConnectorPayload({ type: payload?.type, id: payload?.id }),
+      });
+      return result;
+    } catch (err) {
+      void this.connectorObs.recordIngest({
+        orgId,
+        route: 'pos/clover/webhook',
+        durationMs: Date.now() - started,
+        outcome: 'error',
+        httpStatus: 500,
+        redactedPayload: {
+          error: err instanceof Error ? err.message.slice(0, 120) : 'error',
+        },
+      });
+      throw err;
+    }
   }
 }

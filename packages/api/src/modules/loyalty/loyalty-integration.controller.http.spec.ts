@@ -56,6 +56,7 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
 
   const connectorObs = {
     logIngest: vi.fn(),
+    recordIngest: vi.fn().mockResolvedValue(undefined),
     recordClientError: vi.fn(),
   };
 
@@ -322,7 +323,7 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
       .expect(200);
 
     expect(queueEvents.processRemoteEvent).toHaveBeenCalledWith(ORG_ID, payload);
-    expect(connectorObs.logIngest).toHaveBeenCalledWith(
+    expect(connectorObs.recordIngest).toHaveBeenCalledWith(
       expect.objectContaining({
         orgId: ORG_ID,
         route: 'queue-events',
@@ -352,7 +353,7 @@ describe('LoyaltyIntegrationController (HTTP contract)', () => {
       ...payload,
       connectorVersion: 1,
     });
-    expect(connectorObs.logIngest).toHaveBeenCalledWith(
+    expect(connectorObs.recordIngest).toHaveBeenCalledWith(
       expect.objectContaining({ outcome: 'idempotent' }),
     );
   });

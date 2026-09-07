@@ -7,6 +7,23 @@ const api_errors_1 = require("./api-errors");
         (0, vitest_1.expect)((0, api_errors_1.getApiRequestId)({ requestId: 'abc-123-def' })).toBe('abc-123-def');
         (0, vitest_1.expect)((0, api_errors_1.getApiRequestId)({})).toBeUndefined();
     });
+    (0, vitest_1.it)('creates client request ids', () => {
+        const id = (0, api_errors_1.newClientRequestId)();
+        (0, vitest_1.expect)(id.length).toBeGreaterThan(8);
+    });
+    (0, vitest_1.it)('resolves requestId preferring body then header then client', () => {
+        (0, vitest_1.expect)((0, api_errors_1.resolveApiRequestId)({
+            body: { requestId: 'from-body' },
+            responseHeaders: { 'x-request-id': 'from-header' },
+            clientRequestId: 'from-client',
+        })).toBe('from-body');
+        (0, vitest_1.expect)((0, api_errors_1.resolveApiRequestId)({
+            body: {},
+            responseHeaders: { 'x-request-id': 'from-header' },
+            clientRequestId: 'from-client',
+        })).toBe('from-header');
+        (0, vitest_1.expect)((0, api_errors_1.resolveApiRequestId)({ clientRequestId: 'from-client' })).toBe('from-client');
+    });
     (0, vitest_1.it)('formats 5xx with reference', () => {
         const msg = (0, api_errors_1.formatUserFacingApiError)({
             status: 500,

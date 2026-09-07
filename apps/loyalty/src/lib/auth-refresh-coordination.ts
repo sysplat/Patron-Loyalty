@@ -49,7 +49,11 @@ async function waitForPeerRefresh(maxMs = 15_000): Promise<void> {
 /** After another tab refreshed HttpOnly cookies, pull a fresh access JWT via BFF token sync. */
 export async function syncAccessTokenAfterPeerRefresh(): Promise<RefreshSessionResult> {
   try {
-    const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+    const res = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'X-Request-ID': crypto.randomUUID() },
+    });
     if (res.status === 401 || res.status === 403) return 'invalid';
     if (!res.ok) return 'unavailable';
     const payload = (await res.json().catch(() => null)) as {

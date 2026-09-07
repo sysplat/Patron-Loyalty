@@ -113,6 +113,7 @@ export async function refreshAccessToken(): Promise<RefreshSessionResult> {
         const res = await fetch('/api/auth/refresh', {
           method: 'POST',
           credentials: 'include',
+          headers: { 'X-Request-ID': newClientRequestId() },
         });
 
         if (res.status === 401 || res.status === 403) return 'invalid';
