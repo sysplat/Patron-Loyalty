@@ -42,15 +42,16 @@ Legacy `lms-api.sysplat.com` is **301-redirected** to `loyalty-api` at Cloudflar
 
 ## Services
 
-| File                          | Service                    | Runtime                                                                       |
-| ----------------------------- | -------------------------- | ----------------------------------------------------------------------------- |
-| `api.railway.json`            | NestJS REST API            | Docker ([`docker/api.Dockerfile`](docker/api.Dockerfile))                     |
-| `loyalty.railway.json`        | Loyalty staff app          | Docker ([`docker/loyalty.Dockerfile`](docker/loyalty.Dockerfile))             |
-| `admin.railway.json`          | Platform admin (LMS)       | Docker ([`docker/admin.Dockerfile`](docker/admin.Dockerfile))                 |
-| `../railway.json` (repo root) | Loyalty (primary deploy)   | Docker ([`docker/loyalty.Dockerfile`](docker/loyalty.Dockerfile))             |
-| `scheduler.railway.json`      | BullMQ scheduler worker    | Docker ([`docker/api.Dockerfile`](docker/api.Dockerfile))                     |
-| `notifications.railway.json`  | BullMQ Notification Worker | Docker ([`docker/notifications.Dockerfile`](docker/notifications.Dockerfile)) |
-| `centrifugo.railway.json`     | Centrifugo realtime        | Docker ([`apps/centrifugo/Dockerfile`](../apps/centrifugo/Dockerfile))        |
+| File                         | Service                    | Runtime                                                                       |
+| ---------------------------- | -------------------------- | ----------------------------------------------------------------------------- |
+| `api.railway.json`           | NestJS REST API            | Docker ([`docker/api.Dockerfile`](docker/api.Dockerfile))                     |
+| `loyalty.railway.json`       | Loyalty staff app          | Docker ([`docker/loyalty.Dockerfile`](docker/loyalty.Dockerfile))             |
+| `admin.railway.json`         | Platform admin (LMS)       | Docker ([`docker/admin.Dockerfile`](docker/admin.Dockerfile))                 |
+| `notifications.railway.json` | BullMQ Notification Worker | Docker ([`docker/notifications.Dockerfile`](docker/notifications.Dockerfile)) |
+| `centrifugo.railway.json`    | Centrifugo realtime        | Docker ([`apps/centrifugo/Dockerfile`](../apps/centrifugo/Dockerfile))        |
+| `scheduler.railway.json`     | BullMQ scheduler worker    | Docker ([`docker/api.Dockerfile`](docker/api.Dockerfile))                     |
+
+> **Note:** Root `railway.json` was removed. It forced `loyalty.Dockerfile` onto new services (broke `pl-admin`). Each service must set its own `dockerfilePath` (see files above as reference). Legacy copy: `railway/root-legacy-loyalty.railway.json`.
 
 ## Troubleshooting: API healthcheck / crash loop
 
@@ -90,7 +91,7 @@ In the Railway dashboard, add each service from the same GitHub repository and s
 | -------------------- | ------------------------------------ |
 | API                  | `railway/api.railway.json`           |
 | Loyalty              | `railway/loyalty.railway.json`       |
-| Loyalty (root)       | `railway.json` (repository root)     |
+| Admin                | `railway/admin.railway.json`         |
 | Scheduler worker     | `railway/scheduler.railway.json`     |
 | Notifications Worker | `railway/notifications.railway.json` |
 | Centrifugo           | `railway/centrifugo.railway.json`    |
