@@ -1,3 +1,4 @@
+// Railway pl-admin image — see railway/docker/admin.Dockerfile
 const path = require('path');
 const { withSentryConfig } = require('@sentry/nextjs');
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
