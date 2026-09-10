@@ -72,3 +72,4 @@ USER nextjs
 EXPOSE 3000
 
 CMD ["node", "apps/admin/server.js"]
+
