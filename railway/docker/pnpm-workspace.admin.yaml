@@ -1,0 +1,5 @@
+# Loyalty admin image only — Next standalone for apps/admin.
+packages:
+  - "apps/admin"
+  - "packages/shared"
+  - "packages/frontend-core"

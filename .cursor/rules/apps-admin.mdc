@@ -1,15 +1,16 @@
 ---
-description: Guidelines for working on the Next.js Platform Admin UI (apps/admin)
+description: Guidelines for working on the Next.js Patron Loyalty Platform Admin UI (apps/admin)
 globs: apps/admin/**/*
 ---
 
 # Next.js Platform Admin App (apps/admin)
 
-This is the platform-operator administrative dashboard.
+Patron Loyalty platform-operator dashboard at **loyalty-admin.sysplat.com**.
 Stack: Next.js 15 (App Router), React 19, Tailwind CSS, Radix UI.
 
 ## Guidelines
-- **Audience:** This is strictly for platform operators and support staff, not tenants or customers.
+- **Audience:** Platform operators and support staff for **Patron Loyalty only** — not QMS queue tenants and not loyalty staff end-users.
+- **Separate from QMS:** Do not point this app at QPlatform API; use `loyalty-api.sysplat.com`. QMS admin stays on `qplatform-admin.sysplat.com`.
 - **Component Creation:** Use functional components with Tailwind CSS. Place reusable UI components in `src/components/ui/`.
-- **Architecture Boundary:** NEVER import from `apps/web`. The admin app communicates with `packages/api/src/modules/platform-admin/` routes.
-- **Security:** Ensure all administrative actions trigger appropriate audit logs via backend endpoints.
+- **Architecture Boundary:** NEVER import from `apps/loyalty`. Call `packages/api` `platform-admin/*` routes only.
+- **Security:** Administrative actions must remain auditable via `PlatformAuditEvent` / Auth Audit Trail.

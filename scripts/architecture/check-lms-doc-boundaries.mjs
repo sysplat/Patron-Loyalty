@@ -17,9 +17,10 @@ const baselinePath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'lm
 const updateBaseline = process.argv.includes('--update-baseline');
 
 const QMS_QUALIFIER =
-  /(\.\.\/QMS|QMS repo|sibling repo|sibling `?\.\.\/QMS|not in this (repo|workspace)|QMS-only|ships from the sibling)/i;
+  /(\.\.\/QMS|QMS repo|sibling repo|sibling `?\.\.\/QMS|not in this (repo|workspace)|QMS-only|ships from the sibling|QMS sibling)/i;
 
-const APP_PATH = /apps\/(web|admin)\b/;
+/** Flag QMS tenant web path; LMS now owns apps/admin in this repo. */
+const APP_PATH = /apps\/web\b/;
 
 function collectMarkdownFiles(dir, files = []) {
   if (!fs.existsSync(dir)) return files;

@@ -4,24 +4,25 @@ This repository ships **Patron Loyalty (LMS)** only. QPlatform queue management 
 
 ## What ships from this repo
 
-| Surface                   | Path                     | Purpose                                                               |
-| ------------------------- | ------------------------ | --------------------------------------------------------------------- |
-| Loyalty staff + patron UI | `apps/loyalty`           | CRM, points, tiers, campaigns, integrations                           |
-| Core API                  | `packages/api`           | NestJS API (includes loyalty + legacy QMS modules for bundle deploys) |
-| Database                  | `packages/database`      | Unified Prisma schema (loyalty + QMS tables)                          |
-| Shared contracts          | `packages/shared`        | Zod validators, enums, RBAC, integration events                       |
-| Notifications worker      | `packages/notifications` | Email/SMS delivery                                                    |
-| E2E smoke                 | `packages/e2e`           | Playwright against loyalty + API health                               |
+| Surface                   | Path                     | Purpose                                                                |
+| ------------------------- | ------------------------ | ---------------------------------------------------------------------- |
+| Loyalty staff + patron UI | `apps/loyalty`           | CRM, points, tiers, campaigns, integrations                            |
+| Platform admin            | `apps/admin`             | LMS operator console (`loyalty-admin.sysplat.com`) — separate from QMS |
+| Core API                  | `packages/api`           | NestJS API (includes loyalty + legacy QMS modules for bundle deploys)  |
+| Database                  | `packages/database`      | Unified Prisma schema (loyalty + QMS tables)                           |
+| Shared contracts          | `packages/shared`        | Zod validators, enums, RBAC, integration events                        |
+| Notifications worker      | `packages/notifications` | Email/SMS delivery                                                     |
+| E2E smoke                 | `packages/e2e`           | Playwright against loyalty + API health                                |
 
 ## QMS-only (sibling `../QMS` repo — not in this workspace)
 
-| Surface                | Typical path in QMS                     | Purpose                                           |
-| ---------------------- | --------------------------------------- | ------------------------------------------------- |
-| Tenant / kiosk web     | `apps/web`                              | Queue dashboard, kiosk, lobby display, track/book |
-| Platform admin         | `apps/admin`                            | Cross-tenant operator console                     |
-| QPlatform connector UI | `apps/web` → loyalty connector settings | Links org to LMS `queue-events`                   |
+| Surface                | Typical path in QMS                     | Purpose                                                |
+| ---------------------- | --------------------------------------- | ------------------------------------------------------ |
+| Tenant / kiosk web     | `apps/web`                              | Queue dashboard, kiosk, lobby display, track/book      |
+| QMS platform admin     | `apps/admin` (QMS repo)                 | Queue operator console (`qplatform-admin.sysplat.com`) |
+| QPlatform connector UI | `apps/web` → loyalty connector settings | Links org to LMS `queue-events`                        |
 
-When docs mention `apps/web`, `apps/admin`, `/kiosk`, `/display`, `/track`, or `/book` without a qualifier, assume **QMS** unless the doc explicitly says `apps/loyalty`.
+When docs mention `apps/web`, `/kiosk`, `/display`, `/track`, or `/book` without a qualifier, assume **QMS**. Mentions of `apps/admin` in **this** repo mean LMS admin unless the doc says QMS sibling.
 
 ## Integration between products
 
@@ -34,7 +35,7 @@ See [qplatform-integration.md](./qplatform-integration.md) for the HTTP connecto
 - `security:check:public-safeguards`
 - `security:check:tenant-isolation`
 - `check:architecture:api-module-boundary`
-- `check:architecture:lms-doc-boundaries` — no new `apps/web` / `apps/admin` refs without QMS sibling qualifier
+- `check:architecture:lms-doc-boundaries` — no new bare `apps/web` refs without QMS sibling qualifier; LMS `apps/admin` is in-repo
 
 QMS-only checks (`check:architecture:web-admin-boundary`, service-size budgets for ticket/workbench) run in the **QMS** repo.
 

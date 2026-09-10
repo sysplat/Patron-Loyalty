@@ -1,6 +1,13 @@
 /** URL hash key for cross-origin platform-operator impersonation launch. */
 export const IMPERSONATION_HANDOFF_HASH_KEY = 'qp-imp';
 
+/** Login path used for admin → loyalty app handoff. */
+export const IMPERSONATION_HANDOFF_PATH = '/login';
+
+export const IMPERSONATION_ENDED_MESSAGE = 'qp-impersonation-ended' as const;
+
+export type ImpersonationEndedMessage = { type: typeof IMPERSONATION_ENDED_MESSAGE };
+
 export type ImpersonationHandoffPayload = {
   accessToken: string;
   orgId: string;
@@ -11,6 +18,8 @@ export type ImpersonationHandoffPayload = {
   roleSimulation?: boolean;
   simulatedBranchId?: string;
   simulatedBranchName?: string;
+  /** Optional admin return URL after ending impersonation. */
+  returnUrl?: string;
   operator: {
     id: string;
     email: string;

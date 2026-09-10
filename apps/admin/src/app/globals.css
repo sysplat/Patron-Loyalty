@@ -1,0 +1,320 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    @keyframes marquee {
+        0% { transform: translateX(100%); }
+        100% { transform: translateX(-100%); }
+    }
+    .animate-marquee {
+        animation: marquee 30s linear infinite;
+    }
+    @keyframes ticket-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+        50% { box-shadow: 0 0 0 12px rgba(99, 102, 241, 0); }
+    }
+    .animate-ticket-pulse {
+        animation: ticket-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+}
+
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 222.2 84% 4.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222.2 84% 4.9%;
+        --primary: 221.2 83.2% 53.3%;
+        --primary-foreground: 210 40% 98%;
+        --secondary: 210 40% 96.1%;
+        --secondary-foreground: 222.2 47.4% 11.2%;
+        --muted: 210 40% 96.1%;
+        --muted-foreground: 215.4 16.3% 46.9%;
+        --accent: 210 40% 96.1%;
+        --accent-foreground: 222.2 47.4% 11.2%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 210 40% 98%;
+        --success: 142 76% 36%;
+        --success-foreground: 0 0% 100%;
+        --warning: 38 92% 50%;
+        --warning-foreground: 0 0% 100%;
+        --border: 214.3 31.8% 91.4%;
+        --input: 214.3 31.8% 91.4%;
+        --ring: 221.2 83.2% 53.3%;
+        --radius: 0.5rem;
+    }
+
+    .dark {
+        --background: 222 47% 6%;
+        --foreground: 210 40% 98%;
+        --card: 222 47% 9%;
+        --card-foreground: 210 40% 98%;
+        --popover: 222 47% 9%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 217.2 91.2% 59.8%;
+        --primary-foreground: 222.2 47.4% 11.2%;
+        --secondary: 217 33% 14%;
+        --secondary-foreground: 210 40% 98%;
+        --muted: 217 33% 14%;
+        --muted-foreground: 215 20% 65%;
+        --accent: 217 33% 16%;
+        --accent-foreground: 210 40% 98%;
+        --destructive: 0 62.8% 45%;
+        --destructive-foreground: 210 40% 98%;
+        --success: 142 76% 36%;
+        --success-foreground: 0 0% 100%;
+        --warning: 38 92% 50%;
+        --warning-foreground: 0 0% 100%;
+        --border: 217 33% 18%;
+        --input: 217 33% 18%;
+        --ring: 224.3 76.3% 48%;
+    }
+}
+
+@layer components {
+    .admin-panel {
+        @apply overflow-hidden rounded-2xl border border-border bg-card shadow-sm;
+    }
+
+    .admin-panel-header {
+        @apply border-b border-border bg-muted/40 px-6 py-4;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+/* Queue display screen animations */
+.ticket-called {
+    animation: ticket-called 0.5s ease-out;
+}
+
+@keyframes ticket-called {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Print styles for tickets */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: white;
+    }
+}
+
+/* Legacy slate utility fallbacks — pages still using light-only classes */
+.dark body {
+    @apply bg-background text-foreground;
+}
+
+.dark .bg-white {
+    background-color: #0f172a !important; /* bg-slate-900 */
+}
+
+.dark .bg-slate-50 {
+    background-color: #020617 !important; /* bg-slate-950 */
+}
+
+.dark .bg-slate-100 {
+    background-color: #0f172a !important; /* bg-slate-900 */
+}
+
+.dark .border-slate-200, 
+.dark .border-slate-100 {
+    border-color: #1e293b !important; /* border-slate-800 */
+}
+
+.dark .text-slate-900 {
+    color: #f8fafc !important; /* text-slate-50 */
+}
+
+.dark .text-slate-800 {
+    color: #e2e8f0 !important; /* text-slate-200 */
+}
+
+.dark .text-slate-700 {
+    color: #cbd5e1 !important; /* text-slate-300 */
+}
+
+.dark .text-slate-600 {
+    color: #94a3b8 !important; /* text-slate-400 */
+}
+
+.dark .text-slate-500 {
+    color: #64748b !important; /* text-slate-500 */
+}
+
+.dark .hover\:bg-slate-50:hover {
+    background-color: #1e293b !important;
+}
+
+.dark .hover\:bg-slate-100:hover {
+    background-color: #334155 !important;
+}
+
+/* Modals, Dialogs, Dropdowns and card hover adjustments */
+.dark .shadow-sm {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark input, 
+.dark select, 
+.dark textarea {
+    background-color: #0f172a !important;
+    border-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+
+.dark input::placeholder {
+    color: #475569 !important;
+}
+
+.dark table th {
+    background-color: #020617 !important;
+    color: #94a3b8 !important;
+    border-color: #1e293b !important;
+}
+
+.dark table td {
+    border-color: #1e293b !important;
+}
+
+.dark tr:hover td {
+    background-color: rgba(30, 41, 59, 0.4) !important;
+}
+
+/* Lucide and other icon adjustments in dark mode */
+.dark .text-indigo-600 {
+    color: #818cf8 !important; /* text-indigo-400 */
+}
+.dark .bg-indigo-50 {
+    background-color: rgba(99, 102, 241, 0.15) !important;
+}
+.dark .border-indigo-100 {
+    border-color: rgba(99, 102, 241, 0.3) !important;
+}
+
+.dark .text-amber-600 {
+    color: #fbbf24 !important; /* text-amber-400 */
+}
+.dark .bg-amber-50 {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+}
+.dark .border-amber-100 {
+    border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+.dark .text-emerald-600 {
+    color: #34d399 !important; /* text-emerald-400 */
+}
+.dark .bg-emerald-50 {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+}
+.dark .border-emerald-100 {
+    border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.dark .text-blue-600 {
+    color: #60a5fa !important; /* text-blue-400 */
+}
+.dark .bg-blue-50 {
+    background-color: rgba(59, 130, 246, 0.15) !important;
+}
+.dark .border-blue-100 {
+    border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.dark .text-blue-700,
+.dark .text-blue-900 {
+    color: #93c5fd !important;
+}
+
+.dark .text-red-700,
+.dark .text-red-900 {
+    color: #fca5a5 !important;
+}
+
+.dark .bg-red-50 {
+    background-color: rgba(239, 68, 68, 0.12) !important;
+}
+
+.dark .border-red-100,
+.dark .border-red-200 {
+    border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+.dark .text-emerald-700 {
+    color: #6ee7b7 !important;
+}
+
+.dark .text-amber-700,
+.dark .text-amber-900 {
+    color: #fcd34d !important;
+}
+
+.dark .border-amber-200 {
+    border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+.dark .text-indigo-700,
+.dark .text-indigo-950 {
+    color: #a5b4fc !important;
+}
+
+.dark .border-indigo-100,
+.dark .border-indigo-300 {
+    border-color: rgba(99, 102, 241, 0.35) !important;
+}
+
+.dark .bg-indigo-50\/60,
+.dark .bg-indigo-50\/80 {
+    background-color: rgba(99, 102, 241, 0.12) !important;
+}
+
+.dark .bg-slate-50\/30,
+.dark .bg-slate-50\/50,
+.dark .bg-slate-50\/80 {
+    background-color: rgba(15, 23, 42, 0.55) !important;
+}
+
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #1e293b !important;
+}
+
+.dark .hover\:bg-amber-50:hover,
+.dark .hover\:bg-emerald-50:hover,
+.dark .hover\:bg-red-50:hover {
+    background-color: rgba(30, 41, 59, 0.65) !important;
+}
+
+.dark .text-slate-300 {
+    color: #64748b !important;
+}
+
+.dark .text-slate-400 {
+    color: #94a3b8 !important;
+}
+
+.dark .bg-slate-950\/40 {
+    background-color: rgba(2, 6, 23, 0.55) !important;
+}

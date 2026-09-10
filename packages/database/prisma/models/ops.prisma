@@ -79,6 +79,7 @@ model PlatformAuditEvent {
 
   @@index([createdAt(sort: Desc)])
   @@index([eventType, createdAt(sort: Desc)])
+  @@index([actorEmail, createdAt(sort: Desc)])
   @@map("platform_audit_events")
 }
 

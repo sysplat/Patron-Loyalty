@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.IMPERSONATION_HANDOFF_HASH_KEY = void 0;
+exports.IMPERSONATION_ENDED_MESSAGE = exports.IMPERSONATION_HANDOFF_PATH = exports.IMPERSONATION_HANDOFF_HASH_KEY = void 0;
 exports.encodeImpersonationHandoff = encodeImpersonationHandoff;
 exports.decodeImpersonationHandoff = decodeImpersonationHandoff;
 exports.impersonationHandoffToSession = impersonationHandoffToSession;
@@ -8,6 +8,9 @@ exports.buildImpersonationLaunchUrl = buildImpersonationLaunchUrl;
 exports.parseImpersonationHandoffFromHash = parseImpersonationHandoffFromHash;
 /** URL hash key for cross-origin platform-operator impersonation launch. */
 exports.IMPERSONATION_HANDOFF_HASH_KEY = 'qp-imp';
+/** Login path used for admin → loyalty app handoff. */
+exports.IMPERSONATION_HANDOFF_PATH = '/login';
+exports.IMPERSONATION_ENDED_MESSAGE = 'qp-impersonation-ended';
 function toBase64Url(value) {
     if (typeof Buffer !== 'undefined') {
         return Buffer.from(value, 'utf8').toString('base64url');

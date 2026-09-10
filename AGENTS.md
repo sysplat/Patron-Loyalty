@@ -23,6 +23,7 @@ Pre-release: `pnpm audit:patron-loyalty` (Railway migration + prod smoke when li
 
 ```text
 apps/loyalty/            Staff UI + patron portal (port 3003)
+apps/admin/              Platform operator UI (port 3002) → loyalty-admin.sysplat.com
 packages/api/            NestJS API — loyalty module + auth, billing, customer
 packages/database/       Prisma + PostgreSQL
 packages/frontend-core/  Shared realtime hooks
@@ -33,10 +34,11 @@ packages/e2e/            Playwright smoke
 
 ## Boundaries
 
-- **LMS UI** → `apps/loyalty` only (no kiosk, serve, or platform admin UI in this repo).
-- **QPlatform UI** → sibling `../QMS` repo (`apps/web`, `apps/admin`) — see [REPO_BOUNDARIES.md](docs/architecture/REPO_BOUNDARIES.md).
+- **LMS staff UI** → `apps/loyalty`.
+- **LMS platform admin** → `apps/admin` only (`loyalty-admin.sysplat.com`) — separate from QMS admin.
+- **QPlatform UI** → sibling `../QMS` repo (`apps/web`, QMS `apps/admin`) — see [REPO_BOUNDARIES.md](docs/architecture/REPO_BOUNDARIES.md).
 - **QPlatform connection** → optional; queue events via Integration API (`docs/architecture/qplatform-integration.md`).
-- **Platform admin** → not in this repo.
+- Auth incident monitoring: Admin → Audit Trail → `auth.*` (see QMS SUPPORT_OPERATIONS pattern; LMS uses the same event names).
 
 ## Key docs
 

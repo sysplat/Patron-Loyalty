@@ -1,9 +1,16 @@
-import { Injectable, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  Logger,
+  Optional,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PlatformAuditService } from '../../common/audit/platform-audit.service';
 import { syncSystemRolePermissions } from '../../common/rbac/system-role-permissions';
 import { isPlatformOperator } from '../../common/platform-operator.util';
 import { verifyTotp, compareBackupCode } from './two-factor.util';
@@ -12,6 +19,7 @@ import {
   loadAdminTwoFactorMemberships,
   syncAdminTwoFactorToMemberships,
 } from './admin-two-factor-account.util';
+import { AUTH_AUDIT_EVENTS, recordAuthAudit } from './auth-security-audit';
 
 @Injectable()
 export class AuthLoginService {
@@ -22,6 +30,7 @@ export class AuthLoginService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly authTokenService: AuthTokenService,
+    @Optional() private readonly platformAudit?: PlatformAuditService,
   ) {}
 
   async login(
@@ -62,6 +71,13 @@ export class AuthLoginService {
       );
 
       if (usersWithEmail.length === 0 && !account) {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.loginFailed,
+          email: emailNorm,
+          severity: 'warning',
+          outcome: 'unknown_email',
+          metadata: { platformAdmin },
+        });
         throw new UnauthorizedException('Invalid email or password');
       }
 
@@ -77,6 +93,13 @@ export class AuthLoginService {
       }
 
       if (!authenticatedAccountId && legacyValidUserIds.length === 0) {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.loginFailed,
+          email: emailNorm,
+          severity: 'warning',
+          outcome: 'invalid_credentials',
+          metadata: { platformAdmin },
+        });
         throw new UnauthorizedException('Invalid email or password');
       }
 
@@ -94,8 +117,22 @@ export class AuthLoginService {
 
       if (finalPool.length === 0) {
         if (platformAdmin) {
+          await recordAuthAudit(this.platformAudit, {
+            eventType: AUTH_AUDIT_EVENTS.loginBlocked,
+            email: emailNorm,
+            severity: 'warning',
+            outcome: 'platform_admin_only',
+            metadata: { platformAdmin: true },
+          });
           throw new UnauthorizedException('This sign-in is only for platform operators.');
         }
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.loginFailed,
+          email: emailNorm,
+          severity: 'warning',
+          outcome: 'invalid_credentials',
+          metadata: { platformAdmin },
+        });
         throw new UnauthorizedException('Invalid email or password');
       }
 
@@ -105,6 +142,13 @@ export class AuthLoginService {
       if (orgId) {
         user = finalPool.find((u) => u.orgId === orgId) ?? null;
         if (!user) {
+          await recordAuthAudit(this.platformAudit, {
+            eventType: AUTH_AUDIT_EVENTS.loginFailed,
+            email: emailNorm,
+            severity: 'warning',
+            outcome: 'org_not_available',
+            metadata: { platformAdmin, orgId },
+          });
           throw new UnauthorizedException(
             'The selected organization is not available for this account.',
           );
@@ -112,6 +156,15 @@ export class AuthLoginService {
       } else if (finalPool.length === 1) {
         user = finalPool[0];
       } else {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.loginPending,
+          email: emailNorm,
+          outcome: 'requires_org_selection',
+          metadata: {
+            platformAdmin,
+            orgCount: finalPool.length,
+          },
+        });
         // Multiple orgs found - trigger UI selection
         return {
           requiresOrgSelection: true,
@@ -126,18 +179,45 @@ export class AuthLoginService {
       const isDev = this.configService.get<string>('app.env') !== 'production';
       const resolvedEmailVerified = (user.account?.emailVerified ?? false) || user.emailVerified;
       if (!resolvedEmailVerified && !isDev) {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.loginBlocked,
+          email: emailNorm,
+          actorUserId: user.id,
+          subjectOrgId: user.orgId,
+          severity: 'warning',
+          outcome: 'email_unverified',
+          metadata: { platformAdmin },
+        });
         throw new UnauthorizedException(
           'Your email address has not been verified. Please check your inbox for a verification link.',
         );
       }
 
       if (user.status === 'suspended') {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.loginBlocked,
+          email: emailNorm,
+          actorUserId: user.id,
+          subjectOrgId: user.orgId,
+          severity: 'warning',
+          outcome: 'user_suspended',
+          metadata: { platformAdmin },
+        });
         throw new UnauthorizedException(
           'Your account has been suspended. Please contact your organization administrator.',
         );
       }
 
       if (user.organization.status === 'suspended') {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.loginBlocked,
+          email: emailNorm,
+          actorUserId: user.id,
+          subjectOrgId: user.orgId,
+          severity: 'critical',
+          outcome: 'org_suspended',
+          metadata: { platformAdmin, orgSlug: user.organization.slug },
+        });
         throw new UnauthorizedException(
           'Your organization has been suspended. Please contact QPlatform support.',
         );
@@ -170,6 +250,18 @@ export class AuthLoginService {
             expiresIn: 300,
           },
         );
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.login2faRequired,
+          email: emailNorm,
+          actorUserId: user.id,
+          subjectOrgId: user.orgId,
+          outcome: 'success',
+          metadata: {
+            platformAdmin,
+            orgSlug: user.organization.slug,
+            adminDashboardTwoFactor: platformAdmin,
+          },
+        });
         return {
           requiresTwoFactor: true as const,
           ...(platformAdmin ? { adminDashboardTwoFactor: true as const } : {}),
@@ -228,6 +320,19 @@ export class AuthLoginService {
         user.email,
       );
 
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.loginSuccess,
+        email: emailNorm,
+        actorUserId: user.id,
+        subjectOrgId: user.orgId,
+        outcome: 'success',
+        metadata: {
+          platformAdmin,
+          orgSlug: user.organization.slug,
+          role: roleName,
+        },
+      });
+
       return {
         user: {
           id: user.id,
@@ -263,10 +368,24 @@ export class AuthLoginService {
           secret: this.configService.get<string>('app.jwt.secret'),
         });
       } catch {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.login2faFailed,
+          email: 'unknown',
+          severity: 'warning',
+          outcome: 'invalid_2fa_session',
+          metadata: { reason: 'token_verify_failed' },
+        });
         throw new UnauthorizedException('Invalid or expired two-factor session');
       }
       const isAdminTotp = decoded.typ === '2fa_pending_admin';
       if (decoded.typ !== '2fa_pending' && !isAdminTotp) {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.login2faFailed,
+          email: 'unknown',
+          severity: 'warning',
+          outcome: 'invalid_2fa_session',
+          metadata: { reason: 'bad_token_typ' },
+        });
         throw new UnauthorizedException('Invalid two-factor session');
       }
 
@@ -278,16 +397,41 @@ export class AuthLoginService {
       );
 
       if (!user) {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.login2faFailed,
+          email: 'unknown',
+          severity: 'warning',
+          outcome: 'invalid_2fa_session',
+          metadata: { reason: 'user_missing' },
+        });
         throw new UnauthorizedException('Invalid two-factor session');
       }
 
       if (user.status === 'suspended') {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.loginBlocked,
+          email: user.email,
+          actorUserId: user.id,
+          subjectOrgId: user.orgId,
+          severity: 'warning',
+          outcome: 'user_suspended',
+          metadata: { stage: '2fa' },
+        });
         throw new UnauthorizedException(
           'Your account has been suspended. Please contact your organization administrator.',
         );
       }
 
       if (user.organization.status === 'suspended') {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.loginBlocked,
+          email: user.email,
+          actorUserId: user.id,
+          subjectOrgId: user.orgId,
+          severity: 'critical',
+          outcome: 'org_suspended',
+          metadata: { stage: '2fa', orgSlug: user.organization.slug },
+        });
         throw new UnauthorizedException(
           'Your organization has been suspended. Please contact QPlatform support.',
         );
@@ -298,11 +442,29 @@ export class AuthLoginService {
           loadAdminTwoFactorMemberships(tx, user.id),
         );
         if (!adminTwoFactor?.enabled) {
+          await recordAuthAudit(this.platformAudit, {
+            eventType: AUTH_AUDIT_EVENTS.login2faFailed,
+            email: user.email,
+            actorUserId: user.id,
+            subjectOrgId: user.orgId,
+            severity: 'warning',
+            outcome: '2fa_not_required',
+            metadata: { adminTotp: true },
+          });
           throw new UnauthorizedException(
             'Admin Dashboard two-factor verification is not required for this account',
           );
         }
       } else if (!user.twoFactorEnabled) {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.login2faFailed,
+          email: user.email,
+          actorUserId: user.id,
+          subjectOrgId: user.orgId,
+          severity: 'warning',
+          outcome: '2fa_not_required',
+          metadata: { adminTotp: false },
+        });
         throw new UnauthorizedException('Two-factor verification is not required for this account');
       }
 
@@ -363,6 +525,15 @@ export class AuthLoginService {
       }
 
       if (!verified) {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.login2faFailed,
+          email: user.email,
+          actorUserId: user.id,
+          subjectOrgId: user.orgId,
+          severity: 'warning',
+          outcome: 'invalid_2fa_code',
+          metadata: { adminTotp: isAdminTotp, orgSlug: user.organization.slug },
+        });
         throw new UnauthorizedException('Invalid authenticator code');
       }
 
@@ -392,6 +563,19 @@ export class AuthLoginService {
         user.email,
       );
       const resolvedEmailVerified = (user.account?.emailVerified ?? false) || user.emailVerified;
+
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.login2faSuccess,
+        email: user.email,
+        actorUserId: user.id,
+        subjectOrgId: user.orgId,
+        outcome: 'success',
+        metadata: {
+          adminTotp: isAdminTotp,
+          orgSlug: user.organization.slug,
+          role: roleAssignment?.role?.name ?? 'viewer',
+        },
+      });
 
       return {
         user: {

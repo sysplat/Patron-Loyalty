@@ -13,6 +13,7 @@
     "dev:full:local": "bash scripts/ensure-env-local.sh && dotenv -e .env.local -- bash -c 'bash scripts/assert-local-db.sh && concurrently -n \"CENTRI,TURBO\" -c \"cyan,magenta\" \"pnpm centrifugo:local\" \"pnpm dev:local\"'",
     "dev:api": "pnpm --filter @queueplatform/api dev",
     "dev:loyalty": "pnpm --filter @queueplatform/loyalty dev",
+    "dev:admin": "pnpm --filter @queueplatform/admin dev",
     "dev:notifications": "dotenv -e .env -- pnpm --filter @queueplatform/notifications dev",
     "build": "turbo build",
     "lint": "turbo lint",

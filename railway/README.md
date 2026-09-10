@@ -7,6 +7,7 @@ This folder contains Railway configuration files for each deployable service in 
 | Surface        | Canonical host                                      | Railway service |
 | -------------- | --------------------------------------------------- | --------------- |
 | Staff + portal | `https://loyalty.sysplat.com`                       | pl-loyalty      |
+| Platform admin | `https://loyalty-admin.sysplat.com`                 | pl-admin        |
 | REST API       | `https://loyalty-api.sysplat.com`                   | pl-api          |
 | WebSocket      | `wss://loyalty-ws.sysplat.com/connection/websocket` | pl-centrifugo   |
 
@@ -18,12 +19,21 @@ NEXT_PUBLIC_API_URL=https://loyalty-api.sysplat.com/api/v1
 NEXT_PUBLIC_CENTRIFUGO_WS_URL=wss://loyalty-ws.sysplat.com/connection/websocket
 ```
 
+Set on **pl-admin** before build:
+
+```bash
+API_URL=https://loyalty-api.sysplat.com
+NEXT_PUBLIC_API_URL=https://loyalty-api.sysplat.com/api/v1
+NEXT_PUBLIC_LOYALTY_URL=https://loyalty.sysplat.com
+NEXT_PUBLIC_CENTRIFUGO_WS_URL=wss://loyalty-ws.sysplat.com/connection/websocket
+```
+
 Set on **pl-api**:
 
 ```bash
 API_URL=https://loyalty-api.sysplat.com
 TWILIO_STATUS_CALLBACK_URL=https://loyalty-api.sysplat.com/api/v1/notifications/webhook/twilio-status
-APP_ALLOWED_ORIGINS=https://loyalty.sysplat.com
+APP_ALLOWED_ORIGINS=https://loyalty.sysplat.com,https://loyalty-admin.sysplat.com
 ```
 
 Legacy `lms-api.sysplat.com` is **301-redirected** to `loyalty-api` at Cloudflare (Railway custom domain removed). Do not re-add `lms-*` hosts on Railway.
@@ -36,6 +46,7 @@ Legacy `lms-api.sysplat.com` is **301-redirected** to `loyalty-api` at Cloudflar
 | ----------------------------- | -------------------------- | ----------------------------------------------------------------------------- |
 | `api.railway.json`            | NestJS REST API            | Docker ([`docker/api.Dockerfile`](docker/api.Dockerfile))                     |
 | `loyalty.railway.json`        | Loyalty staff app          | Docker ([`docker/loyalty.Dockerfile`](docker/loyalty.Dockerfile))             |
+| `admin.railway.json`          | Platform admin (LMS)       | Docker ([`docker/admin.Dockerfile`](docker/admin.Dockerfile))                 |
 | `../railway.json` (repo root) | Loyalty (primary deploy)   | Docker ([`docker/loyalty.Dockerfile`](docker/loyalty.Dockerfile))             |
 | `scheduler.railway.json`      | BullMQ scheduler worker    | Docker ([`docker/api.Dockerfile`](docker/api.Dockerfile))                     |
 | `notifications.railway.json`  | BullMQ Notification Worker | Docker ([`docker/notifications.Dockerfile`](docker/notifications.Dockerfile)) |

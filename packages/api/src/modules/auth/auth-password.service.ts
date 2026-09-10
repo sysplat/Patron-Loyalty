@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { Prisma } from '@prisma/client';
@@ -6,7 +6,9 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationService } from '../notification/notification.service';
 import { SYSTEM_ROLES, passwordSchema } from '@queueplatform/shared';
 import { AuditService } from '../../common/audit/audit.service';
+import { PlatformAuditService } from '../../common/audit/platform-audit.service';
 import { BCRYPT_ROUNDS, generateToken, sha256 } from './auth-token.util';
+import { AUTH_AUDIT_EVENTS, recordAuthAudit, type AuthAuditOutcome } from './auth-security-audit';
 
 @Injectable()
 export class AuthPasswordService {
@@ -17,27 +19,69 @@ export class AuthPasswordService {
     private readonly configService: ConfigService,
     private readonly notificationService: NotificationService,
     private readonly audit: AuditService,
+    @Optional() private readonly platformAudit?: PlatformAuditService,
   ) {}
 
   async forgotPassword(email: string) {
+    const emailNorm = email.toLowerCase();
     const user = await this.prisma.withBypassRls((tx) =>
       tx.user.findFirst({
-        where: { email: email.toLowerCase() },
-        include: { organization: { select: { status: true } } },
+        where: { email: emailNorm },
+        include: { organization: { select: { status: true, slug: true } } },
       }),
     );
 
+    const publicOk = { message: 'If the email exists, a reset link has been sent' };
+
     // Always return success to prevent email enumeration
-    if (!user) return { message: 'If the email exists, a reset link has been sent' };
+    if (!user) {
+      const accountOnly = await this.prisma.account.findUnique({
+        where: { email: emailNorm },
+        select: { id: true },
+      });
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.passwordResetRequested,
+        email: emailNorm,
+        severity: accountOnly ? 'warning' : 'info',
+        outcome: accountOnly ? 'account_user_email_mismatch' : 'unknown_email',
+        metadata: accountOnly ? { accountId: accountOnly.id } : undefined,
+      });
+      return publicOk;
+    }
 
     if (user.status === 'suspended') {
-      return { message: 'If the email exists, a reset link has been sent' };
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.passwordResetRequested,
+        email: emailNorm,
+        actorUserId: user.id,
+        subjectOrgId: user.orgId,
+        severity: 'warning',
+        outcome: 'user_suspended',
+      });
+      return publicOk;
     }
     if (user.organization.status === 'suspended') {
-      return { message: 'If the email exists, a reset link has been sent' };
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.passwordResetRequested,
+        email: emailNorm,
+        actorUserId: user.id,
+        subjectOrgId: user.orgId,
+        severity: 'warning',
+        outcome: 'org_suspended',
+        metadata: { orgSlug: user.organization.slug },
+      });
+      return publicOk;
     }
     if (!user.emailVerified) {
-      return { message: 'If the email exists, a reset link has been sent' };
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.passwordResetRequested,
+        email: emailNorm,
+        actorUserId: user.id,
+        subjectOrgId: user.orgId,
+        severity: 'warning',
+        outcome: 'email_unverified',
+      });
+      return publicOk;
     }
 
     const ownerAssignment = await this.prisma.withBypassRls((tx) =>
@@ -50,7 +94,16 @@ export class AuthPasswordService {
       }),
     );
     if (!ownerAssignment) {
-      return { message: 'If the email exists, a reset link has been sent' };
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.passwordResetRequested,
+        email: emailNorm,
+        actorUserId: user.id,
+        subjectOrgId: user.orgId,
+        severity: 'warning',
+        outcome: 'not_owner',
+        metadata: { orgSlug: user.organization.slug },
+      });
+      return publicOk;
     }
 
     // Invalidate any existing unused tokens before creating a new one
@@ -73,8 +126,9 @@ export class AuthPasswordService {
     // Queue password reset email via BullMQ
     const appUrl = this.configService.get<string>('app.appUrl') || 'http://localhost:3000';
     const resetLink = `${appUrl}/reset-password?token=${resetToken}`;
-    await this.notificationService
-      .send(user.orgId, {
+    let emailOutcome: AuthAuditOutcome = 'email_queued';
+    try {
+      await this.notificationService.send(user.orgId, {
         channel: 'email',
         to: user.email,
         subject: 'Reset your password — QPlatform',
@@ -89,12 +143,23 @@ export class AuthPasswordService {
           '',
           '— The QPlatform Team',
         ].join('\n'),
-      })
-      .catch((err) => {
-        this.logger.warn(
-          `Failed to queue password reset email: ${err instanceof Error ? err.message : 'Unknown error'}`,
-        );
       });
+    } catch (err) {
+      emailOutcome = 'email_queue_failed';
+      this.logger.warn(
+        `Failed to queue password reset email: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      );
+    }
+
+    await recordAuthAudit(this.platformAudit, {
+      eventType: AUTH_AUDIT_EVENTS.passwordResetRequested,
+      email: emailNorm,
+      actorUserId: user.id,
+      subjectOrgId: user.orgId,
+      severity: emailOutcome === 'email_queue_failed' ? 'critical' : 'info',
+      outcome: emailOutcome,
+      metadata: { orgSlug: user.organization.slug },
+    });
 
     // Dev: return token directly so the flow works without SMTP
     const devPayload = process.env.NODE_ENV !== 'production' ? { resetToken } : {};
@@ -112,12 +177,23 @@ export class AuthPasswordService {
     );
 
     if (!matched) {
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.passwordResetFailed,
+        email: 'unknown',
+        outcome: 'invalid_reset_token',
+      });
       throw new BadRequestException('Invalid or expired reset token');
     }
 
     try {
       passwordSchema.parse(newPassword);
     } catch (err) {
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.passwordResetFailed,
+        email: 'unknown',
+        actorUserId: matched.userId,
+        outcome: 'invalid_password_format',
+      });
       if (err instanceof Error) {
         throw new BadRequestException(err.message);
       }
@@ -128,6 +204,7 @@ export class AuthPasswordService {
       tx.user.findUnique({
         where: { id: matched.userId },
         select: {
+          email: true,
           accountId: true,
           orgId: true,
           twoFactorEnabled: true,
@@ -136,6 +213,13 @@ export class AuthPasswordService {
       }),
     );
     if (!target) {
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.passwordResetFailed,
+        email: 'unknown',
+        actorUserId: matched.userId,
+        outcome: 'invalid_reset_token',
+        metadata: { reason: 'user_missing' },
+      });
       throw new BadRequestException('Invalid or expired reset token');
     }
 
@@ -219,6 +303,23 @@ export class AuthPasswordService {
         twoFactorSecretCleared: true,
         twoFactorBackupHashesCleared: true,
       } as Prisma.InputJsonObject,
+    });
+
+    await recordAuthAudit(this.platformAudit, {
+      eventType: AUTH_AUDIT_EVENTS.passwordResetCompleted,
+      email: target.email,
+      actorUserId: matched.userId,
+      subjectOrgId: target.orgId,
+      outcome: 'success',
+      metadata: { twoFactorCleared },
+    });
+    await recordAuthAudit(this.platformAudit, {
+      eventType: AUTH_AUDIT_EVENTS.sessionsRevoked,
+      email: target.email,
+      actorUserId: matched.userId,
+      subjectOrgId: target.orgId,
+      outcome: 'success',
+      metadata: { reason: 'password_reset' },
     });
 
     return { message: 'Password reset successfully', twoFactorCleared };

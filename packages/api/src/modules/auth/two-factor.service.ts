@@ -1,8 +1,9 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, Optional, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Prisma } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PlatformAuditService } from '../../common/audit/platform-audit.service';
 import {
   buildOtpauthUrl,
   generateTotpSecret,
@@ -13,6 +14,7 @@ import {
   loadAdminTwoFactorMemberships,
   syncAdminTwoFactorToMemberships,
 } from './admin-two-factor-account.util';
+import { AUTH_AUDIT_EVENTS, recordAuthAudit } from './auth-security-audit';
 
 const BCRYPT_ROUNDS = 12;
 
@@ -21,7 +23,10 @@ export type TotpChannel = 'organization' | 'admin_dashboard';
 
 @Injectable()
 export class TwoFactorService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly platformAudit?: PlatformAuditService,
+  ) {}
 
   /** Auth paths resolve users before tenant RLS context is established. */
   private bypass<T>(fn: (tx: PrismaClient) => Promise<T>): Promise<T> {
@@ -134,6 +139,15 @@ export class TwoFactorService {
         throw new BadRequestException('Two-factor authentication is already enabled');
       }
       if (!verifyTotp(resolved.secret, code)) {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.twoFactorEnabled,
+          email: resolved.email,
+          actorUserId: userId,
+          subjectOrgId: resolved.memberships[0]?.orgId ?? null,
+          severity: 'warning',
+          outcome: 'invalid_2fa_code',
+          metadata: { channel, stage: 'enable' },
+        });
         throw new UnauthorizedException('Invalid authenticator code');
       }
       const plainCodes = generateBackupCodes(8);
@@ -144,13 +158,21 @@ export class TwoFactorService {
           adminTwoFactorBackupHashes: hashes,
         }),
       );
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.twoFactorEnabled,
+        email: resolved.email,
+        actorUserId: userId,
+        subjectOrgId: resolved.memberships[0]?.orgId ?? null,
+        outcome: 'success',
+        metadata: { channel },
+      });
       return { backupCodes: plainCodes };
     }
 
     const u = await this.bypass((tx) =>
       tx.user.findUnique({
         where: { id: userId },
-        select: { orgId: true, twoFactorSecret: true, twoFactorEnabled: true },
+        select: { email: true, orgId: true, twoFactorSecret: true, twoFactorEnabled: true },
       }),
     );
     if (!u?.twoFactorSecret) {
@@ -160,6 +182,15 @@ export class TwoFactorService {
       throw new BadRequestException('Two-factor authentication is already enabled');
     }
     if (!verifyTotp(u.twoFactorSecret, code)) {
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.twoFactorEnabled,
+        email: u.email,
+        actorUserId: userId,
+        subjectOrgId: u.orgId,
+        severity: 'warning',
+        outcome: 'invalid_2fa_code',
+        metadata: { channel, stage: 'enable' },
+      });
       throw new UnauthorizedException('Invalid authenticator code');
     }
     const plainCodes = generateBackupCodes(8);
@@ -173,6 +204,14 @@ export class TwoFactorService {
         },
       }),
     );
+    await recordAuthAudit(this.platformAudit, {
+      eventType: AUTH_AUDIT_EVENTS.twoFactorEnabled,
+      email: u.email,
+      actorUserId: userId,
+      subjectOrgId: u.orgId,
+      outcome: 'success',
+      metadata: { channel },
+    });
     return { backupCodes: plainCodes };
   }
 
@@ -199,7 +238,18 @@ export class TwoFactorService {
         throw new BadRequestException('Two-factor authentication is not enabled');
       }
       const ok = await bcrypt.compare(password, resolved.passwordHash);
-      if (!ok) throw new BadRequestException('Invalid password');
+      if (!ok) {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.twoFactorDisabled,
+          email: resolved.admin.email,
+          actorUserId: userId,
+          subjectOrgId: resolved.admin.memberships[0]?.orgId ?? null,
+          severity: 'warning',
+          outcome: 'wrong_current_password',
+          metadata: { channel, stage: 'disable' },
+        });
+        throw new BadRequestException('Invalid password');
+      }
 
       const normalized = code.replace(/\s/g, '');
       const totpOk = resolved.admin.secret ? verifyTotp(resolved.admin.secret, normalized) : false;
@@ -215,6 +265,15 @@ export class TwoFactorService {
         }
       }
       if (!totpOk && !backupOk) {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.twoFactorDisabled,
+          email: resolved.admin.email,
+          actorUserId: userId,
+          subjectOrgId: resolved.admin.memberships[0]?.orgId ?? null,
+          severity: 'warning',
+          outcome: 'invalid_2fa_code',
+          metadata: { channel, stage: 'disable' },
+        });
         throw new BadRequestException('Invalid authenticator or backup code');
       }
 
@@ -225,6 +284,14 @@ export class TwoFactorService {
           adminTwoFactorBackupHashes: Prisma.DbNull,
         }),
       );
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.twoFactorDisabled,
+        email: resolved.admin.email,
+        actorUserId: userId,
+        subjectOrgId: resolved.admin.memberships[0]?.orgId ?? null,
+        outcome: 'success',
+        metadata: { channel },
+      });
       return { disabled: true };
     }
 
@@ -232,6 +299,7 @@ export class TwoFactorService {
       tx.user.findUnique({
         where: { id: userId },
         select: {
+          email: true,
           orgId: true,
           passwordHash: true,
           twoFactorSecret: true,
@@ -244,7 +312,18 @@ export class TwoFactorService {
       throw new BadRequestException('Two-factor authentication is not enabled');
     }
     const ok = await bcrypt.compare(password, u.passwordHash);
-    if (!ok) throw new BadRequestException('Invalid password');
+    if (!ok) {
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.twoFactorDisabled,
+        email: u.email,
+        actorUserId: userId,
+        subjectOrgId: u.orgId,
+        severity: 'warning',
+        outcome: 'wrong_current_password',
+        metadata: { channel, stage: 'disable' },
+      });
+      throw new BadRequestException('Invalid password');
+    }
 
     const normalized = code.replace(/\s/g, '');
     const totpOk = u.twoFactorSecret ? verifyTotp(u.twoFactorSecret, normalized) : false;
@@ -260,6 +339,15 @@ export class TwoFactorService {
       }
     }
     if (!totpOk && !backupOk) {
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.twoFactorDisabled,
+        email: u.email,
+        actorUserId: userId,
+        subjectOrgId: u.orgId,
+        severity: 'warning',
+        outcome: 'invalid_2fa_code',
+        metadata: { channel, stage: 'disable' },
+      });
       throw new BadRequestException('Invalid authenticator or backup code');
     }
 
@@ -273,6 +361,14 @@ export class TwoFactorService {
         },
       }),
     );
+    await recordAuthAudit(this.platformAudit, {
+      eventType: AUTH_AUDIT_EVENTS.twoFactorDisabled,
+      email: u.email,
+      actorUserId: userId,
+      subjectOrgId: u.orgId,
+      outcome: 'success',
+      metadata: { channel },
+    });
     return { disabled: true };
   }
 
@@ -346,9 +442,29 @@ export class TwoFactorService {
         throw new BadRequestException('Two-factor authentication is not enabled');
       }
       const ok = await bcrypt.compare(password, resolved.passwordHash);
-      if (!ok) throw new BadRequestException('Invalid password');
+      if (!ok) {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.twoFactorBackupRegenerated,
+          email: resolved.admin.email,
+          actorUserId: userId,
+          subjectOrgId: resolved.admin.memberships[0]?.orgId ?? null,
+          severity: 'warning',
+          outcome: 'wrong_current_password',
+          metadata: { channel },
+        });
+        throw new BadRequestException('Invalid password');
+      }
       const normalized = totpCode.replace(/\s/g, '');
       if (!verifyTotp(resolved.admin.secret, normalized)) {
+        await recordAuthAudit(this.platformAudit, {
+          eventType: AUTH_AUDIT_EVENTS.twoFactorBackupRegenerated,
+          email: resolved.admin.email,
+          actorUserId: userId,
+          subjectOrgId: resolved.admin.memberships[0]?.orgId ?? null,
+          severity: 'warning',
+          outcome: 'invalid_2fa_code',
+          metadata: { channel },
+        });
         throw new UnauthorizedException('Invalid authenticator code');
       }
       const plainCodes = generateBackupCodes(8);
@@ -358,6 +474,14 @@ export class TwoFactorService {
           adminTwoFactorBackupHashes: hashes,
         }),
       );
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.twoFactorBackupRegenerated,
+        email: resolved.admin.email,
+        actorUserId: userId,
+        subjectOrgId: resolved.admin.memberships[0]?.orgId ?? null,
+        outcome: 'success',
+        metadata: { channel },
+      });
       return { backupCodes: plainCodes };
     }
 
@@ -365,6 +489,7 @@ export class TwoFactorService {
       tx.user.findUnique({
         where: { id: userId },
         select: {
+          email: true,
           orgId: true,
           passwordHash: true,
           twoFactorEnabled: true,
@@ -377,9 +502,29 @@ export class TwoFactorService {
       throw new BadRequestException('Two-factor authentication is not enabled');
     }
     const ok = await bcrypt.compare(password, u.passwordHash);
-    if (!ok) throw new BadRequestException('Invalid password');
+    if (!ok) {
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.twoFactorBackupRegenerated,
+        email: u.email,
+        actorUserId: userId,
+        subjectOrgId: u.orgId,
+        severity: 'warning',
+        outcome: 'wrong_current_password',
+        metadata: { channel },
+      });
+      throw new BadRequestException('Invalid password');
+    }
     const normalized = totpCode.replace(/\s/g, '');
     if (!verifyTotp(u.twoFactorSecret, normalized)) {
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.twoFactorBackupRegenerated,
+        email: u.email,
+        actorUserId: userId,
+        subjectOrgId: u.orgId,
+        severity: 'warning',
+        outcome: 'invalid_2fa_code',
+        metadata: { channel },
+      });
       throw new UnauthorizedException('Invalid authenticator code');
     }
     const plainCodes = generateBackupCodes(8);
@@ -390,6 +535,14 @@ export class TwoFactorService {
         data: { twoFactorBackupHashes: hashes },
       }),
     );
+    await recordAuthAudit(this.platformAudit, {
+      eventType: AUTH_AUDIT_EVENTS.twoFactorBackupRegenerated,
+      email: u.email,
+      actorUserId: userId,
+      subjectOrgId: u.orgId,
+      outcome: 'success',
+      metadata: { channel },
+    });
     return { backupCodes: plainCodes };
   }
 }

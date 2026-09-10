@@ -1,4 +1,10 @@
-import { Injectable, ConflictException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  BadRequestException,
+  Logger,
+  Optional,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,7 +27,9 @@ import { validateEmailExistence } from '../../common/utils/email-validator.util'
 import { RequestContextService } from '../../common/request-context/request-context.service';
 import { syncSystemRolePermissions } from '../../common/rbac/system-role-permissions';
 import { AuditService } from '../../common/audit/audit.service';
+import { PlatformAuditService } from '../../common/audit/platform-audit.service';
 import { BCRYPT_ROUNDS, generateToken, sha256 } from './auth-token.util';
+import { AUTH_AUDIT_EVENTS, recordAuthAudit } from './auth-security-audit';
 
 @Injectable()
 export class AuthRegistrationService {
@@ -33,6 +41,7 @@ export class AuthRegistrationService {
     private readonly notificationService: NotificationService,
     private readonly requestContext: RequestContextService,
     private readonly audit: AuditService,
+    @Optional() private readonly platformAudit?: PlatformAuditService,
   ) {}
 
   async register(input: {
@@ -50,6 +59,11 @@ export class AuthRegistrationService {
       where: { email: input.email.toLowerCase() },
     });
     if (existingAccount) {
+      await recordAuthAudit(this.platformAudit, {
+        eventType: AUTH_AUDIT_EVENTS.registerFailed,
+        email: input.email.toLowerCase(),
+        outcome: 'already_registered',
+      });
       throw new ConflictException('Email already registered');
     }
 
@@ -254,8 +268,9 @@ export class AuthRegistrationService {
     const verificationLink = `${verifyBase.replace(/\/$/, '')}/verify-email?token=${result.verificationToken}`;
     const productLabel =
       result.productSku === PRODUCT_SKUS.LOYALTY ? 'Patron Loyalty' : 'QPlatform';
-    await this.notificationService
-      .send(result.org.id, {
+    let verificationEmailFailed = false;
+    try {
+      await this.notificationService.send(result.org.id, {
         channel: 'email',
         to: result.user.email,
         subject: `Verify your email — ${productLabel}`,
@@ -270,12 +285,13 @@ export class AuthRegistrationService {
           '',
           `— The ${productLabel} Team`,
         ].join('\n'),
-      })
-      .catch((err) => {
-        this.logger.warn(
-          `Failed to queue verification email: ${err instanceof Error ? err.message : 'Unknown error'}`,
-        );
       });
+    } catch (err) {
+      verificationEmailFailed = true;
+      this.logger.warn(
+        `Failed to queue verification email: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      );
+    }
 
     await this.audit.logActivity({
       orgId: result.org.id,
@@ -285,6 +301,19 @@ export class AuthRegistrationService {
       metadata: {
         termsVersion: CURRENT_TERMS_VERSION,
         privacyVersion: CURRENT_PRIVACY_VERSION,
+      },
+    });
+
+    await recordAuthAudit(this.platformAudit, {
+      eventType: AUTH_AUDIT_EVENTS.registered,
+      email: result.user.email,
+      actorUserId: result.user.id,
+      subjectOrgId: result.org.id,
+      severity: verificationEmailFailed ? 'critical' : 'info',
+      outcome: verificationEmailFailed ? 'email_queue_failed' : 'email_queued',
+      metadata: {
+        productSku: result.productSku,
+        orgSlug: result.org.slug,
       },
     });
 
