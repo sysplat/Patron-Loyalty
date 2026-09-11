@@ -16,6 +16,7 @@ type PrismaMigrationRow = {
 
 /**
  * Read-only deployment signals for platform operators (no secrets).
+ * Mirrors QMS `GET /platform-admin/deployment/status` for LMS Infrastructure.
  */
 @ApiTags('platform-admin')
 @ApiBearerAuth()
