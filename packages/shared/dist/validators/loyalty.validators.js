@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateLoyaltyProfileSchema = exports.updateCrmTaskSchema = exports.createCrmTaskSchema = exports.createGiftCardSchema = exports.createLoyaltyChallengeSchema = exports.createLoyaltyBadgeSchema = exports.updateCrmSalesOpportunitySchema = exports.createCrmSalesOpportunitySchema = exports.updateCrmSupportTicketSchema = exports.createCrmSupportTicketSchema = exports.updateLoyaltyEarnRuleSchema = exports.updateLoyaltyCampaignSchema = exports.createLoyaltyCampaignSchema = exports.createReferralSchema = exports.loyaltyPointsAdjustSchema = exports.loyaltyWalletAdjustSchema = exports.validateLoyaltyCouponSchema = exports.createLoyaltyCouponSchema = exports.redeemLoyaltyRewardSchema = exports.updateLoyaltyRewardSchema = exports.createLoyaltyRewardSchema = exports.createLoyaltyEarnRuleSchema = exports.updateLoyaltyTierSchema = exports.createLoyaltyTierSchema = exports.updateLoyaltyProgramSchema = void 0;
+exports.updateLoyaltyProfileSchema = exports.updateCrmTaskSchema = exports.createCrmTaskSchema = exports.createGiftCardSchema = exports.createLoyaltyChallengeSchema = exports.createLoyaltyBadgeSchema = exports.updateCrmSalesOpportunitySchema = exports.createCrmSalesOpportunitySchema = exports.updateCrmSupportTicketSchema = exports.createCrmSupportTicketSchema = exports.updateLoyaltyEarnRuleSchema = exports.updateLoyaltyCampaignSchema = exports.createLoyaltyCampaignSchema = exports.createReferralSchema = exports.loyaltyPointsEarnPurchaseSchema = exports.loyaltyPointsAdjustSchema = exports.loyaltyWalletAdjustSchema = exports.validateLoyaltyCouponSchema = exports.createLoyaltyCouponSchema = exports.redeemLoyaltyRewardSchema = exports.updateLoyaltyRewardSchema = exports.createLoyaltyRewardSchema = exports.createLoyaltyEarnRuleSchema = exports.updateLoyaltyTierSchema = exports.createLoyaltyTierSchema = exports.updateLoyaltyProgramSchema = void 0;
 const zod_1 = require("zod");
 const loyalty_1 = require("../constants/loyalty");
 const optionalDate = zod_1.z.string().datetime().optional().nullable();
@@ -103,6 +103,11 @@ exports.loyaltyPointsAdjustSchema = zod_1.z.object({
         .number()
         .int()
         .refine((n) => n !== 0, 'Points must be non-zero'),
+    description: zod_1.z.string().max(500).optional(),
+});
+/** Staff counter: enter purchase amount; points resolved from program earn rules. */
+exports.loyaltyPointsEarnPurchaseSchema = zod_1.z.object({
+    purchaseAmountCents: zod_1.z.number().int().min(1).max(100_000_000),
     description: zod_1.z.string().max(500).optional(),
 });
 exports.createReferralSchema = zod_1.z.object({

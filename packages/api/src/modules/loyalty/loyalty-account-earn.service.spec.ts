@@ -188,4 +188,57 @@ describe('LoyaltyAccountEarnService', () => {
     );
     expect(account).toMatchObject({ pointsBalance: 110 });
   });
+
+  it('earnFromPurchase awards from purchaseAmountCents via PURCHASE rules', async () => {
+    lifecycle.ensureAccount.mockResolvedValue({
+      id: 'acct-1',
+      tier: { slug: 'bronze' },
+      lifetimePointsEarned: 0,
+      totalVisits: 0,
+    });
+    programService.resolveEarnPoints.mockResolvedValue(50);
+    points.applyPoints.mockResolvedValue({
+      account: { id: 'acct-1', pointsBalance: 50 },
+      idempotent: false,
+    });
+
+    const result = await service.earnFromPurchase(ORG_ID, CUSTOMER_ID, 5000, 'Counter sale');
+
+    expect(patronCrmFeature.requireEnabled).toHaveBeenCalledWith(ORG_ID);
+    expect(programService.resolveEarnPoints).toHaveBeenCalledWith(
+      ORG_ID,
+      LOYALTY_EARN_EVENT_TYPES.PURCHASE,
+      expect.objectContaining({ purchaseAmountCents: 5000 }),
+    );
+    expect(points.applyPoints).toHaveBeenCalledWith(
+      ORG_ID,
+      'acct-1',
+      50,
+      LOYALTY_POINT_LEDGER_TYPES.EARN,
+      expect.objectContaining({
+        sourceType: 'manual_purchase',
+        description: 'Counter sale',
+        incrementVisit: true,
+      }),
+    );
+    expect(result).toMatchObject({
+      pointsAwarded: 50,
+      purchaseAmountCents: 5000,
+      account: { pointsBalance: 50 },
+    });
+  });
+
+  it('earnFromPurchase throws when rules resolve to zero', async () => {
+    lifecycle.ensureAccount.mockResolvedValue({
+      id: 'acct-1',
+      tier: null,
+      lifetimePointsEarned: 0,
+      totalVisits: 0,
+    });
+    programService.resolveEarnPoints.mockResolvedValue(0);
+
+    await expect(service.earnFromPurchase(ORG_ID, CUSTOMER_ID, 100)).rejects.toMatchObject({
+      message: expect.stringContaining('No points awarded'),
+    });
+  });
 });

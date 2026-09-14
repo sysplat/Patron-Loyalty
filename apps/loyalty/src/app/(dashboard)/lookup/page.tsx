@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { loyaltyGet } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
 import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { RecordPurchaseForm } from '@/components/record-purchase-form';
 
 interface LookupResult {
   found: boolean;
@@ -29,6 +30,7 @@ interface LookupResult {
 
 export default function PatronLookupPage() {
   const token = useAuthStore((s) => s.accessToken);
+  const qc = useQueryClient();
   const [phoneInput, setPhoneInput] = useState('');
   const [queryPhone, setQueryPhone] = useState('');
 
@@ -47,7 +49,7 @@ export default function PatronLookupPage() {
       <div>
         <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Customer lookup</h1>
         <p className="text-muted-foreground text-sm">
-          Find a loyalty member by phone at the counter — quick points check or profile link.
+          Find a member by phone, record a purchase for points, or open their full profile.
         </p>
       </div>
 
@@ -85,7 +87,7 @@ export default function PatronLookupPage() {
           <CardHeader>
             <CardTitle>{data.customer.name}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+          <CardContent className="space-y-4 text-sm">
             {data.customer.phone && <p>Phone: {data.customer.phone}</p>}
             {data.customer.email && <p>Email: {data.customer.email}</p>}
             <p>Visits: {data.customer.visitCount}</p>
@@ -99,8 +101,22 @@ export default function PatronLookupPage() {
                 <p className="font-mono text-xs">{data.loyaltyAccount.referralCode}</p>
               </>
             ) : (
-              <p className="text-muted-foreground">No loyalty account yet.</p>
+              <p className="text-muted-foreground">
+                No loyalty account yet — recording a purchase will create one.
+              </p>
             )}
+
+            <div className="border-t pt-4">
+              <p className="mb-2 text-sm font-semibold">Record purchase</p>
+              <RecordPurchaseForm
+                customerId={data.customer.id}
+                compact
+                onSuccess={() => {
+                  void qc.invalidateQueries({ queryKey: ['loyalty', 'lookup', queryPhone] });
+                }}
+              />
+            </div>
+
             <Link
               href={`/patrons/${data.customer.id}`}
               className="text-primary mt-2 inline-block text-sm underline"

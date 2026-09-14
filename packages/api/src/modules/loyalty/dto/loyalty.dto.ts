@@ -13,6 +13,7 @@ import {
   createLoyaltyTierSchema,
   createReferralSchema,
   loyaltyPointsAdjustSchema,
+  loyaltyPointsEarnPurchaseSchema,
   loyaltyWalletAdjustSchema,
   redeemLoyaltyRewardSchema,
   updateCrmTaskSchema,
@@ -37,6 +38,7 @@ export class CreateLoyaltyCouponDto extends createZodDto(createLoyaltyCouponSche
 export class ValidateLoyaltyCouponDto extends createZodDto(validateLoyaltyCouponSchema) {}
 export class LoyaltyWalletAdjustDto extends createZodDto(loyaltyWalletAdjustSchema) {}
 export class LoyaltyPointsAdjustDto extends createZodDto(loyaltyPointsAdjustSchema) {}
+export class LoyaltyPointsEarnPurchaseDto extends createZodDto(loyaltyPointsEarnPurchaseSchema) {}
 export class CreateReferralDto extends createZodDto(createReferralSchema) {}
 export class CreateLoyaltyCampaignDto extends createZodDto(createLoyaltyCampaignSchema) {}
 export class UpdateLoyaltyCampaignDto extends createZodDto(updateLoyaltyCampaignSchema) {}

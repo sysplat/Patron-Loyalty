@@ -7,6 +7,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { RecordPurchaseForm } from '@/components/record-purchase-form';
 
 interface LoyaltyAccount {
   id: string;
@@ -118,8 +119,13 @@ export function PatronLoyaltyPanel({ customerId }: { customerId: string }) {
         </p>
       </div>
 
+      <RecordPurchaseForm customerId={customerId} />
+
       <div className="bg-card rounded-xl border p-5">
         <h3 className="mb-2 text-sm font-semibold">Adjust points</h3>
+        <p className="text-muted-foreground mb-2 text-xs">
+          Manual correction only. For a sale, use Record purchase above so program rules apply.
+        </p>
         <div className="flex flex-wrap gap-2">
           <Input
             placeholder="± points"

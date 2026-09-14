@@ -66,6 +66,15 @@ export class LoyaltyAccountService {
     return this.earn.adjustPoints(orgId, customerId, points, description, tx);
   }
 
+  earnFromPurchase(
+    orgId: string,
+    customerId: string,
+    purchaseAmountCents: number,
+    description?: string,
+  ) {
+    return this.earn.earnFromPurchase(orgId, customerId, purchaseAmountCents, description);
+  }
+
   earnIntegrationPoints(
     orgId: string,
     accountId: string,

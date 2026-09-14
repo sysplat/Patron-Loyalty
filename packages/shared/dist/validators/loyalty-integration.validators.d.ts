@@ -33,8 +33,8 @@ export declare const loyaltyIntegrationEarnSchema: z.ZodEffects<z.ZodEffects<z.Z
     description?: string | undefined;
     customerId?: string | undefined;
     points?: number | undefined;
-    externalId?: string | undefined;
     purchaseAmountCents?: number | undefined;
+    externalId?: string | undefined;
 }, {
     externalTxnId: string;
     email?: string | undefined;
@@ -43,8 +43,8 @@ export declare const loyaltyIntegrationEarnSchema: z.ZodEffects<z.ZodEffects<z.Z
     customerId?: string | undefined;
     eventType?: "PURCHASE" | "MANUAL" | undefined;
     points?: number | undefined;
-    externalId?: string | undefined;
     purchaseAmountCents?: number | undefined;
+    externalId?: string | undefined;
 }>, {
     eventType: "PURCHASE" | "MANUAL";
     externalTxnId: string;
@@ -53,8 +53,8 @@ export declare const loyaltyIntegrationEarnSchema: z.ZodEffects<z.ZodEffects<z.Z
     description?: string | undefined;
     customerId?: string | undefined;
     points?: number | undefined;
-    externalId?: string | undefined;
     purchaseAmountCents?: number | undefined;
+    externalId?: string | undefined;
 }, {
     externalTxnId: string;
     email?: string | undefined;
@@ -63,8 +63,8 @@ export declare const loyaltyIntegrationEarnSchema: z.ZodEffects<z.ZodEffects<z.Z
     customerId?: string | undefined;
     eventType?: "PURCHASE" | "MANUAL" | undefined;
     points?: number | undefined;
-    externalId?: string | undefined;
     purchaseAmountCents?: number | undefined;
+    externalId?: string | undefined;
 }>, {
     eventType: "PURCHASE" | "MANUAL";
     externalTxnId: string;
@@ -73,8 +73,8 @@ export declare const loyaltyIntegrationEarnSchema: z.ZodEffects<z.ZodEffects<z.Z
     description?: string | undefined;
     customerId?: string | undefined;
     points?: number | undefined;
-    externalId?: string | undefined;
     purchaseAmountCents?: number | undefined;
+    externalId?: string | undefined;
 }, {
     externalTxnId: string;
     email?: string | undefined;
@@ -83,8 +83,8 @@ export declare const loyaltyIntegrationEarnSchema: z.ZodEffects<z.ZodEffects<z.Z
     customerId?: string | undefined;
     eventType?: "PURCHASE" | "MANUAL" | undefined;
     points?: number | undefined;
-    externalId?: string | undefined;
     purchaseAmountCents?: number | undefined;
+    externalId?: string | undefined;
 }>;
 export declare const loyaltyIntegrationRedeemSchema: z.ZodEffects<z.ZodObject<{
     customerId: z.ZodOptional<z.ZodString>;

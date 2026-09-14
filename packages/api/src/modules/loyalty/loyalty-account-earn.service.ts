@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import {
   LOYALTY_EARN_EVENT_TYPES,
   LOYALTY_POINT_LEDGER_TYPES,
@@ -27,6 +28,56 @@ export class LoyaltyAccountEarnService {
     private readonly lifecycle: LoyaltyAccountLifecycleService,
     private readonly points: LoyaltyPointsService,
   ) {}
+
+  /**
+   * Staff counter: purchase amount → program earn rules → EARN ledger.
+   * Uses the same PURCHASE resolution as POS / Integration API.
+   */
+  async earnFromPurchase(
+    orgId: string,
+    customerId: string,
+    purchaseAmountCents: number,
+    description?: string,
+  ): Promise<LoyaltyApplyPointsResult & { pointsAwarded: number; purchaseAmountCents: number }> {
+    await this.patronCrmFeature.requireEnabled(orgId);
+
+    const account = await this.lifecycle.ensureAccount(orgId, customerId);
+    if (!account) throw new NotFoundException('Loyalty account not found');
+
+    const pointsAwarded = await this.programService.resolveEarnPoints(
+      orgId,
+      LOYALTY_EARN_EVENT_TYPES.PURCHASE,
+      {
+        tierSlug: account.tier?.slug ?? null,
+        lifetimePointsEarned: account.lifetimePointsEarned,
+        purchaseAmountCents,
+        totalVisits: account.totalVisits,
+        accountId: account.id,
+      },
+    );
+
+    if (pointsAwarded <= 0) {
+      throw new BadRequestException(
+        'No points awarded for this purchase. Check Program → earn rules (PURCHASE) or default earn amount.',
+      );
+    }
+
+    const dollars = (purchaseAmountCents / 100).toFixed(2);
+    const result = await this.points.applyPoints(
+      orgId,
+      account.id,
+      pointsAwarded,
+      LOYALTY_POINT_LEDGER_TYPES.EARN,
+      {
+        sourceType: 'manual_purchase',
+        sourceId: `staff-purchase-${randomUUID()}`,
+        description: description?.trim() || `Purchase $${dollars}`,
+        incrementVisit: true,
+      },
+    );
+
+    return { ...result, pointsAwarded, purchaseAmountCents };
+  }
 
   async earnFromEvent(
     orgId: string,

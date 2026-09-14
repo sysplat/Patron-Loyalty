@@ -238,6 +238,17 @@ export default function ProgramPage() {
                           value={rulePoints}
                           onChange={(e) => setRulePoints(e.target.value)}
                         />
+                        {ruleEvent === 'PURCHASE' && Number(rulePoints) === 1 ? (
+                          <p className="text-muted-foreground text-[11px] leading-snug">
+                            With 1 point on Purchase, staff &quot;Record purchase&quot; awards 1 pt
+                            per $1 of the amount entered (Lookup or patron profile).
+                          </p>
+                        ) : ruleEvent === 'PURCHASE' ? (
+                          <p className="text-muted-foreground text-[11px] leading-snug">
+                            Staff enter the sale amount on Lookup / patron profile; this fixed point
+                            amount is awarded when the purchase qualifies.
+                          </p>
+                        ) : null}
                       </div>
                     </div>
 

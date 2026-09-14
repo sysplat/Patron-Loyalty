@@ -127,6 +127,12 @@ export const loyaltyPointsAdjustSchema = z.object({
   description: z.string().max(500).optional(),
 });
 
+/** Staff counter: enter purchase amount; points resolved from program earn rules. */
+export const loyaltyPointsEarnPurchaseSchema = z.object({
+  purchaseAmountCents: z.number().int().min(1).max(100_000_000),
+  description: z.string().max(500).optional(),
+});
+
 export const createReferralSchema = z.object({
   referralCode: z.string().min(4).max(20),
   customerId: z.string().uuid(),

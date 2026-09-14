@@ -5,7 +5,11 @@ import { RequirePermissions } from '../../../common/decorators/permissions.decor
 import { PrismaService } from '../../../prisma/prisma.service';
 import { LoyaltyAccountService } from '../loyalty-account.service';
 import { LoyaltyGamificationService } from '../loyalty-gamification.service';
-import { LoyaltyPointsAdjustDto, UpdateLoyaltyProfileDto } from '../dto/loyalty.dto';
+import {
+  LoyaltyPointsAdjustDto,
+  LoyaltyPointsEarnPurchaseDto,
+  UpdateLoyaltyProfileDto,
+} from '../dto/loyalty.dto';
 
 @ApiTags('Loyalty')
 @ApiBearerAuth()
@@ -75,5 +79,23 @@ export class LoyaltyAccountsController {
     @Body() body: LoyaltyPointsAdjustDto,
   ) {
     return this.accounts.adjustPoints(user.orgId, customerId, body.points, body.description);
+  }
+
+  @Post('accounts/:customerId/points/earn')
+  @ApiOperation({
+    summary: 'Staff: award points from a purchase amount using program earn rules',
+  })
+  @RequirePermissions({ resource: 'customer', action: 'update' })
+  earnFromPurchase(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
+    @Body() body: LoyaltyPointsEarnPurchaseDto,
+  ) {
+    return this.accounts.earnFromPurchase(
+      user.orgId,
+      customerId,
+      body.purchaseAmountCents,
+      body.description,
+    );
   }
 }

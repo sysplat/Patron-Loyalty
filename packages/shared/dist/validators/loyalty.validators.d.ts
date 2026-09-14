@@ -229,6 +229,17 @@ export declare const loyaltyPointsAdjustSchema: z.ZodObject<{
     points: number;
     description?: string | undefined;
 }>;
+/** Staff counter: enter purchase amount; points resolved from program earn rules. */
+export declare const loyaltyPointsEarnPurchaseSchema: z.ZodObject<{
+    purchaseAmountCents: z.ZodNumber;
+    description: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    purchaseAmountCents: number;
+    description?: string | undefined;
+}, {
+    purchaseAmountCents: number;
+    description?: string | undefined;
+}>;
 export declare const createReferralSchema: z.ZodObject<{
     referralCode: z.ZodString;
     customerId: z.ZodString;
