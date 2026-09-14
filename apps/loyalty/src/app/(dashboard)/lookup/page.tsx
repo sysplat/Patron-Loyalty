@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { RecordPurchaseForm } from '@/components/record-purchase-form';
+import { AlertTriangle } from 'lucide-react';
 
 interface LookupResult {
   found: boolean;
@@ -28,11 +29,32 @@ interface LookupResult {
   } | null;
 }
 
+interface ProgramSummary {
+  earnRules: Array<{
+    id: string;
+    eventType: string;
+    points: number;
+    active: boolean;
+  }>;
+  defaultEarnPoints?: number;
+}
+
 export default function PatronLookupPage() {
   const token = useAuthStore((s) => s.accessToken);
   const qc = useQueryClient();
   const [phoneInput, setPhoneInput] = useState('');
   const [queryPhone, setQueryPhone] = useState('');
+
+  const { data: program } = useQuery({
+    queryKey: ['loyalty', 'program'],
+    queryFn: () => loyaltyGet<ProgramSummary>('/loyalty/program', token!),
+    enabled: !!token,
+    staleTime: 60_000,
+  });
+
+  const hasActivePurchaseRule = (program?.earnRules ?? []).some(
+    (r) => r.eventType === 'PURCHASE' && r.active,
+  );
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['loyalty', 'lookup', queryPhone],
@@ -44,18 +66,44 @@ export default function PatronLookupPage() {
     enabled: !!token && queryPhone.length >= 10,
   });
 
+  const runLookup = () => {
+    const next = phoneInput.trim();
+    if (next.length >= 10) setQueryPhone(next);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Customer lookup</h1>
-        <p className="text-muted-foreground text-sm">
-          Find a member by phone, record a purchase for points, or open their full profile.
+        <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Counter</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
+          Award points in 3 steps: <span className="text-foreground font-medium">phone</span> →{' '}
+          <span className="text-foreground font-medium">sale amount</span> →{' '}
+          <span className="text-foreground font-medium">Award</span>.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Search by phone</CardTitle>
+      {program && !hasActivePurchaseRule ? (
+        <div
+          role="status"
+          className="flex gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-950 dark:text-amber-100"
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <div className="space-y-1">
+            <p className="font-medium">No active PURCHASE earn rule</p>
+            <p className="text-muted-foreground text-xs dark:text-amber-100/80">
+              Add a Purchase rule under Program (recommended: 1 point per $1) so Counter and POS
+              award points the same way.
+            </p>
+            <Link href="/program" className="text-primary text-xs font-medium underline">
+              Open Program →
+            </Link>
+          </div>
+        </div>
+      ) : null}
+
+      <Card className="sticky top-16 z-10 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">1. Find member by phone</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Input
@@ -63,16 +111,12 @@ export default function PatronLookupPage() {
             value={phoneInput}
             onChange={(e) => setPhoneInput(e.target.value)}
             className="max-w-xs"
+            autoFocus
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && phoneInput.trim().length >= 10) {
-                setQueryPhone(phoneInput.trim());
-              }
+              if (e.key === 'Enter') runLookup();
             }}
           />
-          <Button
-            onClick={() => setQueryPhone(phoneInput.trim())}
-            disabled={phoneInput.trim().length < 10 || isFetching}
-          >
+          <Button onClick={runLookup} disabled={phoneInput.trim().length < 10 || isFetching}>
             Look up
           </Button>
         </CardContent>
@@ -85,7 +129,7 @@ export default function PatronLookupPage() {
       {data?.found && data.customer && (
         <Card>
           <CardHeader>
-            <CardTitle>{data.customer.name}</CardTitle>
+            <CardTitle className="text-lg">{data.customer.name}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
             {data.customer.phone && <p>Phone: {data.customer.phone}</p>}
@@ -94,11 +138,13 @@ export default function PatronLookupPage() {
             {data.loyaltyAccount ? (
               <>
                 <p>
-                  Balance: {data.loyaltyAccount.pointsBalance} pts · Lifetime:{' '}
-                  {data.loyaltyAccount.lifetimePointsEarned}
+                  Balance:{' '}
+                  <span className="text-foreground text-base font-semibold">
+                    {data.loyaltyAccount.pointsBalance} pts
+                  </span>{' '}
+                  · Lifetime: {data.loyaltyAccount.lifetimePointsEarned}
                 </p>
                 {data.loyaltyAccount.tier && <p>Tier: {data.loyaltyAccount.tier.name}</p>}
-                <p className="font-mono text-xs">{data.loyaltyAccount.referralCode}</p>
               </>
             ) : (
               <p className="text-muted-foreground">
@@ -107,7 +153,10 @@ export default function PatronLookupPage() {
             )}
 
             <div className="border-t pt-4">
-              <p className="mb-2 text-sm font-semibold">Record purchase</p>
+              <p className="mb-1 text-sm font-semibold">2. Record purchase</p>
+              <p className="text-muted-foreground mb-3 text-xs">
+                Enter the sale total. Points come from your Program PURCHASE rules.
+              </p>
               <RecordPurchaseForm
                 customerId={data.customer.id}
                 compact
@@ -117,18 +166,35 @@ export default function PatronLookupPage() {
               />
             </div>
 
-            <Link
-              href={`/patrons/${data.customer.id}`}
-              className="text-primary mt-2 inline-block text-sm underline"
-            >
-              Open customer profile →
-            </Link>
+            <div className="flex flex-wrap gap-3 border-t pt-4 text-sm">
+              <Link
+                href={`/patrons/${data.customer.id}`}
+                className="text-primary font-medium underline"
+              >
+                Redeem / full profile →
+              </Link>
+              <Link href="/rewards" className="text-muted-foreground underline">
+                Browse rewards
+              </Link>
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {data && !data.found && queryPhone && !isLoading && (
-        <p className="text-muted-foreground text-sm">No customer found for that phone number.</p>
+      {data && !data.found && queryPhone && !isLoading && !isFetching && (
+        <Card>
+          <CardContent className="space-y-3 pt-6 text-sm">
+            <p className="font-medium">No customer found for that phone number.</p>
+            <p className="text-muted-foreground text-xs">
+              Check the number, or add them under Customers, then return here to award points.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link href="/patrons">Go to Customers</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

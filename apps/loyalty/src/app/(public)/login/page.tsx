@@ -88,7 +88,7 @@ export default function LoginPage() {
         throw new Error('Signed in but session could not be established. Please try again.');
       }
       setAuth(accessToken, mapLoginUser(data));
-      router.push('/overview');
+      router.push('/lookup');
     },
     [router, setAuth],
   );

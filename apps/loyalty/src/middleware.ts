@@ -25,7 +25,7 @@ const publicPaths = [
 ];
 const publicPrefixes = ['/portal', '/card', '/refer'];
 
-const DASHBOARD_HOME = '/overview';
+const DASHBOARD_HOME = '/lookup';
 
 /** Preserve the browser hostname when proxied (Cloudflare → Railway). */
 function publicRequestUrl(request: NextRequest): URL {

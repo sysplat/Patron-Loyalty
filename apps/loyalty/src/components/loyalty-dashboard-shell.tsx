@@ -8,6 +8,7 @@ import {
   Activity,
   BarChart3,
   CheckSquare,
+  ChevronDown,
   ChevronRight,
   ExternalLink,
   Gift,
@@ -38,22 +39,66 @@ import {
 import { cn } from '@/lib/utils';
 import { formatRoleLabel, formatUserDisplayName, isOwnerOrAdmin } from '@/lib/rbac-ui';
 
-export const LOYALTY_NAV = [
-  { href: '/overview', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/lookup', label: 'Lookup', icon: Phone },
-  { href: '/patrons', label: 'Customers', icon: Users },
-  { href: '/rewards', label: 'Rewards', icon: Gift },
-  { href: '/coupons', label: 'Coupons', icon: Tag },
-  { href: '/wallet', label: 'Wallet', icon: Wallet },
-  { href: '/referrals', label: 'Referrals', icon: Ticket },
-  { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
-  { href: '/engagement', label: 'Engagement', icon: Trophy },
-  { href: '/tasks', label: 'Tasks', icon: CheckSquare },
-  { href: '/reports', label: 'Reports', icon: BarChart3 },
-  { href: '/program', label: 'Program', icon: Settings2 },
-  { href: '/integrations', label: 'Integrations', icon: Plug },
-  { href: '/diagnostics', label: 'Diagnostics', icon: Activity, adminOnly: true },
-] as const;
+type NavIcon = typeof Phone;
+
+export type LoyaltyNavItem = {
+  href: string;
+  label: string;
+  icon: NavIcon;
+  adminOnly?: boolean;
+};
+
+export type LoyaltyNavSection = {
+  id: 'counter' | 'grow' | 'insights' | 'setup';
+  label: string;
+  collapsible?: boolean;
+  items: LoyaltyNavItem[];
+};
+
+/** Grouped staff nav: Counter first; Setup collapsed for non-admins by default. */
+export const LOYALTY_NAV_SECTIONS: LoyaltyNavSection[] = [
+  {
+    id: 'counter',
+    label: 'Counter',
+    items: [
+      { href: '/lookup', label: 'Counter', icon: Phone },
+      { href: '/patrons', label: 'Customers', icon: Users },
+      { href: '/rewards', label: 'Rewards', icon: Gift },
+    ],
+  },
+  {
+    id: 'grow',
+    label: 'Grow',
+    items: [
+      { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
+      { href: '/referrals', label: 'Referrals', icon: Ticket },
+      { href: '/engagement', label: 'Engagement', icon: Trophy },
+      { href: '/coupons', label: 'Coupons', icon: Tag },
+      { href: '/wallet', label: 'Wallet', icon: Wallet },
+      { href: '/tasks', label: 'Tasks', icon: CheckSquare },
+    ],
+  },
+  {
+    id: 'insights',
+    label: 'Insights',
+    items: [
+      { href: '/overview', label: 'Dashboard', icon: LayoutDashboard },
+      { href: '/reports', label: 'Reports', icon: BarChart3 },
+    ],
+  },
+  {
+    id: 'setup',
+    label: 'Setup',
+    collapsible: true,
+    items: [
+      { href: '/program', label: 'Program', icon: Settings2 },
+      { href: '/integrations', label: 'Integrations', icon: Plug },
+      { href: '/diagnostics', label: 'Diagnostics', icon: Activity, adminOnly: true },
+    ],
+  },
+];
+
+export const LOYALTY_NAV: LoyaltyNavItem[] = LOYALTY_NAV_SECTIONS.flatMap((s) => s.items);
 
 function webAppUrl(): string {
   return (process.env.NEXT_PUBLIC_WEB_URL ?? 'http://localhost:3000').replace(/\/$/, '');
@@ -170,7 +215,14 @@ function LoyaltySidebar({
   const displayName = formatUserDisplayName(user);
   const roleLabel = formatRoleLabel(user?.role);
   const isViewer = String(user?.role ?? '').toLowerCase() === 'viewer';
+  const adminOrOwner = isOwnerOrAdmin(user?.role);
   const webUrl = webAppUrl();
+  const [setupOpen, setSetupOpen] = useState(adminOrOwner);
+
+  const visibleSections = LOYALTY_NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => !item.adminOnly || adminOrOwner),
+  })).filter((section) => section.items.length > 0);
 
   return (
     <aside
@@ -234,42 +286,79 @@ function LoyaltySidebar({
               <QPlatformWordmark height={24} />
             </Link>
             <p className="text-muted-foreground truncate text-[10px] font-semibold uppercase tracking-wider">
-              Loyalty
+              Patron Loyalty
             </p>
           </div>
         )}
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3" aria-label="Loyalty">
-        {LOYALTY_NAV.filter(
-          (item) => !('adminOnly' in item && item.adminOnly) || isOwnerOrAdmin(user?.role),
-        ).map(({ href, label, icon: Icon }) => {
-          const active = navItemActive(pathname, href);
+      <nav className="flex-1 space-y-3 overflow-y-auto px-2 py-3" aria-label="Loyalty">
+        {visibleSections.map((section) => {
+          const isSetup = section.id === 'setup' && section.collapsible;
+          const setupActive =
+            isSetup && section.items.some((item) => navItemActive(pathname, item.href));
+          const sectionExpanded = !isSetup || setupOpen || collapsed || setupActive;
+
           return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onCloseMobile}
-              title={collapsed ? label : undefined}
-              className={cn(
-                'group flex items-center gap-3 rounded-lg border-l-[3px] py-2.5 pl-[9px] pr-3 text-sm font-medium transition-all duration-150',
-                collapsed && 'justify-center px-0 pl-0',
-                active
-                  ? 'bg-primary/10 text-primary border-primary shadow-sm'
-                  : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground border-transparent',
+            <div key={section.id} className="space-y-0.5">
+              {!collapsed && (
+                <div className="flex items-center justify-between px-2 pt-1">
+                  {isSetup ? (
+                    <button
+                      type="button"
+                      onClick={() => setSetupOpen((v) => !v)}
+                      className="text-muted-foreground hover:text-foreground flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-wider"
+                      aria-expanded={setupOpen}
+                    >
+                      <span>{section.label}</span>
+                      <ChevronDown
+                        className={cn(
+                          'h-3.5 w-3.5 transition-transform',
+                          setupOpen || setupActive ? 'rotate-0' : '-rotate-90',
+                        )}
+                      />
+                    </button>
+                  ) : (
+                    <p className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">
+                      {section.label}
+                    </p>
+                  )}
+                </div>
               )}
-            >
-              <Icon
-                className={cn(
-                  'h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110',
-                  active ? 'text-primary' : 'text-muted-foreground/70 group-hover:text-foreground',
-                )}
-              />
-              {!collapsed && <span className="truncate">{label}</span>}
-              {!collapsed && active && (
-                <ChevronRight className="text-primary/50 ml-auto h-4 w-4 shrink-0" />
-              )}
-            </Link>
+              {sectionExpanded
+                ? section.items.map(({ href, label, icon: Icon }) => {
+                    const active = navItemActive(pathname, href);
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={onCloseMobile}
+                        title={collapsed ? label : undefined}
+                        className={cn(
+                          'group flex items-center gap-3 rounded-lg border-l-[3px] py-2.5 pl-[9px] pr-3 text-sm font-medium transition-all duration-150',
+                          collapsed && 'justify-center px-0 pl-0',
+                          active
+                            ? 'bg-primary/10 text-primary border-primary shadow-sm'
+                            : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground border-transparent',
+                        )}
+                      >
+                        <Icon
+                          className={cn(
+                            'h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110',
+                            active
+                              ? 'text-primary'
+                              : 'text-muted-foreground/70 group-hover:text-foreground',
+                          )}
+                        />
+                        {!collapsed && <span className="truncate">{label}</span>}
+                        {!collapsed && active && (
+                          <ChevronRight className="text-primary/50 ml-auto h-4 w-4 shrink-0" />
+                        )}
+                      </Link>
+                    );
+                  })
+                : null}
+            </div>
           );
         })}
       </nav>
@@ -283,7 +372,7 @@ function LoyaltySidebar({
             className="text-muted-foreground hover:bg-muted/70 hover:text-foreground flex items-center gap-2 rounded-lg border border-dashed px-3 py-2 text-xs font-medium transition-colors"
           >
             <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
-            <span className="truncate">Back to Queue Management</span>
+            <span className="truncate">Open queue product (optional)</span>
           </a>
         ) : null}
 

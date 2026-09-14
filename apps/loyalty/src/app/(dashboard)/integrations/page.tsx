@@ -326,16 +326,68 @@ export default function IntegrationsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Integrations</h1>
-      <p className="text-muted-foreground max-w-2xl text-sm">
-        Connect POS systems, marketing platforms, and custom apps to award points and sync patron
-        profiles automatically.
-      </p>
+      <div>
+        <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Integrations</h1>
+        <p className="text-muted-foreground mt-1 max-w-2xl text-sm">
+          Connections are optional. Staff Counter already awards points from Program rules.
+          Integration <code className="text-xs">points/earn</code> and Counter Record purchase share
+          the same PURCHASE earn rules.
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="border-primary/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Standalone</CardTitle>
+            <CardDescription>
+              No connection required. Award points at the counter with phone + sale amount.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild size="sm">
+              <a href="/lookup">Open Counter</a>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Point of sale</CardTitle>
+            <CardDescription>
+              Square or Clover send purchase totals automatically — same Program PURCHASE rules.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground text-xs">Configure Square / Clover below.</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Platforms &amp; API</CardTitle>
+            <CardDescription>
+              QPlatform visit events and custom apps via API key (
+              <code className="text-xs">X-Loyalty-Api-Key</code>).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-muted-foreground text-xs">
+              See API key and endpoints below.{' '}
+              <a href="/qplatform-integration" className="text-primary underline">
+                QPlatform integration overview
+              </a>
+              . Operator guide:{' '}
+              <span className="text-foreground">docs/operations/LOYALTY_STAFF_COUNTER.md</span>
+            </p>
+            <Button asChild size="sm" variant="outline">
+              <a href="#integration-api-key">Manage API key</a>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* ── API Key ─────────────────────────────────────────────────────────── */}
       <SectionDivider label="Generic API" />
 
-      <Card>
+      <Card id="integration-api-key">
         <CardHeader>
           <CardTitle className="text-base">Integration API key</CardTitle>
           <CardDescription>

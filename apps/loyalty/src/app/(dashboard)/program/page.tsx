@@ -167,7 +167,7 @@ export default function ProgramPage() {
         <div>
           <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Rewards Engine</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Configure how customers earn points across your business.
+            Configure how customers earn points. Staff Counter and POS both use these rules.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -187,6 +187,34 @@ export default function ProgramPage() {
           </Button>
         </div>
       </div>
+
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Recommended for standalone</CardTitle>
+          <CardDescription>
+            Use a <strong>Purchase</strong> earn rule with <strong>1 point</strong> — Counter and
+            POS then award 1 pt per $1 of the sale amount. Staff enter the amount on Counter; no
+            integration required.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setShowRuleBuilder(true);
+              setRuleEvent('PURCHASE');
+              setRulePoints('1');
+              setRuleName('Purchase (1 pt per dollar)');
+            }}
+          >
+            Prefill 1 pt / $1 purchase rule
+          </Button>
+          <Button size="sm" variant="ghost" asChild>
+            <a href="/lookup">Open Counter</a>
+          </Button>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left Column: Rules & Tiers */}

@@ -44,6 +44,7 @@ packages/e2e/            Playwright smoke
 
 | Doc                                                                              | Purpose                                       |
 | -------------------------------------------------------------------------------- | --------------------------------------------- |
+| [LOYALTY_STAFF_COUNTER.md](docs/operations/LOYALTY_STAFF_COUNTER.md)             | Staff Counter path + when to connect POS/API  |
 | [TESTING.md](docs/operations/TESTING.md)                                         | Test tiers, CI matrix (disabled), local gates |
 | [PATRON_LOYALTY_10X_ROADMAP.md](docs/architecture/PATRON_LOYALTY_10X_ROADMAP.md) | Phase plan + scorecard                        |
 | [REPO_BOUNDARIES.md](docs/architecture/REPO_BOUNDARIES.md)                       | LMS vs QMS surfaces, deploy profile           |

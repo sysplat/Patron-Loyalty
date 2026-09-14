@@ -100,13 +100,42 @@ function getRelativeTime(dateString: string) {
 export default function LoyaltyDashboardPage() {
   const token = useAuthStore((s) => s.accessToken);
   const [view, setView] = useState<DashboardView>('executive');
-  const [showOnboarding, setShowOnboarding] = useState(true);
+  const [checklistDismissed, setChecklistDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('loyalty-getting-started-dismissed') === '1';
+  });
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['loyalty', 'dashboard'],
     queryFn: () => loyaltyGet<DashboardData>('/loyalty/dashboard', token!),
     enabled: !!token,
   });
+
+  const { data: program } = useQuery({
+    queryKey: ['loyalty', 'program'],
+    queryFn: () =>
+      loyaltyGet<{
+        earnRules: Array<{ eventType: string; active: boolean }>;
+      }>('/loyalty/program', token!),
+    enabled: !!token && !checklistDismissed,
+  });
+
+  const { data: rewards = [] } = useQuery({
+    queryKey: ['loyalty', 'rewards'],
+    queryFn: () => loyaltyGet<Array<{ id: string; active?: boolean }>>('/loyalty/rewards', token!),
+    enabled: !!token && !checklistDismissed,
+  });
+
+  const hasPurchaseRule = (program?.earnRules ?? []).some(
+    (r) => r.eventType === 'PURCHASE' && r.active,
+  );
+  const hasReward = rewards.length > 0;
+  const hasMembers = (data?.kpis.loyaltyMembers ?? 0) > 0;
+
+  const dismissChecklist = () => {
+    window.localStorage.setItem('loyalty-getting-started-dismissed', '1');
+    setChecklistDismissed(true);
+  };
 
   const { data: salesData } = useQuery({
     queryKey: ['loyalty', 'reports', 'sales-dashboard'],
@@ -225,50 +254,53 @@ export default function LoyaltyDashboardPage() {
         </p>
       </div>
 
-      {showOnboarding && (
-        <Card className="animate-in fade-in slide-in-from-top-2 border-primary/20 bg-primary/5 relative overflow-hidden">
+      {!checklistDismissed && (
+        <Card className="border-primary/20 bg-primary/5 relative overflow-hidden">
           <button
-            onClick={() => setShowOnboarding(false)}
+            type="button"
+            onClick={dismissChecklist}
             className="text-muted-foreground hover:text-foreground absolute right-4 top-4"
+            aria-label="Dismiss getting started"
           >
             <X className="h-4 w-4" />
           </button>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Welcome to Patron Loyalty! 👋</CardTitle>
+            <CardTitle className="text-lg">Getting started</CardTitle>
             <p className="text-muted-foreground text-sm">
-              Follow these steps to get your program ready for launch.
+              Standalone Loyalty works without POS — finish these steps, then use Counter for every
+              sale.
             </p>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 {
-                  title: 'Create a Reward',
-                  desc: 'Add a perk for your patrons',
-                  done: true,
-                  href: '/rewards',
-                },
-                {
-                  title: 'Setup Portal Branding',
-                  desc: 'Add your logo and colors',
-                  done: false,
+                  title: 'Set how purchases earn',
+                  desc: 'Program → PURCHASE rule (1 pt per $1 recommended)',
+                  done: hasPurchaseRule,
                   href: '/program',
                 },
                 {
-                  title: 'Connect QPlatform',
-                  desc: 'Sync historical visits',
-                  done: true,
-                  href: '/integrations',
+                  title: 'Add at least one reward',
+                  desc: 'Something members can redeem',
+                  done: hasReward,
+                  href: '/rewards',
                 },
                 {
-                  title: 'Share Referral Link',
-                  desc: 'Invite your first customer',
-                  done: false,
-                  href: '/referrals',
+                  title: 'Try Counter',
+                  desc: 'Lookup a phone and record a test purchase',
+                  done: hasMembers,
+                  href: '/lookup',
                 },
-              ].map((step, i) => (
+                {
+                  title: 'Optional: connect apps',
+                  desc: 'POS, QPlatform, or API key when ready',
+                  done: false,
+                  href: '/integrations',
+                },
+              ].map((step) => (
                 <Link
-                  key={i}
+                  key={step.href + step.title}
                   href={step.href}
                   className={`hover:border-primary/50 flex items-start gap-3 rounded-lg border p-3 transition-colors ${
                     step.done
