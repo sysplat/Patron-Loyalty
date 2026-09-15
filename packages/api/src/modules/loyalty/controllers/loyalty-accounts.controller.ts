@@ -98,4 +98,25 @@ export class LoyaltyAccountsController {
       body.description,
     );
   }
+
+  @Get('accounts/:customerId/points/earn-preview')
+  @ApiOperation({
+    summary: 'Staff: preview points for a purchase amount (no ledger write)',
+  })
+  @RequirePermissions({ resource: 'customer', action: 'read' })
+  previewEarnFromPurchase(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
+    @Query('purchaseAmountCents') purchaseAmountCentsRaw: string,
+  ) {
+    const purchaseAmountCents = Number(purchaseAmountCentsRaw);
+    if (
+      !Number.isInteger(purchaseAmountCents) ||
+      purchaseAmountCents < 1 ||
+      purchaseAmountCents > 100_000_000
+    ) {
+      return { pointsAwarded: 0, purchaseAmountCents: 0 };
+    }
+    return this.accounts.previewEarnFromPurchase(user.orgId, customerId, purchaseAmountCents);
+  }
 }

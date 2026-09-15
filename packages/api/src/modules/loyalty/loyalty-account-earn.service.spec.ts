@@ -241,4 +241,19 @@ describe('LoyaltyAccountEarnService', () => {
       message: expect.stringContaining('No points awarded'),
     });
   });
+
+  it('previewEarnFromPurchase returns points without applying ledger', async () => {
+    lifecycle.ensureAccount.mockResolvedValue({
+      id: 'acct-1',
+      tier: { slug: 'bronze' },
+      lifetimePointsEarned: 10,
+      totalVisits: 2,
+    });
+    programService.resolveEarnPoints.mockResolvedValue(42);
+
+    const result = await service.previewEarnFromPurchase(ORG_ID, CUSTOMER_ID, 4200);
+
+    expect(points.applyPoints).not.toHaveBeenCalled();
+    expect(result).toEqual({ pointsAwarded: 42, purchaseAmountCents: 4200 });
+  });
 });

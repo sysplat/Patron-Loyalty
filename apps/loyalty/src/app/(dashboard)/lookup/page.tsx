@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { RecordPurchaseForm } from '@/components/record-purchase-form';
+import { CounterRedeemPanel } from '@/components/counter-redeem-panel';
 import { AlertTriangle } from 'lucide-react';
 
 interface LookupResult {
@@ -71,6 +72,10 @@ export default function PatronLookupPage() {
     if (next.length >= 10) setQueryPhone(next);
   };
 
+  const refreshLookup = () => {
+    void qc.invalidateQueries({ queryKey: ['loyalty', 'lookup', queryPhone] });
+  };
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
@@ -78,7 +83,7 @@ export default function PatronLookupPage() {
         <p className="text-muted-foreground mt-1 text-sm">
           Award points in 3 steps: <span className="text-foreground font-medium">phone</span> →{' '}
           <span className="text-foreground font-medium">sale amount</span> →{' '}
-          <span className="text-foreground font-medium">Award</span>.
+          <span className="text-foreground font-medium">Award</span>. Redeem without leaving.
         </p>
       </div>
 
@@ -110,13 +115,17 @@ export default function PatronLookupPage() {
             placeholder="+1 555 123 4567"
             value={phoneInput}
             onChange={(e) => setPhoneInput(e.target.value)}
-            className="max-w-xs"
+            className="h-11 max-w-xs text-base"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === 'Enter') runLookup();
             }}
           />
-          <Button onClick={runLookup} disabled={phoneInput.trim().length < 10 || isFetching}>
+          <Button
+            className="h-11"
+            onClick={runLookup}
+            disabled={phoneInput.trim().length < 10 || isFetching}
+          >
             Look up
           </Button>
         </CardContent>
@@ -128,53 +137,54 @@ export default function PatronLookupPage() {
 
       {data?.found && data.customer && (
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2">
             <CardTitle className="text-lg">{data.customer.name}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            {data.customer.phone && <p>Phone: {data.customer.phone}</p>}
-            {data.customer.email && <p>Email: {data.customer.email}</p>}
-            <p>Visits: {data.customer.visitCount}</p>
-            {data.loyaltyAccount ? (
-              <>
-                <p>
-                  Balance:{' '}
-                  <span className="text-foreground text-base font-semibold">
-                    {data.loyaltyAccount.pointsBalance} pts
-                  </span>{' '}
-                  · Lifetime: {data.loyaltyAccount.lifetimePointsEarned}
+          <CardContent className="space-y-5 text-sm">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div className="space-y-1">
+                {data.customer.phone && <p>Phone: {data.customer.phone}</p>}
+                {data.customer.email && <p>Email: {data.customer.email}</p>}
+                <p>Visits: {data.customer.visitCount}</p>
+                {data.loyaltyAccount?.tier && <p>Tier: {data.loyaltyAccount.tier.name}</p>}
+              </div>
+              <div className="text-right">
+                <p className="text-muted-foreground text-xs uppercase tracking-wide">Balance</p>
+                <p className="text-foreground text-3xl font-semibold tabular-nums">
+                  {data.loyaltyAccount?.pointsBalance ?? 0}
+                  <span className="text-muted-foreground ml-1 text-base font-medium">pts</span>
                 </p>
-                {data.loyaltyAccount.tier && <p>Tier: {data.loyaltyAccount.tier.name}</p>}
-              </>
-            ) : (
-              <p className="text-muted-foreground">
-                No loyalty account yet — recording a purchase will create one.
-              </p>
-            )}
+              </div>
+            </div>
 
             <div className="border-t pt-4">
-              <p className="mb-1 text-sm font-semibold">2. Record purchase</p>
-              <p className="text-muted-foreground mb-3 text-xs">
-                Enter the sale total. Points come from your Program PURCHASE rules.
-              </p>
+              <p className="mb-3 text-sm font-semibold">2. Record purchase</p>
               <RecordPurchaseForm
                 customerId={data.customer.id}
                 compact
-                onSuccess={() => {
-                  void qc.invalidateQueries({ queryKey: ['loyalty', 'lookup', queryPhone] });
-                }}
+                prominent
+                onSuccess={refreshLookup}
               />
             </div>
 
-            <div className="flex flex-wrap gap-3 border-t pt-4 text-sm">
+            <div className="border-t pt-4">
+              <p className="mb-1 text-sm font-semibold">3. Redeem (optional)</p>
+              <p className="text-muted-foreground mb-3 text-xs">
+                Spend points on a reward without leaving Counter.
+              </p>
+              <CounterRedeemPanel
+                customerId={data.customer.id}
+                pointsBalance={data.loyaltyAccount?.pointsBalance ?? 0}
+                onRedeemed={refreshLookup}
+              />
+            </div>
+
+            <div className="border-t pt-3">
               <Link
                 href={`/patrons/${data.customer.id}`}
-                className="text-primary font-medium underline"
+                className="text-muted-foreground text-xs underline"
               >
-                Redeem / full profile →
-              </Link>
-              <Link href="/rewards" className="text-muted-foreground underline">
-                Browse rewards
+                Full customer profile →
               </Link>
             </div>
           </CardContent>

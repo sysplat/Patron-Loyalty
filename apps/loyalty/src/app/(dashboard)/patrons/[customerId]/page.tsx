@@ -177,9 +177,9 @@ export default function CustomerProfilePage() {
   if (error || !profile) {
     return (
       <div className="space-y-4 py-12 text-center">
-        <p className="text-destructive text-sm">Patron not found or CRM not available.</p>
+        <p className="text-destructive text-sm">Customer not found or CRM not available.</p>
         <Link href="/patrons" className="text-primary text-sm underline">
-          Back to directory
+          Back to customers
         </Link>
       </div>
     );
@@ -231,7 +231,7 @@ export default function CustomerProfilePage() {
           className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          Patrons
+          Customers
         </Link>
       </div>
 

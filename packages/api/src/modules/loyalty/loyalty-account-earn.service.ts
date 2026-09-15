@@ -79,6 +79,34 @@ export class LoyaltyAccountEarnService {
     return { ...result, pointsAwarded, purchaseAmountCents };
   }
 
+  /**
+   * Dry-run PURCHASE earn for Counter UI preview (no ledger write).
+   */
+  async previewEarnFromPurchase(
+    orgId: string,
+    customerId: string,
+    purchaseAmountCents: number,
+  ): Promise<{ pointsAwarded: number; purchaseAmountCents: number }> {
+    await this.patronCrmFeature.requireEnabled(orgId);
+
+    const account = await this.lifecycle.ensureAccount(orgId, customerId);
+    if (!account) throw new NotFoundException('Loyalty account not found');
+
+    const pointsAwarded = await this.programService.resolveEarnPoints(
+      orgId,
+      LOYALTY_EARN_EVENT_TYPES.PURCHASE,
+      {
+        tierSlug: account.tier?.slug ?? null,
+        lifetimePointsEarned: account.lifetimePointsEarned,
+        purchaseAmountCents,
+        totalVisits: account.totalVisits,
+        accountId: account.id,
+      },
+    );
+
+    return { pointsAwarded, purchaseAmountCents };
+  }
+
   async earnFromEvent(
     orgId: string,
     customerId: string | null,
