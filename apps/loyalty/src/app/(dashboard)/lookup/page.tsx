@@ -1,17 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'next/navigation';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { RESOURCES, ACTIONS } from '@queueplatform/shared';
 import { loyaltyGet } from '@/lib/api-response';
+import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
+import { hasPermission } from '@/lib/rbac-ui';
+import { validateCreateCustomer } from '@/lib/validation';
 import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { RecordPurchaseForm } from '@/components/record-purchase-form';
 import { CounterRedeemPanel } from '@/components/counter-redeem-panel';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, UserPlus } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface LookupResult {
   found: boolean;
@@ -40,11 +47,24 @@ interface ProgramSummary {
   defaultEarnPoints?: number;
 }
 
-export default function PatronLookupPage() {
+function PatronLookupPageContent() {
   const token = useAuthStore((s) => s.accessToken);
+  const userRole = useAuthStore((s) => s.user?.role);
+  const canCreate = hasPermission(userRole, RESOURCES.CUSTOMER, ACTIONS.CREATE);
   const qc = useQueryClient();
-  const [phoneInput, setPhoneInput] = useState('');
-  const [queryPhone, setQueryPhone] = useState('');
+  const searchParams = useSearchParams();
+  const phoneFromUrl = (searchParams.get('phone') ?? '').trim();
+  const [phoneInput, setPhoneInput] = useState(phoneFromUrl);
+  const [queryPhone, setQueryPhone] = useState(phoneFromUrl.length >= 10 ? phoneFromUrl : '');
+  const [newName, setNewName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+
+  useEffect(() => {
+    const next = (searchParams.get('phone') ?? '').trim();
+    if (!next) return;
+    setPhoneInput(next);
+    if (next.length >= 10) setQueryPhone(next);
+  }, [searchParams]);
 
   const { data: program } = useQuery({
     queryKey: ['loyalty', 'program'],
@@ -67,6 +87,28 @@ export default function PatronLookupPage() {
     enabled: !!token && queryPhone.length >= 10,
   });
 
+  const createMutation = useMutation({
+    mutationFn: (payload: { name: string; email?: string; phone?: string }) =>
+      api.post<{ id: string; phone?: string | null }>('/customers', payload, { token: token! }),
+    onSuccess: (created) => {
+      toast.success('Customer added — you can award points now');
+      setNewName('');
+      setNewEmail('');
+      const phone = (created.phone ?? queryPhone).trim();
+      setPhoneInput(phone);
+      setQueryPhone(phone);
+      void qc.invalidateQueries({ queryKey: ['loyalty', 'lookup'] });
+      void qc.invalidateQueries({ queryKey: ['customers'] });
+    },
+    onError: (err: unknown) => {
+      const message =
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as { message?: string }).message)
+          : 'Could not add customer';
+      toast.error(message);
+    },
+  });
+
   const runLookup = () => {
     const next = phoneInput.trim();
     if (next.length >= 10) setQueryPhone(next);
@@ -74,6 +116,19 @@ export default function PatronLookupPage() {
 
   const refreshLookup = () => {
     void qc.invalidateQueries({ queryKey: ['loyalty', 'lookup', queryPhone] });
+  };
+
+  const submitNewCustomer = () => {
+    const parsed = validateCreateCustomer({
+      name: newName,
+      email: newEmail,
+      phone: queryPhone || phoneInput,
+    });
+    if (!parsed.ok) {
+      toast.error(parsed.error);
+      return;
+    }
+    createMutation.mutate(parsed.data);
   };
 
   return (
@@ -131,7 +186,7 @@ export default function PatronLookupPage() {
         </CardContent>
       </Card>
 
-      {queryPhone && (isLoading || isFetching) && (
+      {queryPhone && (isLoading || isFetching) && !createMutation.isPending && (
         <p className="text-muted-foreground text-sm">Searching…</p>
       )}
 
@@ -193,19 +248,92 @@ export default function PatronLookupPage() {
 
       {data && !data.found && queryPhone && !isLoading && !isFetching && (
         <Card>
-          <CardContent className="space-y-3 pt-6 text-sm">
-            <p className="font-medium">No customer found for that phone number.</p>
-            <p className="text-muted-foreground text-xs">
-              Check the number, or add them under Customers, then return here to award points.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button asChild variant="outline" size="sm">
-                <Link href="/patrons">Go to Customers</Link>
-              </Button>
-            </div>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <UserPlus className="h-4 w-4" />
+              New customer
+            </CardTitle>
+            <CardDescription>
+              No match for <span className="text-foreground font-medium">{queryPhone}</span>. Add
+              them here, then award points on the next step.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {canCreate ? (
+              <form
+                className="space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  submitNewCustomer();
+                }}
+              >
+                <div className="space-y-1.5">
+                  <Label htmlFor="counter-new-name">Name</Label>
+                  <Input
+                    id="counter-new-name"
+                    required
+                    placeholder="Full name"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="counter-new-phone">Phone</Label>
+                  <Input
+                    id="counter-new-phone"
+                    value={queryPhone}
+                    readOnly
+                    className="bg-muted/40"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="counter-new-email">Email (optional)</Label>
+                  <Input
+                    id="counter-new-email"
+                    type="email"
+                    placeholder="Optional"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Button type="submit" disabled={createMutation.isPending || !newName.trim()}>
+                    {createMutation.isPending ? 'Adding…' : 'Add customer & continue'}
+                  </Button>
+                  <Button type="button" variant="ghost" asChild>
+                    <Link href="/patrons">Open Customers</Link>
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-3 text-sm">
+                <p className="text-muted-foreground">
+                  You don’t have permission to add customers. Ask an owner or admin, or open the
+                  directory if you only need to browse.
+                </p>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/patrons">Go to Customers</Link>
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
     </div>
+  );
+}
+
+export default function PatronLookupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-2xl py-12">
+          <p className="text-muted-foreground text-sm">Loading Counter…</p>
+        </div>
+      }
+    >
+      <PatronLookupPageContent />
+    </Suspense>
   );
 }
