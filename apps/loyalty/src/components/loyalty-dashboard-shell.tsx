@@ -75,7 +75,7 @@ export const LOYALTY_NAV_SECTIONS: LoyaltyNavSection[] = [
       { href: '/engagement', label: 'Engagement', icon: Trophy },
       { href: '/coupons', label: 'Coupons', icon: Tag },
       { href: '/wallet', label: 'Wallet', icon: Wallet },
-      { href: '/tasks', label: 'Tasks', icon: CheckSquare },
+      { href: '/tasks', label: 'Follow-ups', icon: CheckSquare },
     ],
   },
   {

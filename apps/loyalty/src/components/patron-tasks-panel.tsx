@@ -15,22 +15,13 @@ interface CrmTask {
   id: string;
   title: string;
   status: string;
-  priority: string;
   dueAt?: string | null;
 }
 
-function priorityBadge(priority: string) {
-  const p = priority.toLowerCase();
-  if (p === 'high' || p === 'urgent') {
-    return (
-      <Badge variant="destructive" className="font-normal capitalize">
-        {priority}
-      </Badge>
-    );
-  }
+function StatusBadge({ status }: { status: string }) {
   return (
-    <Badge variant="outline" className="text-muted-foreground font-normal capitalize">
-      {priority}
+    <Badge variant="secondary" className="font-normal capitalize">
+      {status.replace(/_/g, ' ')}
     </Badge>
   );
 }
@@ -61,9 +52,9 @@ export function PatronTasksPanel({ customerId }: { customerId: string }) {
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <CheckSquare className="h-4 w-4" />
-              Tasks
+              Follow-ups
             </CardTitle>
-            <CardDescription>Follow-ups tied to this customer</CardDescription>
+            <CardDescription>Staff to-dos for this patron</CardDescription>
           </div>
           <Button variant="ghost" size="sm" className="h-8 shrink-0" asChild>
             <Link href="/tasks">View all</Link>
@@ -77,7 +68,7 @@ export function PatronTasksPanel({ customerId }: { customerId: string }) {
             <Skeleton className="h-10 w-full" />
           </div>
         ) : tasks.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No open tasks for this customer.</p>
+          <p className="text-muted-foreground text-sm">No open follow-ups for this patron.</p>
         ) : (
           <ul className="divide-border/70 divide-y rounded-lg border">
             {tasks.map((task) => (
@@ -85,10 +76,7 @@ export function PatronTasksPanel({ customerId }: { customerId: string }) {
                 <div className="min-w-0 space-y-1">
                   <p className="text-sm font-medium leading-snug">{task.title}</p>
                   <div className="flex flex-wrap items-center gap-1.5">
-                    {priorityBadge(task.priority)}
-                    <Badge variant="secondary" className="font-normal capitalize">
-                      {task.status}
-                    </Badge>
+                    <StatusBadge status={task.status} />
                     {task.dueAt ? (
                       <span className="text-muted-foreground text-xs">
                         Due{' '}
