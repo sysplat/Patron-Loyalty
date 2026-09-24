@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import {
   LOYALTY_EARN_EVENT_TYPES,
@@ -17,6 +23,7 @@ import {
   type LoyaltyApplyPointsResult,
   type LoyaltyPointsTx,
 } from './loyalty-points.service';
+import { LoyaltyReferralService } from './loyalty-referral.service';
 
 @Injectable()
 export class LoyaltyAccountEarnService {
@@ -27,6 +34,8 @@ export class LoyaltyAccountEarnService {
     private readonly loyaltyWebhook: LoyaltyWebhookService,
     private readonly lifecycle: LoyaltyAccountLifecycleService,
     private readonly points: LoyaltyPointsService,
+    @Inject(forwardRef(() => LoyaltyReferralService))
+    private readonly referrals: LoyaltyReferralService,
   ) {}
 
   /**
@@ -75,6 +84,9 @@ export class LoyaltyAccountEarnService {
         incrementVisit: true,
       },
     );
+
+    // First purchase completes any pending referral and awards advocate/friend bonuses.
+    await this.referrals.completePendingForCustomer(orgId, customerId);
 
     return { ...result, pointsAwarded, purchaseAmountCents };
   }
@@ -135,10 +147,22 @@ export class LoyaltyAccountEarnService {
     });
     if (points <= 0) return null;
 
-    return this.points.applyPoints(orgId, account.id, points, LOYALTY_POINT_LEDGER_TYPES.EARN, {
-      ...source,
-      incrementVisit,
-    });
+    const result = await this.points.applyPoints(
+      orgId,
+      account.id,
+      points,
+      LOYALTY_POINT_LEDGER_TYPES.EARN,
+      {
+        ...source,
+        incrementVisit,
+      },
+    );
+
+    if (eventType === LOYALTY_EARN_EVENT_TYPES.PURCHASE) {
+      await this.referrals.completePendingForCustomer(orgId, customerId);
+    }
+
+    return result;
   }
 
   async earnIntegrationPoints(
@@ -159,6 +183,14 @@ export class LoyaltyAccountEarnService {
         incrementVisit: source.incrementVisit,
       },
     );
+
+    if (source.incrementVisit) {
+      const customerId = result.account.customerId;
+      if (customerId) {
+        await this.referrals.completePendingForCustomer(orgId, customerId);
+      }
+    }
+
     return result.account;
   }
 

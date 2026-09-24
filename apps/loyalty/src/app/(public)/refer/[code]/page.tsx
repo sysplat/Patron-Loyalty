@@ -55,13 +55,20 @@ export default function PublicReferJoinPage() {
         const err = (await res.json().catch(() => ({}))) as { message?: string };
         throw new Error(err.message ?? 'Could not join');
       }
-      return res.json() as Promise<{ portalCode: string | null; referralApplied: boolean }>;
+      return res.json() as Promise<{
+        portalCode: string | null;
+        referralApplied: boolean;
+        completesOnFirstPurchase?: boolean;
+        referredBonusPoints?: number;
+      }>;
     },
     onSuccess: (result) => {
       if (result.portalCode) setPortalCode(result.portalCode);
       toast.success(
         result.referralApplied
-          ? 'Welcome! Referral bonus applied.'
+          ? result.completesOnFirstPurchase
+            ? `You're in! Earn ${result.referredBonusPoints ?? data?.referredBonusPoints ?? 25} points on your first purchase.`
+            : 'Welcome! Referral bonus applied.'
           : 'Welcome to the loyalty program!',
       );
     },
@@ -112,7 +119,8 @@ export default function PublicReferJoinPage() {
         <p className="text-xs uppercase tracking-widest text-white/60">{data.orgName}</p>
         <h1 className="mt-2 text-2xl font-bold">Join {data.referrerFirstName}&apos;s invite</h1>
         <p className="mt-2 text-sm text-white/70">
-          Sign up and earn {data.referredBonusPoints ?? 25} welcome bonus points.
+          Sign up now — earn {data.referredBonusPoints ?? 25} welcome bonus points on your first
+          purchase.
         </p>
 
         <div className="mt-4 flex justify-center">

@@ -22,6 +22,7 @@ describe('LoyaltyAccountEarnService', () => {
     adjustPointsInTransaction: vi.fn(),
   };
   const loyaltyWebhook = { dispatch: vi.fn() };
+  const referrals = { completePendingForCustomer: vi.fn().mockResolvedValue(null) };
   const prisma = { withTenant: vi.fn() };
   let service: LoyaltyAccountEarnService;
 
@@ -34,6 +35,7 @@ describe('LoyaltyAccountEarnService', () => {
       loyaltyWebhook as never,
       lifecycle as never,
       points as never,
+      referrals as never,
     );
   });
 
@@ -78,11 +80,14 @@ describe('LoyaltyAccountEarnService', () => {
   });
 
   it('earnIntegrationPoints applies integration ledger type', async () => {
-    points.applyPoints.mockResolvedValue({ account: { id: 'acct-1', pointsBalance: 60 } });
+    points.applyPoints.mockResolvedValue({
+      account: { id: 'acct-1', customerId: CUSTOMER_ID, pointsBalance: 60 },
+    });
 
     const account = await service.earnIntegrationPoints(ORG_ID, 'acct-1', 10, {
       sourceId: 'txn-1',
       description: 'POS earn',
+      incrementVisit: true,
     });
 
     expect(points.applyPoints).toHaveBeenCalledWith(
@@ -93,6 +98,7 @@ describe('LoyaltyAccountEarnService', () => {
       expect.objectContaining({ sourceType: 'integration', sourceId: 'txn-1' }),
     );
     expect(account).toMatchObject({ pointsBalance: 60 });
+    expect(referrals.completePendingForCustomer).toHaveBeenCalledWith(ORG_ID, CUSTOMER_ID);
   });
 
   it('expires inactive account points', async () => {
@@ -226,6 +232,7 @@ describe('LoyaltyAccountEarnService', () => {
       purchaseAmountCents: 5000,
       account: { pointsBalance: 50 },
     });
+    expect(referrals.completePendingForCustomer).toHaveBeenCalledWith(ORG_ID, CUSTOMER_ID);
   });
 
   it('earnFromPurchase throws when rules resolve to zero', async () => {

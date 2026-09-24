@@ -58,6 +58,8 @@ export default function ProgramPage() {
   const [defaultLocale] = useState('');
   const [defaultEarn, setDefaultEarn] = useState('');
   const [expiryDays, setExpiryDays] = useState('');
+  const [referralBonus, setReferralBonus] = useState('');
+  const [referredBonus, setReferredBonus] = useState('');
 
   // Tiers
   const [tierName, setTierName] = useState('');
@@ -540,6 +542,34 @@ export default function ProgramPage() {
               </div>
 
               <div className="space-y-2">
+                <label className="text-sm font-medium">Advocate bonus (referrer)</label>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="Points for the person who shared"
+                  defaultValue={String(program.referralBonusPoints)}
+                  onChange={(e) => setReferralBonus(e.target.value)}
+                />
+                <p className="text-muted-foreground text-[11px] leading-snug">
+                  Awarded when the friend completes their first purchase.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Welcome bonus (referred)</label>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="Points for the new member"
+                  defaultValue={String(program.referredBonusPoints)}
+                  onChange={(e) => setReferredBonus(e.target.value)}
+                />
+                <p className="text-muted-foreground text-[11px] leading-snug">
+                  Separate from earn rules — credited as a BONUS on first purchase.
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <label className="text-sm font-medium">Display Currency</label>
                 <Input
                   placeholder="USD, CAD, GBP"
@@ -559,6 +589,12 @@ export default function ProgramPage() {
                       ? Number(defaultEarn)
                       : program.defaultEarnPoints,
                     pointsExpiryDays: expiryDays ? Number(expiryDays) : null,
+                    referralBonusPoints: referralBonus
+                      ? Number(referralBonus)
+                      : program.referralBonusPoints,
+                    referredBonusPoints: referredBonus
+                      ? Number(referredBonus)
+                      : program.referredBonusPoints,
                   })
                 }
                 disabled={updateProgram.isPending}

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { LOYALTY_POINT_LEDGER_TYPES } from '@queueplatform/shared';
 import { LoyaltyReferralService } from './loyalty-referral.service';
 
 const ORG_ID = 'org-1';
@@ -12,9 +13,8 @@ describe('LoyaltyReferralService', () => {
     requireEnabled: vi.fn().mockResolvedValue(undefined),
     isEnabled: vi.fn().mockResolvedValue(true),
   };
-  const accounts = {
+  const lifecycle = {
     ensureAccount: vi.fn(),
-    earnFromEvent: vi.fn().mockResolvedValue(undefined),
   };
   const programService = {
     getOrCreateProgram: vi.fn().mockResolvedValue({
@@ -23,6 +23,7 @@ describe('LoyaltyReferralService', () => {
     }),
   };
   const integration = { upsertCustomer: vi.fn() };
+  const points = { applyPoints: vi.fn().mockResolvedValue({ account: { id: 'acct' } }) };
   const prisma = { withTenant: vi.fn(), withBypassRls: vi.fn() };
   let service: LoyaltyReferralService;
 
@@ -31,9 +32,10 @@ describe('LoyaltyReferralService', () => {
     service = new LoyaltyReferralService(
       prisma as never,
       patronCrmFeature as never,
-      accounts as never,
+      lifecycle as never,
       programService as never,
       integration as never,
+      points as never,
     );
   });
 
@@ -68,8 +70,8 @@ describe('LoyaltyReferralService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('applies referral and awards bonus points', async () => {
-    const create = vi.fn().mockResolvedValue({ id: 'ref-1' });
+  it('applies referral as pending without awarding points', async () => {
+    const create = vi.fn().mockResolvedValue({ id: 'ref-1', status: 'pending' });
     let callCount = 0;
     prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) => {
       callCount += 1;
@@ -95,26 +97,99 @@ describe('LoyaltyReferralService', () => {
         loyaltyReferral: { create },
       });
     });
-    accounts.ensureAccount.mockResolvedValue({ id: 'acct-referred' });
+    lifecycle.ensureAccount.mockResolvedValue({ id: 'acct-referred' });
 
     const referral = await service.applyReferral(ORG_ID, REFERRAL_CODE, REFERRED_CUSTOMER_ID);
 
-    expect(referral).toEqual({ id: 'ref-1' });
-    expect(accounts.earnFromEvent).toHaveBeenCalledTimes(2);
+    expect(referral).toEqual({ id: 'ref-1', status: 'pending' });
+    expect(points.applyPoints).not.toHaveBeenCalled();
     expect(create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         referrerAccountId: 'acct-referrer',
         referredCustomerId: REFERRED_CUSTOMER_ID,
-        status: 'completed',
+        referredAccountId: 'acct-referred',
+        status: 'pending',
+        referrerBonusPoints: 50,
+        referredBonusPoints: 25,
+        completedAt: null,
       }),
     });
   });
 
-  it('returns referral stats aggregate', async () => {
+  it('completes pending referral and awards asymmetric bonuses', async () => {
+    const update = vi.fn().mockResolvedValue({ id: 'ref-1', status: 'completed' });
+    let callCount = 0;
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) => {
+      callCount += 1;
+      if (callCount === 1) {
+        return fn({
+          loyaltyReferral: {
+            findFirst: vi.fn().mockResolvedValue({
+              id: 'ref-1',
+              referrerAccountId: 'acct-referrer',
+              referredAccountId: 'acct-referred',
+              referrerBonusPoints: 50,
+              referredBonusPoints: 25,
+              referrerAccount: { id: 'acct-referrer', customerId: REFERRER_CUSTOMER_ID },
+              referredAccount: { id: 'acct-referred', customerId: REFERRED_CUSTOMER_ID },
+            }),
+          },
+        });
+      }
+      return fn({ loyaltyReferral: { update } });
+    });
+
+    const completed = await service.completePendingForCustomer(ORG_ID, REFERRED_CUSTOMER_ID);
+
+    expect(points.applyPoints).toHaveBeenCalledTimes(2);
+    expect(points.applyPoints).toHaveBeenNthCalledWith(
+      1,
+      ORG_ID,
+      'acct-referrer',
+      50,
+      LOYALTY_POINT_LEDGER_TYPES.BONUS,
+      expect.objectContaining({
+        sourceType: 'referral',
+        sourceId: 'ref-1:advocate',
+        description: 'Referral bonus (advocate)',
+      }),
+    );
+    expect(points.applyPoints).toHaveBeenNthCalledWith(
+      2,
+      ORG_ID,
+      'acct-referred',
+      25,
+      LOYALTY_POINT_LEDGER_TYPES.BONUS,
+      expect.objectContaining({
+        sourceType: 'referral',
+        sourceId: 'ref-1:welcome',
+        description: 'Welcome referral bonus',
+      }),
+    );
+    expect(update).toHaveBeenCalled();
+    expect(completed).toEqual({ id: 'ref-1', status: 'completed' });
+  });
+
+  it('returns null when no pending referral to complete', async () => {
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({
+        loyaltyReferral: { findFirst: vi.fn().mockResolvedValue(null) },
+      }),
+    );
+
+    expect(await service.completePendingForCustomer(ORG_ID, REFERRED_CUSTOMER_ID)).toBeNull();
+    expect(points.applyPoints).not.toHaveBeenCalled();
+  });
+
+  it('returns referral stats aggregate including pending', async () => {
     prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
       fn({
         loyaltyReferral: {
-          count: vi.fn().mockResolvedValueOnce(10).mockResolvedValueOnce(8),
+          count: vi
+            .fn()
+            .mockResolvedValueOnce(10)
+            .mockResolvedValueOnce(8)
+            .mockResolvedValueOnce(2),
           aggregate: vi.fn().mockResolvedValue({
             _sum: { referrerBonusPoints: 100, referredBonusPoints: 50 },
           }),
@@ -124,7 +199,7 @@ describe('LoyaltyReferralService', () => {
 
     const stats = await service.getReferralStats(ORG_ID);
 
-    expect(stats).toEqual({ total: 10, completed: 8, bonusPointsAwarded: 150 });
+    expect(stats).toEqual({ total: 10, completed: 8, pending: 2, bonusPointsAwarded: 150 });
   });
 
   it('returns public landing when code is valid', async () => {
@@ -152,6 +227,7 @@ describe('LoyaltyReferralService', () => {
       orgName: 'Cafe',
       referrerFirstName: 'Alice',
       referralCode: REFERRAL_CODE,
+      completesOnFirstPurchase: true,
     });
   });
 
@@ -212,6 +288,7 @@ describe('LoyaltyReferralService', () => {
       referralCode: REFERRAL_CODE,
       referredBonusPoints: 25,
       referrerBonusPoints: 50,
+      completesOnFirstPurchase: true,
     });
     const applySpy = vi.spyOn(service, 'applyReferral').mockResolvedValue({ id: 'ref-2' } as never);
     prisma.withBypassRls.mockImplementation((fn: (tx: unknown) => unknown) =>
@@ -238,7 +315,7 @@ describe('LoyaltyReferralService', () => {
       }
       return fn({
         loyaltyAccount: {
-          findUnique: vi.fn().mockResolvedValue({ referralCode: 'NEWCODE', pointsBalance: 25 }),
+          findUnique: vi.fn().mockResolvedValue({ referralCode: 'NEWCODE', pointsBalance: 0 }),
         },
       });
     });
@@ -252,8 +329,11 @@ describe('LoyaltyReferralService', () => {
     expect(result).toEqual({
       joined: true,
       referralApplied: true,
+      referralStatus: 'pending',
       portalCode: 'NEWCODE',
-      pointsBalance: 25,
+      pointsBalance: 0,
+      referredBonusPoints: 25,
+      completesOnFirstPurchase: true,
     });
   });
 
@@ -266,6 +346,7 @@ describe('LoyaltyReferralService', () => {
       referralCode: REFERRAL_CODE,
       referredBonusPoints: 25,
       referrerBonusPoints: 50,
+      completesOnFirstPurchase: true,
     });
     const applySpy = vi.spyOn(service, 'applyReferral');
     prisma.withBypassRls.mockImplementation((fn: (tx: unknown) => unknown) =>
@@ -284,7 +365,9 @@ describe('LoyaltyReferralService', () => {
       tenantCalls += 1;
       if (tenantCalls === 1) {
         return fn({
-          loyaltyReferral: { findFirst: vi.fn().mockResolvedValue({ id: 'existing' }) },
+          loyaltyReferral: {
+            findFirst: vi.fn().mockResolvedValue({ id: 'existing', status: 'pending' }),
+          },
         });
       }
       return fn({
@@ -298,6 +381,7 @@ describe('LoyaltyReferralService', () => {
 
     expect(applySpy).not.toHaveBeenCalled();
     expect(result.referralApplied).toBe(false);
+    expect(result.referralStatus).toBe('pending');
   });
 
   it('rejects self-join via public referral', async () => {
@@ -309,6 +393,7 @@ describe('LoyaltyReferralService', () => {
       referralCode: REFERRAL_CODE,
       referredBonusPoints: 25,
       referrerBonusPoints: 50,
+      completesOnFirstPurchase: true,
     });
     prisma.withBypassRls.mockImplementation((fn: (tx: unknown) => unknown) =>
       fn({
