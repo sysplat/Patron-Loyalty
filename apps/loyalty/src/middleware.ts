@@ -27,14 +27,24 @@ const publicPrefixes = ['/portal', '/card', '/refer'];
 
 const DASHBOARD_HOME = '/lookup';
 
-/** Preserve the browser hostname when proxied (Cloudflare → Railway). */
+/**
+ * Preserve the browser hostname when proxied (Cloudflare → Railway).
+ * Never keep Railway’s container PORT (e.g. 8080) in public redirects — that
+ * produces `https://loyalty.sysplat.com:8080/...` and ERR_SSL_PROTOCOL_ERROR.
+ */
 function publicRequestUrl(request: NextRequest): URL {
   const forwardedHost = request.headers.get('x-forwarded-host')?.split(',')[0]?.trim();
-  const host = forwardedHost || request.headers.get('host');
-  if (!host) return new URL(request.url);
+  const rawHost = forwardedHost || request.headers.get('host');
+  if (!rawHost) return new URL(request.url);
+
+  const hostname = rawHost.replace(/:\d+$/, '').trim();
+  const protoHeader = request.headers.get('x-forwarded-proto')?.split(',')[0]?.trim();
+  const protocol = `${protoHeader || 'https'}:`;
+
   const url = new URL(request.url);
-  url.host = host;
-  url.protocol = `${request.headers.get('x-forwarded-proto') ?? url.protocol.replace(':', '')}:`;
+  url.protocol = protocol;
+  url.hostname = hostname;
+  url.port = '';
   return url;
 }
 
