@@ -1,5 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { LOYALTY_PATRON_GAME_TYPES, type LoyaltyPatronGameType } from '@queueplatform/shared';
+import { BadRequestException, Inject, Injectable, forwardRef } from '@nestjs/common';
+import {
+  LOYALTY_CHALLENGE_TARGET_TYPES,
+  LOYALTY_PATRON_GAME_TYPES,
+  type LoyaltyPatronGameType,
+} from '@queueplatform/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PatronCrmFeatureService } from '../../common/features/patron-crm-feature.service';
 import { ApplyPointsTxResult, LoyaltyAccountService } from './loyalty-account.service';
@@ -9,6 +13,7 @@ export class LoyaltyGamificationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly patronCrmFeature: PatronCrmFeatureService,
+    @Inject(forwardRef(() => LoyaltyAccountService))
     private readonly accounts: LoyaltyAccountService,
   ) {}
 

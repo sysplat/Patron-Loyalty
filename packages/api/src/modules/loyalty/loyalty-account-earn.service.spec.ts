@@ -23,6 +23,10 @@ describe('LoyaltyAccountEarnService', () => {
   };
   const loyaltyWebhook = { dispatch: vi.fn() };
   const referrals = { completePendingForCustomer: vi.fn().mockResolvedValue(null) };
+  const gamification = {
+    incrementChallengeProgress: vi.fn().mockResolvedValue(undefined),
+    evaluateBadgesForAccount: vi.fn().mockResolvedValue([]),
+  };
   const prisma = { withTenant: vi.fn() };
   let service: LoyaltyAccountEarnService;
 
@@ -36,6 +40,7 @@ describe('LoyaltyAccountEarnService', () => {
       lifecycle as never,
       points as never,
       referrals as never,
+      gamification as never,
     );
   });
 
@@ -99,6 +104,13 @@ describe('LoyaltyAccountEarnService', () => {
     );
     expect(account).toMatchObject({ pointsBalance: 60 });
     expect(referrals.completePendingForCustomer).toHaveBeenCalledWith(ORG_ID, CUSTOMER_ID);
+    expect(gamification.incrementChallengeProgress).toHaveBeenCalledWith(
+      ORG_ID,
+      CUSTOMER_ID,
+      'VISITS',
+      1,
+    );
+    expect(gamification.evaluateBadgesForAccount).toHaveBeenCalledWith(ORG_ID, CUSTOMER_ID);
   });
 
   it('expires inactive account points', async () => {
@@ -233,6 +245,19 @@ describe('LoyaltyAccountEarnService', () => {
       account: { pointsBalance: 50 },
     });
     expect(referrals.completePendingForCustomer).toHaveBeenCalledWith(ORG_ID, CUSTOMER_ID);
+    expect(gamification.incrementChallengeProgress).toHaveBeenCalledWith(
+      ORG_ID,
+      CUSTOMER_ID,
+      'VISITS',
+      1,
+    );
+    expect(gamification.incrementChallengeProgress).toHaveBeenCalledWith(
+      ORG_ID,
+      CUSTOMER_ID,
+      'POINTS_EARNED',
+      50,
+    );
+    expect(gamification.evaluateBadgesForAccount).toHaveBeenCalledWith(ORG_ID, CUSTOMER_ID);
   });
 
   it('earnFromPurchase throws when rules resolve to zero', async () => {

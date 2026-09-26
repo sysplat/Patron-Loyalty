@@ -4,9 +4,11 @@ import {
   BadRequestException,
   Inject,
   forwardRef,
+  Logger,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import {
+  LOYALTY_CHALLENGE_TARGET_TYPES,
   LOYALTY_EARN_EVENT_TYPES,
   LOYALTY_POINT_LEDGER_TYPES,
   LOYALTY_WEBHOOK_EVENTS,
@@ -24,9 +26,12 @@ import {
   type LoyaltyPointsTx,
 } from './loyalty-points.service';
 import { LoyaltyReferralService } from './loyalty-referral.service';
+import { LoyaltyGamificationService } from './loyalty-gamification.service';
 
 @Injectable()
 export class LoyaltyAccountEarnService {
+  private readonly logger = new Logger(LoyaltyAccountEarnService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly patronCrmFeature: PatronCrmFeatureService,
@@ -36,6 +41,8 @@ export class LoyaltyAccountEarnService {
     private readonly points: LoyaltyPointsService,
     @Inject(forwardRef(() => LoyaltyReferralService))
     private readonly referrals: LoyaltyReferralService,
+    @Inject(forwardRef(() => LoyaltyGamificationService))
+    private readonly gamification: LoyaltyGamificationService,
   ) {}
 
   /**
@@ -87,6 +94,11 @@ export class LoyaltyAccountEarnService {
 
     // First purchase completes any pending referral and awards advocate/friend bonuses.
     await this.referrals.completePendingForCustomer(orgId, customerId);
+
+    await this.afterEarnActivity(orgId, customerId, {
+      pointsAwarded,
+      incrementVisit: true,
+    });
 
     return { ...result, pointsAwarded, purchaseAmountCents };
   }
@@ -158,9 +170,16 @@ export class LoyaltyAccountEarnService {
       },
     );
 
+    if (result.idempotent) return result;
+
     if (eventType === LOYALTY_EARN_EVENT_TYPES.PURCHASE) {
       await this.referrals.completePendingForCustomer(orgId, customerId);
     }
+
+    await this.afterEarnActivity(orgId, customerId, {
+      pointsAwarded: points,
+      incrementVisit,
+    });
 
     return result;
   }
@@ -184,14 +203,54 @@ export class LoyaltyAccountEarnService {
       },
     );
 
-    if (source.incrementVisit) {
+    if (!result.idempotent) {
       const customerId = result.account.customerId;
       if (customerId) {
-        await this.referrals.completePendingForCustomer(orgId, customerId);
+        if (source.incrementVisit) {
+          await this.referrals.completePendingForCustomer(orgId, customerId);
+        }
+        await this.afterEarnActivity(orgId, customerId, {
+          pointsAwarded: points,
+          incrementVisit: Boolean(source.incrementVisit),
+        });
       }
     }
 
     return result.account;
+  }
+
+  /**
+   * Advance challenges / badges after a real earn (Counter, POS, queue visit).
+   * Failures are logged only — points already committed.
+   */
+  private async afterEarnActivity(
+    orgId: string,
+    customerId: string,
+    opts: { pointsAwarded: number; incrementVisit: boolean },
+  ): Promise<void> {
+    try {
+      if (opts.incrementVisit) {
+        await this.gamification.incrementChallengeProgress(
+          orgId,
+          customerId,
+          LOYALTY_CHALLENGE_TARGET_TYPES.VISITS,
+          1,
+        );
+      }
+      if (opts.pointsAwarded > 0) {
+        await this.gamification.incrementChallengeProgress(
+          orgId,
+          customerId,
+          LOYALTY_CHALLENGE_TARGET_TYPES.POINTS_EARNED,
+          opts.pointsAwarded,
+        );
+      }
+      await this.gamification.evaluateBadgesForAccount(orgId, customerId);
+    } catch (err) {
+      this.logger.warn(
+        `Gamification after earn failed orgId=${orgId} customerId=${customerId}: ${(err as Error).message}`,
+      );
+    }
   }
 
   async expireInactivePoints(orgId: string, pointsExpiryDays: number): Promise<number> {

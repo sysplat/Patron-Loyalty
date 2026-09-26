@@ -19,10 +19,6 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     handleNoShow: vi.fn(),
     ensureAccount: vi.fn(),
   };
-  const gamification = {
-    incrementChallengeProgress: vi.fn(),
-    evaluateBadgesForAccount: vi.fn(),
-  };
   const customerFindFirst = vi.fn();
   const reviewFindFirst = vi.fn();
   const reviewCreate = vi.fn();
@@ -50,8 +46,6 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     accounts.handleReviewSubmitted.mockResolvedValue({ idempotent: false });
     accounts.handleNoShow.mockResolvedValue({});
     accounts.ensureAccount.mockResolvedValue({ id: 'acc-1' });
-    gamification.incrementChallengeProgress.mockResolvedValue(undefined);
-    gamification.evaluateBadgesForAccount.mockResolvedValue([]);
     campaignAutomation.fireTrigger.mockResolvedValue(undefined);
     integration.upsertCustomer.mockResolvedValue({ customerId: CUSTOMER_ID });
     customerFindFirst.mockResolvedValue({
@@ -66,7 +60,6 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     const marketingSync = { syncProfile: vi.fn() };
     service = new LoyaltyQueueEventsService(
       accounts as never,
-      gamification as never,
       prisma as never,
       campaignAutomation as never,
       loyaltyWebhook as never,
@@ -96,12 +89,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
         CUSTOMER_ID,
         BRANCH_ID,
       );
-      expect(gamification.incrementChallengeProgress).toHaveBeenCalledWith(
-        ORG_ID,
-        CUSTOMER_ID,
-        'VISITS',
-      );
-      expect(gamification.evaluateBadgesForAccount).toHaveBeenCalledWith(ORG_ID, CUSTOMER_ID);
+      // Challenges / badges advance inside earnFromEvent (Counter + queue share one path).
       expect(result).toMatchObject({
         ok: true,
         event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.TICKET_COMPLETED,
@@ -109,7 +97,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
       });
     });
 
-    it('returns idempotent without gamification side effects', async () => {
+    it('returns idempotent without re-earning', async () => {
       accounts.handleTicketCompleted.mockResolvedValue({ idempotent: true });
 
       const result = await service.processRemoteEvent(ORG_ID, {
@@ -120,8 +108,6 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
       });
 
       expect(result).toMatchObject({ ok: true, idempotent: true, sourceId: 'ticket-1' });
-      expect(gamification.incrementChallengeProgress).not.toHaveBeenCalled();
-      expect(gamification.evaluateBadgesForAccount).not.toHaveBeenCalled();
     });
 
     it('skips earn when customer cannot be resolved', async () => {
@@ -196,11 +182,6 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
         CUSTOMER_ID,
         BRANCH_ID,
       );
-      expect(gamification.incrementChallengeProgress).toHaveBeenCalledWith(
-        ORG_ID,
-        CUSTOMER_ID,
-        'VISITS',
-      );
       expect(result).toMatchObject({
         ok: true,
         event: QPLATFORM_QUEUE_INTEGRATION_EVENTS.APPOINTMENT_COMPLETED,
@@ -208,7 +189,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
       });
     });
 
-    it('returns idempotent without challenge progress', async () => {
+    it('returns idempotent without re-earning', async () => {
       accounts.handleAppointmentCompleted.mockResolvedValue({ idempotent: true });
 
       const result = await service.processRemoteEvent(ORG_ID, {
@@ -219,7 +200,6 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
       });
 
       expect(result).toMatchObject({ ok: true, idempotent: true, sourceId: 'appt-2' });
-      expect(gamification.incrementChallengeProgress).not.toHaveBeenCalled();
     });
 
     it('skips when customer cannot be resolved', async () => {
@@ -388,7 +368,7 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     expect(result).toMatchObject({ ok: true, sourceId: 'ticket-email' });
   });
 
-  it('does not run gamification when ticket handler returns no earn row', async () => {
+  it('returns ok when ticket handler awards nothing', async () => {
     accounts.handleTicketCompleted.mockResolvedValue(null);
 
     const result = await service.onTicketCompleted(
@@ -396,7 +376,6 @@ describe('LoyaltyQueueEventsService processRemoteEvent', () => {
     );
 
     expect(result).toEqual({ ok: true });
-    expect(gamification.incrementChallengeProgress).not.toHaveBeenCalled();
   });
 
   it('rethrows when ticket handler fails', async () => {

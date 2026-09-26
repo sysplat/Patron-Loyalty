@@ -1,11 +1,18 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { LOYALTY_POINT_LEDGER_TYPES } from '@queueplatform/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
+import { LOYALTY_CHALLENGE_TARGET_TYPES, LOYALTY_POINT_LEDGER_TYPES } from '@queueplatform/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PatronCrmFeatureService } from '../../common/features/patron-crm-feature.service';
 import { LoyaltyAccountLifecycleService } from './loyalty-account-lifecycle.service';
 import { LoyaltyProgramService } from './loyalty-program.service';
 import { LoyaltyIntegrationService } from './loyalty-integration.service';
 import { LoyaltyPointsService } from './loyalty-points.service';
+import { LoyaltyGamificationService } from './loyalty-gamification.service';
 
 @Injectable()
 export class LoyaltyReferralService {
@@ -16,6 +23,8 @@ export class LoyaltyReferralService {
     private readonly programService: LoyaltyProgramService,
     private readonly integration: LoyaltyIntegrationService,
     private readonly points: LoyaltyPointsService,
+    @Inject(forwardRef(() => LoyaltyGamificationService))
+    private readonly gamification: LoyaltyGamificationService,
   ) {}
 
   /**
@@ -116,6 +125,20 @@ export class LoyaltyReferralService {
           description: 'Welcome referral bonus',
         },
       );
+    }
+
+    const referrerCustomerId = pending.referrerAccount?.customerId;
+    if (referrerCustomerId) {
+      try {
+        await this.gamification.incrementChallengeProgress(
+          orgId,
+          referrerCustomerId,
+          LOYALTY_CHALLENGE_TARGET_TYPES.REFERRALS,
+          1,
+        );
+      } catch {
+        // Challenge progress is best-effort; referral bonuses already applied.
+      }
     }
 
     return this.prisma.withTenant(orgId, (tx) =>

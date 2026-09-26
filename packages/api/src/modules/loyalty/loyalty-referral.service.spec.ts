@@ -24,6 +24,9 @@ describe('LoyaltyReferralService', () => {
   };
   const integration = { upsertCustomer: vi.fn() };
   const points = { applyPoints: vi.fn().mockResolvedValue({ account: { id: 'acct' } }) };
+  const gamification = {
+    incrementChallengeProgress: vi.fn().mockResolvedValue(undefined),
+  };
   const prisma = { withTenant: vi.fn(), withBypassRls: vi.fn() };
   let service: LoyaltyReferralService;
 
@@ -36,6 +39,7 @@ describe('LoyaltyReferralService', () => {
       programService as never,
       integration as never,
       points as never,
+      gamification as never,
     );
   });
 
@@ -168,6 +172,12 @@ describe('LoyaltyReferralService', () => {
     );
     expect(update).toHaveBeenCalled();
     expect(completed).toEqual({ id: 'ref-1', status: 'completed' });
+    expect(gamification.incrementChallengeProgress).toHaveBeenCalledWith(
+      ORG_ID,
+      REFERRER_CUSTOMER_ID,
+      'REFERRALS',
+      1,
+    );
   });
 
   it('returns null when no pending referral to complete', async () => {

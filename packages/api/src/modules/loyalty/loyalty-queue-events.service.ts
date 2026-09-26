@@ -8,7 +8,6 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { customerPhoneOr } from '../customer/customer-contact.util';
 import { LoyaltyAccountService } from './loyalty-account.service';
-import { LoyaltyGamificationService } from './loyalty-gamification.service';
 import { LoyaltyCampaignAutomationService } from './loyalty-campaign-automation.service';
 import { LoyaltyWebhookService } from './loyalty-webhook.service';
 import { LoyaltyIntegrationService } from './loyalty-integration.service';
@@ -46,7 +45,6 @@ export class LoyaltyQueueEventsService {
 
   constructor(
     private readonly accounts: LoyaltyAccountService,
-    private readonly gamification: LoyaltyGamificationService,
     private readonly prisma: PrismaService,
     private readonly campaignAutomation: LoyaltyCampaignAutomationService,
     private readonly loyaltyWebhook: LoyaltyWebhookService,
@@ -145,10 +143,6 @@ export class LoyaltyQueueEventsService {
         event.branchId,
       );
       if (earned?.idempotent) return { ok: true, idempotent: true };
-      if (earned) {
-        await this.gamification.incrementChallengeProgress(event.orgId, event.customerId, 'VISITS');
-        await this.gamification.evaluateBadgesForAccount(event.orgId, event.customerId);
-      }
       return { ok: true };
     } catch (err) {
       this.logger.warn(`Loyalty ticket hook failed: ${(err as Error).message}`);
@@ -167,9 +161,6 @@ export class LoyaltyQueueEventsService {
         event.branchId,
       );
       if (earned?.idempotent) return { ok: true, idempotent: true };
-      if (earned) {
-        await this.gamification.incrementChallengeProgress(event.orgId, customerId, 'VISITS');
-      }
       return { ok: true };
     } catch (err) {
       this.logger.warn(`Loyalty appointment hook failed: ${(err as Error).message}`);
