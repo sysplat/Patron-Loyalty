@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PatronCrmFeatureService } from '../../common/features/patron-crm-feature.service';
 import { LoyaltyAccountService } from './loyalty-account.service';
@@ -11,18 +12,44 @@ export class LoyaltyWalletService {
     private readonly accounts: LoyaltyAccountService,
   ) {}
 
+  /** Ensure a wallet row exists for the account (legacy accounts may lack one). */
+  private async ensureWallet(
+    orgId: string,
+    account: { id: string; wallet: { id: string; balanceCents: number; currency?: string } | null },
+  ) {
+    if (account.wallet) return account.wallet;
+
+    try {
+      return await this.prisma.withTenant(orgId, (tx) =>
+        tx.loyaltyWallet.create({
+          data: { orgId, accountId: account.id, balanceCents: 0 },
+        }),
+      );
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        return this.prisma.withTenant(orgId, (tx) =>
+          tx.loyaltyWallet.findUniqueOrThrow({ where: { accountId: account.id } }),
+        );
+      }
+      throw err;
+    }
+  }
+
   async getWallet(orgId: string, customerId: string) {
     await this.patronCrmFeature.requireEnabled(orgId);
     const account = await this.accounts.ensureAccount(orgId, customerId);
-    if (!account?.wallet) throw new NotFoundException('Wallet not found');
+    if (!account) throw new NotFoundException('Loyalty account not found');
+
+    const wallet = await this.ensureWallet(orgId, account);
+
     const transactions = await this.prisma.withTenant(orgId, (tx) =>
       tx.loyaltyWalletTransaction.findMany({
-        where: { walletId: account.wallet!.id },
+        where: { walletId: wallet.id },
         orderBy: { createdAt: 'desc' },
         take: 30,
       }),
     );
-    return { ...account.wallet, transactions };
+    return { ...wallet, transactions };
   }
 
   async adjustWallet(
@@ -34,10 +61,11 @@ export class LoyaltyWalletService {
   ) {
     await this.patronCrmFeature.requireEnabled(orgId);
     const account = await this.accounts.ensureAccount(orgId, customerId);
-    if (!account?.wallet) throw new NotFoundException('Wallet not found');
+    if (!account) throw new NotFoundException('Loyalty account not found');
 
+    const wallet = await this.ensureWallet(orgId, account);
     const isDebit = type === 'DEBIT';
-    const walletId = account.wallet.id;
+    const walletId = wallet.id;
 
     return this.prisma.withTenant(orgId, async (tx) => {
       let balanceAfter: number;

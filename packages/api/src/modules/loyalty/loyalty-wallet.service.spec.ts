@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BadRequestException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { LoyaltyWalletService } from './loyalty-wallet.service';
 
 describe('LoyaltyWalletService adjustWallet', () => {
@@ -122,6 +123,57 @@ describe('LoyaltyWalletService getWallet and gift cards', () => {
       balanceCents: 2500,
       transactions: [{ id: 'tx-1' }],
     });
+  });
+
+  it('creates a wallet when the loyalty account has none', async () => {
+    accounts.ensureAccount.mockResolvedValue({ id: 'acc-1', wallet: null });
+    const create = vi.fn().mockResolvedValue({ id: 'wallet-new', balanceCents: 0 });
+    const findMany = vi.fn().mockResolvedValue([]);
+    prisma.withTenant
+      .mockImplementationOnce((_orgId: string, fn: (tx: unknown) => unknown) =>
+        fn({ loyaltyWallet: { create } }),
+      )
+      .mockImplementationOnce((_orgId: string, fn: (tx: unknown) => unknown) =>
+        fn({ loyaltyWalletTransaction: { findMany } }),
+      );
+
+    const wallet = await service.getWallet('org-1', 'cust-1');
+
+    expect(create).toHaveBeenCalledWith({
+      data: { orgId: 'org-1', accountId: 'acc-1', balanceCents: 0 },
+    });
+    expect(wallet).toMatchObject({
+      id: 'wallet-new',
+      balanceCents: 0,
+      transactions: [],
+    });
+  });
+
+  it('recovers when concurrent wallet create hits unique constraint', async () => {
+    accounts.ensureAccount.mockResolvedValue({ id: 'acc-1', wallet: null });
+    const create = vi.fn().mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Unique', {
+        code: 'P2002',
+        clientVersion: 'test',
+      }),
+    );
+    const findUniqueOrThrow = vi.fn().mockResolvedValue({ id: 'wallet-race', balanceCents: 0 });
+    const findMany = vi.fn().mockResolvedValue([]);
+    prisma.withTenant
+      .mockImplementationOnce((_orgId: string, fn: (tx: unknown) => unknown) =>
+        fn({ loyaltyWallet: { create } }),
+      )
+      .mockImplementationOnce((_orgId: string, fn: (tx: unknown) => unknown) =>
+        fn({ loyaltyWallet: { findUniqueOrThrow } }),
+      )
+      .mockImplementationOnce((_orgId: string, fn: (tx: unknown) => unknown) =>
+        fn({ loyaltyWalletTransaction: { findMany } }),
+      );
+
+    const wallet = await service.getWallet('org-1', 'cust-1');
+
+    expect(findUniqueOrThrow).toHaveBeenCalledWith({ where: { accountId: 'acc-1' } });
+    expect(wallet).toMatchObject({ id: 'wallet-race', transactions: [] });
   });
 
   it('creates gift card with purchaser account when provided', async () => {
