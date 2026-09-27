@@ -21,6 +21,7 @@ export class LoyaltyReferralService {
     private readonly patronCrmFeature: PatronCrmFeatureService,
     private readonly lifecycle: LoyaltyAccountLifecycleService,
     private readonly programService: LoyaltyProgramService,
+    @Inject(forwardRef(() => LoyaltyIntegrationService))
     private readonly integration: LoyaltyIntegrationService,
     private readonly points: LoyaltyPointsService,
     @Inject(forwardRef(() => LoyaltyGamificationService))
