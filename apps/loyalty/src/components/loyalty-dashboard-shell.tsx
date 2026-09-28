@@ -10,6 +10,7 @@ import {
   CheckSquare,
   ChevronDown,
   ChevronRight,
+  CreditCard,
   ExternalLink,
   Gift,
   LayoutDashboard,
@@ -38,7 +39,12 @@ import {
   type DashboardTheme,
 } from '@queueplatform/frontend-core';
 import { cn } from '@/lib/utils';
-import { formatRoleLabel, formatUserDisplayName, isOwnerOrAdmin } from '@/lib/rbac-ui';
+import {
+  formatRoleLabel,
+  formatUserDisplayName,
+  isOrganizationOwner,
+  isOwnerOrAdmin,
+} from '@/lib/rbac-ui';
 
 type NavIcon = typeof Phone;
 
@@ -47,6 +53,8 @@ export type LoyaltyNavItem = {
   label: string;
   icon: NavIcon;
   adminOnly?: boolean;
+  /** Billing and similar owner-gated surfaces (admins have no billing:*). */
+  ownerOnly?: boolean;
 };
 
 export type LoyaltyNavSection = {
@@ -94,6 +102,7 @@ export const LOYALTY_NAV_SECTIONS: LoyaltyNavSection[] = [
     items: [
       { href: '/program', label: 'Program', icon: Settings2 },
       { href: '/team', label: 'Team', icon: UserPlus, adminOnly: true },
+      { href: '/billing', label: 'Billing', icon: CreditCard, ownerOnly: true },
       { href: '/integrations', label: 'Integrations', icon: Plug },
       { href: '/diagnostics', label: 'Diagnostics', icon: Activity, adminOnly: true },
     ],
@@ -218,12 +227,17 @@ function LoyaltySidebar({
   const roleLabel = formatRoleLabel(user?.role);
   const isViewer = String(user?.role ?? '').toLowerCase() === 'viewer';
   const adminOrOwner = isOwnerOrAdmin(user?.role);
+  const owner = isOrganizationOwner(user?.role);
   const webUrl = webAppUrl();
   const [setupOpen, setSetupOpen] = useState(adminOrOwner);
 
   const visibleSections = LOYALTY_NAV_SECTIONS.map((section) => ({
     ...section,
-    items: section.items.filter((item) => !item.adminOnly || adminOrOwner),
+    items: section.items.filter((item) => {
+      if (item.ownerOnly && !owner) return false;
+      if (item.adminOnly && !adminOrOwner) return false;
+      return true;
+    }),
   })).filter((section) => section.items.length > 0);
 
   return (
