@@ -17,7 +17,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RecordPurchaseForm } from '@/components/record-purchase-form';
 import { CounterRedeemPanel } from '@/components/counter-redeem-panel';
-import { AlertTriangle, UserPlus } from 'lucide-react';
+import { useGettingStartedProgress } from '@/hooks/use-getting-started-progress';
+import { dismissGettingStarted, isGettingStartedDismissed } from '@/lib/getting-started';
+import { AlertTriangle, ListChecks, UserPlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface LookupResult {
@@ -58,6 +60,14 @@ function PatronLookupPageContent() {
   const [queryPhone, setQueryPhone] = useState(phoneFromUrl.length >= 10 ? phoneFromUrl : '');
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [setupBannerDismissed, setSetupBannerDismissed] = useState(() =>
+    isGettingStartedDismissed(),
+  );
+  const {
+    summary,
+    isLoading: setupLoading,
+    isReady: setupReady,
+  } = useGettingStartedProgress(!setupBannerDismissed);
 
   useEffect(() => {
     const next = (searchParams.get('phone') ?? '').trim();
@@ -141,6 +151,37 @@ function PatronLookupPageContent() {
           <span className="text-foreground font-medium">Award</span>. Redeem without leaving.
         </p>
       </div>
+
+      {!setupBannerDismissed && setupReady && !setupLoading && !summary.requiredComplete ? (
+        <div className="border-primary/20 bg-primary/5 relative flex items-start gap-3 rounded-lg border p-3 text-sm">
+          <ListChecks className="text-primary mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <div className="min-w-0 flex-1 pr-6">
+            <p className="font-medium">
+              Finish Getting started ({summary.requiredDone}/{summary.requiredTotal})
+            </p>
+            <p className="text-muted-foreground text-xs">
+              {summary.next?.title ?? 'Complete Program, Rewards, and a test purchase.'}
+            </p>
+            <Link
+              href="/getting-started"
+              className="text-primary mt-1 inline-block text-xs font-medium underline"
+            >
+              Open checklist →
+            </Link>
+          </div>
+          <button
+            type="button"
+            className="text-muted-foreground hover:text-foreground absolute right-2 top-2 rounded p-1"
+            aria-label="Dismiss setup reminder"
+            onClick={() => {
+              dismissGettingStarted();
+              setSetupBannerDismissed(true);
+            }}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : null}
 
       {program && !hasActivePurchaseRule ? (
         <div

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { api, refreshAccessToken } from '@/lib/api';
 import { validateLogin } from '@/lib/validation';
 import { useAuthStore } from '@/lib/auth-store';
+import { GETTING_STARTED_DISMISS_KEY } from '@/lib/getting-started';
 import { QPlatformBrand } from '@/components/brand';
 import { AuthMarketingPanel } from '@/components/marketing/auth-marketing-panel';
 
@@ -88,7 +89,10 @@ export default function LoginPage() {
         throw new Error('Signed in but session could not be established. Please try again.');
       }
       setAuth(accessToken, mapLoginUser(data));
-      router.push('/lookup');
+      const goToChecklist =
+        typeof window !== 'undefined' &&
+        window.localStorage.getItem(GETTING_STARTED_DISMISS_KEY) !== '1';
+      router.push(goToChecklist ? '/getting-started' : '/lookup');
     },
     [router, setAuth],
   );

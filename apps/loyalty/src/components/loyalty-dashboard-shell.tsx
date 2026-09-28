@@ -15,6 +15,7 @@ import {
   ExternalLink,
   Gift,
   LayoutDashboard,
+  ListChecks,
   LogOut,
   Megaphone,
   Menu,
@@ -101,6 +102,7 @@ export const LOYALTY_NAV_SECTIONS: LoyaltyNavSection[] = [
     label: 'Setup',
     collapsible: true,
     items: [
+      { href: '/getting-started', label: 'Getting started', icon: ListChecks },
       { href: '/program', label: 'Program', icon: Settings2 },
       { href: '/business', label: 'Business', icon: Building2, ownerOnly: true },
       { href: '/team', label: 'Team', icon: UserPlus, adminOnly: true },

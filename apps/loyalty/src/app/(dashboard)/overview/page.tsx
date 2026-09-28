@@ -5,6 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { loyaltyGet } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
+import { useGettingStartedProgress } from '@/hooks/use-getting-started-progress';
+import { dismissGettingStarted, isGettingStartedDismissed } from '@/lib/getting-started';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +34,7 @@ import {
   X,
   CheckCircle2,
   Circle,
+  ArrowRight,
 } from 'lucide-react';
 
 type DashboardView = 'executive' | 'sales' | 'customer' | 'campaign';
@@ -100,10 +103,8 @@ function getRelativeTime(dateString: string) {
 export default function LoyaltyDashboardPage() {
   const token = useAuthStore((s) => s.accessToken);
   const [view, setView] = useState<DashboardView>('executive');
-  const [checklistDismissed, setChecklistDismissed] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem('loyalty-getting-started-dismissed') === '1';
-  });
+  const [checklistDismissed, setChecklistDismissed] = useState(() => isGettingStartedDismissed());
+  const { steps, summary, isReady } = useGettingStartedProgress(!checklistDismissed);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['loyalty', 'dashboard'],
@@ -111,29 +112,8 @@ export default function LoyaltyDashboardPage() {
     enabled: !!token,
   });
 
-  const { data: program } = useQuery({
-    queryKey: ['loyalty', 'program'],
-    queryFn: () =>
-      loyaltyGet<{
-        earnRules: Array<{ eventType: string; active: boolean }>;
-      }>('/loyalty/program', token!),
-    enabled: !!token && !checklistDismissed,
-  });
-
-  const { data: rewards = [] } = useQuery({
-    queryKey: ['loyalty', 'rewards'],
-    queryFn: () => loyaltyGet<Array<{ id: string; active?: boolean }>>('/loyalty/rewards', token!),
-    enabled: !!token && !checklistDismissed,
-  });
-
-  const hasPurchaseRule = (program?.earnRules ?? []).some(
-    (r) => r.eventType === 'PURCHASE' && r.active,
-  );
-  const hasReward = rewards.length > 0;
-  const hasMembers = (data?.kpis.loyaltyMembers ?? 0) > 0;
-
   const dismissChecklist = () => {
-    window.localStorage.setItem('loyalty-getting-started-dismissed', '1');
+    dismissGettingStarted();
     setChecklistDismissed(true);
   };
 
@@ -254,7 +234,7 @@ export default function LoyaltyDashboardPage() {
         </p>
       </div>
 
-      {!checklistDismissed && (
+      {!checklistDismissed && isReady && !summary.requiredComplete ? (
         <Card className="border-primary/20 bg-primary/5 relative overflow-hidden">
           <button
             type="button"
@@ -264,43 +244,18 @@ export default function LoyaltyDashboardPage() {
           >
             <X className="h-4 w-4" />
           </button>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 pr-10">
             <CardTitle className="text-lg">Getting started</CardTitle>
             <p className="text-muted-foreground text-sm">
-              Standalone Loyalty works without POS — finish these steps, then use Counter for every
-              sale.
+              {summary.requiredDone}/{summary.requiredTotal} required steps done — finish setup,
+              then use Counter for every sale.
             </p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                {
-                  title: 'Set how purchases earn',
-                  desc: 'Program → PURCHASE rule (1 pt per $1 recommended)',
-                  done: hasPurchaseRule,
-                  href: '/program',
-                },
-                {
-                  title: 'Add at least one reward',
-                  desc: 'Something members can redeem',
-                  done: hasReward,
-                  href: '/rewards',
-                },
-                {
-                  title: 'Try Counter',
-                  desc: 'Lookup a phone and record a test purchase',
-                  done: hasMembers,
-                  href: '/lookup',
-                },
-                {
-                  title: 'Optional: connect apps',
-                  desc: 'POS, QPlatform, or API key when ready',
-                  done: false,
-                  href: '/integrations',
-                },
-              ].map((step) => (
+              {steps.map((step) => (
                 <Link
-                  key={step.href + step.title}
+                  key={step.id}
                   href={step.href}
                   className={`hover:border-primary/50 flex items-start gap-3 rounded-lg border p-3 transition-colors ${
                     step.done
@@ -319,14 +274,21 @@ export default function LoyaltyDashboardPage() {
                     >
                       {step.title}
                     </p>
-                    <p className="text-muted-foreground text-xs">{step.desc}</p>
+                    <p className="text-muted-foreground text-xs">{step.description}</p>
                   </div>
                 </Link>
               ))}
             </div>
+            <Link
+              href="/getting-started"
+              className="text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline"
+            >
+              Open full checklist
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
       <div className="bg-muted/30 inline-flex flex-wrap gap-1 rounded-lg p-1">
         <button
