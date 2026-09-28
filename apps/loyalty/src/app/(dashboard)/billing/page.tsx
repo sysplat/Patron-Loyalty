@@ -29,6 +29,9 @@ import {
   Users,
 } from 'lucide-react';
 
+/** Set true to surface SMS allowance, packs, and checkout in staff Billing / pricing. */
+const SHOW_SMS_CREDITS = false;
+
 interface PlanRow {
   id: string;
   name: string;
@@ -83,7 +86,9 @@ interface SmsPack {
 const GUIDE: { title: string; body: string }[] = [
   {
     title: 'Plan',
-    body: 'Your subscription covers seats, SMS allowance, and loyalty features. Change plans here or in Stripe.',
+    body: SHOW_SMS_CREDITS
+      ? 'Your subscription covers seats, SMS allowance, and loyalty features. Change plans here or in Stripe.'
+      : 'Your subscription covers staff seats and loyalty features. Change plans here or in Stripe.',
   },
   {
     title: 'Payment method',
@@ -93,10 +98,19 @@ const GUIDE: { title: string; body: string }[] = [
     title: 'Invoices',
     body: 'Paid invoices sync here after Stripe settles. Download PDFs from the portal if you need a receipt.',
   },
-  {
-    title: 'SMS credits',
-    body: 'Campaign and notification SMS draw from your monthly plan base plus any packs you buy.',
-  },
+  ...(SHOW_SMS_CREDITS
+    ? [
+        {
+          title: 'SMS credits',
+          body: 'Campaign and notification SMS draw from your monthly plan base plus any packs you buy.',
+        },
+      ]
+    : [
+        {
+          title: 'Seats',
+          body: 'Active teammates count toward your plan seat limit. Manage them under Setup → Team.',
+        },
+      ]),
 ];
 
 function formatMoney(amount: number, currency = 'USD'): string {
@@ -218,6 +232,7 @@ function BillingPageInner() {
   const [buyingPack, setBuyingPack] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!SHOW_SMS_CREDITS) return;
     const sms = searchParams.get('sms');
     if (!sms || handledSmsParam.current === sms) return;
     handledSmsParam.current = sms;
@@ -278,7 +293,7 @@ function BillingPageInner() {
         checkoutEnabled: meta?.checkoutEnabled ?? packs.some((p) => p.checkoutEnabled),
       };
     },
-    enabled: !!token && canRead,
+    enabled: !!token && canRead && SHOW_SMS_CREDITS,
   });
 
   /** Never fall back to QMS queue plans — only loyalty SKUs. */
@@ -350,7 +365,8 @@ function BillingPageInner() {
         <div>
           <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Billing</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Only the organization owner can manage plan, payment method, and SMS credits.
+            Only the organization owner can manage plan, payment method
+            {SHOW_SMS_CREDITS ? ', and SMS credits' : ', and invoices'}.
           </p>
         </div>
         <Card>
@@ -375,7 +391,8 @@ function BillingPageInner() {
         <div className="min-w-0">
           <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Billing</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Manage your plan, payment method, invoices, and SMS credits.
+            Manage your plan, payment method, invoices
+            {SHOW_SMS_CREDITS ? ', and SMS credits' : ''}.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -441,8 +458,13 @@ function BillingPageInner() {
       ) : null}
 
       {subLoading ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          className={cn(
+            'grid gap-3 sm:grid-cols-2',
+            SHOW_SMS_CREDITS ? 'lg:grid-cols-4' : 'lg:grid-cols-3',
+          )}
+        >
+          {Array.from({ length: SHOW_SMS_CREDITS ? 4 : 3 }).map((_, i) => (
             <Card key={i}>
               <CardContent className="p-4">
                 <Skeleton className="h-3 w-20" />
@@ -468,7 +490,12 @@ function BillingPageInner() {
         </Card>
       ) : subscription ? (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div
+            className={cn(
+              'grid gap-3 sm:grid-cols-2',
+              SHOW_SMS_CREDITS ? 'lg:grid-cols-4' : 'lg:grid-cols-3',
+            )}
+          >
             {[
               {
                 label: 'Plan',
@@ -487,10 +514,14 @@ function BillingPageInner() {
                     ? `${seats.current}/${seats.limit}`
                     : String(seats?.current ?? '—'),
               },
-              {
-                label: 'SMS left',
-                value: smsRemaining !== null ? smsRemaining.toLocaleString() : '—',
-              },
+              ...(SHOW_SMS_CREDITS
+                ? [
+                    {
+                      label: 'SMS left',
+                      value: smsRemaining !== null ? smsRemaining.toLocaleString() : '—',
+                    },
+                  ]
+                : []),
             ].map((stat) => (
               <Card key={stat.label}>
                 <CardContent className="p-4">
@@ -553,20 +584,22 @@ function BillingPageInner() {
                       : 'Active teammates count toward your plan limit.'
                   }
                 />
-                <UsageMeter
-                  label="SMS this cycle"
-                  current={sms?.current ?? 0}
-                  limit={sms?.limit ?? 0}
-                  hint={
-                    sms
-                      ? `Plan base ${sms.planBase.toLocaleString()}${
-                          sms.purchasedBonus > 0
-                            ? ` + ${sms.purchasedBonus.toLocaleString()} purchased`
-                            : ''
-                        }`
-                      : undefined
-                  }
-                />
+                {SHOW_SMS_CREDITS ? (
+                  <UsageMeter
+                    label="SMS this cycle"
+                    current={sms?.current ?? 0}
+                    limit={sms?.limit ?? 0}
+                    hint={
+                      sms
+                        ? `Plan base ${sms.planBase.toLocaleString()}${
+                            sms.purchasedBonus > 0
+                              ? ` + ${sms.purchasedBonus.toLocaleString()} purchased`
+                              : ''
+                          }`
+                        : undefined
+                    }
+                  />
+                ) : null}
 
                 <div className="flex flex-wrap gap-2 pt-1">
                   {canUpdate ? (
@@ -622,7 +655,7 @@ function BillingPageInner() {
                           {typeof plan.limits?.maxUsers === 'number'
                             ? ` · ${plan.limits.maxUsers} seats`
                             : ''}
-                          {typeof plan.limits?.smsCreditsTotal === 'number'
+                          {SHOW_SMS_CREDITS && typeof plan.limits?.smsCreditsTotal === 'number'
                             ? ` · ${plan.limits.smsCreditsTotal} SMS`
                             : ''}
                         </p>
@@ -650,69 +683,72 @@ function BillingPageInner() {
         </>
       ) : null}
 
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <CardTitle className="text-base">SMS message packs</CardTitle>
-              <CardDescription>
-                One-time top-ups added on top of your plan SMS allowance. Used by campaigns and
-                notifications.
-              </CardDescription>
+      {SHOW_SMS_CREDITS ? (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-base">SMS message packs</CardTitle>
+                <CardDescription>
+                  One-time top-ups added on top of your plan SMS allowance. Used by campaigns and
+                  notifications.
+                </CardDescription>
+              </div>
+              <MessageSquare className="text-muted-foreground h-5 w-5 shrink-0" />
             </div>
-            <MessageSquare className="text-muted-foreground h-5 w-5 shrink-0" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          {packsLoading ? (
-            <div className="grid gap-3 sm:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-36 w-full rounded-lg" />
-              ))}
-            </div>
-          ) : packs.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No SMS packs are configured yet.</p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-3">
-              {packs.map((pack) => {
-                const buying = buyingPack === pack.slug;
-                return (
-                  <div key={pack.slug} className="flex flex-col rounded-lg border p-4">
-                    <p className="font-medium">{pack.label}</p>
-                    <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">
-                      {formatMoney(pack.priceUsd)}
-                    </p>
-                    <p className="text-muted-foreground mt-1 text-xs">
-                      {pack.messages.toLocaleString()} messages · ~{formatMoney(pack.unitPriceUsd)}
-                      /msg
-                    </p>
-                    <p className="text-muted-foreground mt-2 flex-1 text-xs leading-relaxed">
-                      {pack.description}
-                    </p>
-                    {canUpdate ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="mt-4"
-                        disabled={!smsCheckoutEnabled || smsCheckoutMutation.isPending}
-                        onClick={() => smsCheckoutMutation.mutate(pack.slug)}
-                      >
-                        {buying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        Buy pack
-                      </Button>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {!smsCheckoutEnabled && packs.length > 0 ? (
-            <p className="text-muted-foreground mt-3 text-xs">
-              Stripe is not configured on this environment — SMS checkout is unavailable.
-            </p>
-          ) : null}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            {packsLoading ? (
+              <div className="grid gap-3 sm:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-36 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : packs.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No SMS packs are configured yet.</p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-3">
+                {packs.map((pack) => {
+                  const buying = buyingPack === pack.slug;
+                  return (
+                    <div key={pack.slug} className="flex flex-col rounded-lg border p-4">
+                      <p className="font-medium">{pack.label}</p>
+                      <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">
+                        {formatMoney(pack.priceUsd)}
+                      </p>
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        {pack.messages.toLocaleString()} messages · ~
+                        {formatMoney(pack.unitPriceUsd)}
+                        /msg
+                      </p>
+                      <p className="text-muted-foreground mt-2 flex-1 text-xs leading-relaxed">
+                        {pack.description}
+                      </p>
+                      {canUpdate ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="mt-4"
+                          disabled={!smsCheckoutEnabled || smsCheckoutMutation.isPending}
+                          onClick={() => smsCheckoutMutation.mutate(pack.slug)}
+                        >
+                          {buying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          Buy pack
+                        </Button>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {!smsCheckoutEnabled && packs.length > 0 ? (
+              <p className="text-muted-foreground mt-3 text-xs">
+                Stripe is not configured on this environment — SMS checkout is unavailable.
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader className="pb-3">
@@ -730,7 +766,8 @@ function BillingPageInner() {
             </div>
           ) : invoices.length === 0 ? (
             <p className="text-muted-foreground text-sm">
-              No invoices yet. They appear after your first paid period or SMS pack purchase.
+              No invoices yet. They appear after your first paid period
+              {SHOW_SMS_CREDITS ? ' or SMS pack purchase' : ''}.
             </p>
           ) : (
             <div className="overflow-x-auto">

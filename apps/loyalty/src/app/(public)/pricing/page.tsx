@@ -4,6 +4,9 @@ import { LOYALTY_STARTER } from '@queueplatform/shared';
 import { PublicFooter } from '@/components/marketing/public-footer';
 import { PublicHeader } from '@/components/marketing/public-header';
 
+/** Keep in sync with Billing `SHOW_SMS_CREDITS` — hide SMS allowance on public pricing for now. */
+const SHOW_SMS_CREDITS = false;
+
 const ADD_ONS = [
   {
     name: 'QPlatform Bundle',
@@ -71,7 +74,9 @@ export default function PricingPage() {
                   'Campaigns & patron portal',
                   'Integration API & webhooks',
                   `${plan.limits.maxUsers} staff users`,
-                  `${plan.limits.smsCreditsTotal} SMS credits / month`,
+                  ...(SHOW_SMS_CREDITS
+                    ? [`${plan.limits.smsCreditsTotal} SMS credits / month`]
+                    : []),
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2">
                     <CheckCircle2 className="text-primary mt-0.5 h-4 w-4 shrink-0" />
