@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { loyaltyGet, loyaltyPatch, loyaltyPost, loyaltyDelete } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
@@ -9,15 +9,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Trash2, Gift, Coins, Tag, Plus, CheckCircle2 } from 'lucide-react';
+import { Trash2, Gift, Coins, Tag, Plus, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 const EmptyState = ({
   icon: Icon,
   title,
   description,
 }: {
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   title: string;
   description: string;
 }) => (
@@ -50,6 +51,117 @@ interface PendingRedemption {
   };
 }
 
+const REWARD_TYPE_LABEL: Record<string, string> = {
+  DISCOUNT: 'Cash discount',
+  PERCENTAGE: 'Percentage off',
+  FREE_ITEM: 'Free item / service',
+};
+
+function rewardTypeLabel(type: string): string {
+  return REWARD_TYPE_LABEL[type] ?? type.toLowerCase().replaceAll('_', ' ');
+}
+
+function DeleteRewardDialog({
+  reward,
+  pending,
+  onCancel,
+  onConfirm,
+}: {
+  reward: Reward;
+  pending: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const titleId = useId();
+  const descId = useId();
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !pending) onCancel();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onCancel, pending]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
+        aria-label="Close dialog"
+        disabled={pending}
+        onClick={() => {
+          if (!pending) onCancel();
+        }}
+      />
+      <Card
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
+        className="relative z-10 w-full max-w-md border shadow-xl"
+      >
+        <CardHeader className="space-y-3 pb-3">
+          <div className="bg-destructive/10 text-destructive flex h-11 w-11 items-center justify-center rounded-full">
+            <AlertTriangle className="h-5 w-5" aria-hidden />
+          </div>
+          <div className="space-y-1.5">
+            <CardTitle id={titleId} className="text-lg">
+              Delete this reward?
+            </CardTitle>
+            <CardDescription id={descId} className="text-sm leading-relaxed">
+              This permanently removes the reward from your catalog. Patrons will no longer be able
+              to redeem it. Past redemptions stay in history.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="bg-muted/50 flex gap-3 rounded-lg border px-3.5 py-3">
+            <div
+              className={cn(
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+                reward.type === 'FREE_ITEM'
+                  ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
+                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+              )}
+            >
+              {reward.type === 'FREE_ITEM' ? (
+                <Gift className="h-5 w-5" aria-hidden />
+              ) : (
+                <Tag className="h-5 w-5" aria-hidden />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate font-semibold leading-tight">{reward.name}</p>
+              <p className="text-muted-foreground mt-1 text-xs">
+                {reward.pointsCost.toLocaleString()} pts · {rewardTypeLabel(reward.type)}
+                {reward.active ? ' · Active' : ' · Inactive'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
+              Keep reward
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={onConfirm}
+              disabled={pending}
+              autoFocus
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden />
+              {pending ? 'Deleting…' : 'Delete reward'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function RewardsPage() {
   const token = useAuthStore((s) => s.accessToken);
   const qc = useQueryClient();
@@ -59,6 +171,7 @@ export default function RewardsPage() {
   const [description, setDescription] = useState('');
   const [pointsCost, setPointsCost] = useState('');
   const [rewardType, setRewardType] = useState('DISCOUNT');
+  const [deleting, setDeleting] = useState<Reward | null>(null);
 
   const { data: rewards = [], isLoading } = useQuery({
     queryKey: ['loyalty', 'rewards'],
@@ -107,6 +220,7 @@ export default function RewardsPage() {
     mutationFn: (id: string) => loyaltyDelete(`/loyalty/rewards/${id}`, token!),
     onSuccess: () => {
       toast.success('Reward deleted');
+      setDeleting(null);
       qc.invalidateQueries({ queryKey: ['loyalty', 'rewards'] });
     },
     onError: () => toast.error('Failed to delete reward'),
@@ -301,7 +415,7 @@ export default function RewardsPage() {
           {rewards.map((r) => (
             <Card
               key={r.id}
-              className={`group relative overflow-hidden transition-all hover:shadow-md ${!r.active ? 'opacity-60 grayscale' : 'border-primary/10'}`}
+              className={`relative overflow-hidden transition-all hover:shadow-md ${!r.active ? 'opacity-60 grayscale' : 'border-primary/10'}`}
             >
               {!r.active && (
                 <div className="absolute right-3 top-3 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold tracking-wider text-slate-500 dark:bg-slate-800">
@@ -323,10 +437,10 @@ export default function RewardsPage() {
                   )}
                 </div>
 
-                <h3 className="mb-1 text-lg font-bold leading-tight">{r.name}</h3>
+                <h3 className="mb-1 pr-16 text-lg font-bold leading-tight">{r.name}</h3>
                 <p className="text-muted-foreground mb-4 min-h-[40px] text-sm leading-relaxed">
                   {r.description ||
-                    `Redeem ${r.pointsCost} points for a ${r.type.toLowerCase().replace('_', ' ')}.`}
+                    `Redeem ${r.pointsCost} points for a ${rewardTypeLabel(r.type).toLowerCase()}.`}
                 </p>
 
                 <div className="mb-6 flex items-center gap-2">
@@ -336,28 +450,27 @@ export default function RewardsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between border-t pt-4">
+                <div className="flex flex-wrap items-center gap-2 border-t pt-4">
                   <Button
                     size="sm"
                     variant={r.active ? 'outline' : 'secondary'}
                     onClick={() => toggleActive.mutate({ id: r.id, active: !r.active })}
-                    disabled={toggleActive.isPending}
-                    className="w-[100px]"
+                    disabled={toggleActive.isPending || deleteReward.isPending}
+                    className="min-w-[100px]"
                   >
                     {r.active ? 'Deactivate' : 'Activate'}
                   </Button>
                   <Button
-                    size="icon"
-                    variant="ghost"
-                    className="text-destructive hover:bg-destructive/10 hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
-                    onClick={() => {
-                      if (!confirm(`Are you sure you want to delete "${r.name}"?`)) return;
-                      deleteReward.mutate(r.id);
-                    }}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive ml-auto gap-1.5"
+                    onClick={() => setDeleting(r)}
                     disabled={deleteReward.isPending}
-                    title="Delete reward"
+                    aria-label={`Delete ${r.name}`}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
+                    Delete
                   </Button>
                 </div>
               </CardContent>
@@ -365,6 +478,15 @@ export default function RewardsPage() {
           ))}
         </div>
       )}
+
+      {deleting ? (
+        <DeleteRewardDialog
+          reward={deleting}
+          pending={deleteReward.isPending}
+          onCancel={() => setDeleting(null)}
+          onConfirm={() => deleteReward.mutate(deleting.id)}
+        />
+      ) : null}
     </div>
   );
 }
