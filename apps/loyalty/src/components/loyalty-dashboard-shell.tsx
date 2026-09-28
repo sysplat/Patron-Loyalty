@@ -7,6 +7,7 @@ import { useState } from 'react';
 import {
   Activity,
   BarChart3,
+  Building2,
   CheckSquare,
   ChevronDown,
   ChevronRight,
@@ -101,6 +102,7 @@ export const LOYALTY_NAV_SECTIONS: LoyaltyNavSection[] = [
     collapsible: true,
     items: [
       { href: '/program', label: 'Program', icon: Settings2 },
+      { href: '/business', label: 'Business', icon: Building2, ownerOnly: true },
       { href: '/team', label: 'Team', icon: UserPlus, adminOnly: true },
       { href: '/billing', label: 'Billing', icon: CreditCard, ownerOnly: true },
       { href: '/integrations', label: 'Integrations', icon: Plug },
