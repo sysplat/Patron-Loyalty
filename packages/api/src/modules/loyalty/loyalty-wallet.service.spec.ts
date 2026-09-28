@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { LoyaltyWalletService } from './loyalty-wallet.service';
 
@@ -211,5 +211,26 @@ describe('LoyaltyWalletService getWallet and gift cards', () => {
 
     expect(findMany).toHaveBeenCalledWith({ orderBy: { createdAt: 'desc' }, take: 100 });
     expect(cards).toEqual([{ id: 'gc-1' }]);
+  });
+
+  it('deletes gift card for org', async () => {
+    const deleteMany = vi.fn().mockResolvedValue({ count: 1 });
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({ loyaltyGiftCard: { deleteMany } }),
+    );
+
+    await expect(service.deleteGiftCard('org-1', 'gc-1')).resolves.toEqual({ deleted: true });
+    expect(deleteMany).toHaveBeenCalledWith({ where: { id: 'gc-1', orgId: 'org-1' } });
+  });
+
+  it('throws when gift card to delete is missing', async () => {
+    const deleteMany = vi.fn().mockResolvedValue({ count: 0 });
+    prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
+      fn({ loyaltyGiftCard: { deleteMany } }),
+    );
+
+    await expect(service.deleteGiftCard('org-1', 'missing')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
   });
 });

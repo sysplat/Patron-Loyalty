@@ -142,4 +142,13 @@ export class LoyaltyWalletService {
       tx.loyaltyGiftCard.findMany({ orderBy: { createdAt: 'desc' }, take: 100 }),
     );
   }
+
+  async deleteGiftCard(orgId: string, giftCardId: string) {
+    await this.patronCrmFeature.requireEnabled(orgId);
+    const deleted = await this.prisma.withTenant(orgId, (tx) =>
+      tx.loyaltyGiftCard.deleteMany({ where: { id: giftCardId, orgId } }),
+    );
+    if (deleted.count === 0) throw new NotFoundException('Gift card not found');
+    return { deleted: true as const };
+  }
 }

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -60,5 +61,15 @@ export class LoyaltyWalletController {
       recipientEmail: body.recipientEmail,
       expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
     });
+  }
+
+  @Delete('gift-cards/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions({ resource: 'customer', action: 'update' })
+  async deleteGiftCard(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    await this.wallet.deleteGiftCard(user.orgId, id);
   }
 }

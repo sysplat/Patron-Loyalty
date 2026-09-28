@@ -3,7 +3,7 @@
 import { useDeferredValue, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { loyaltyGet, loyaltyPost, fetchPaginated } from '@/lib/api-response';
+import { loyaltyGet, loyaltyPost, loyaltyDelete, fetchPaginated } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
 import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { cn } from '@/lib/utils';
@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { BookOpen, ChevronDown, ChevronUp, Plus, UserRound } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronUp, Plus, Trash2, UserRound } from 'lucide-react';
 
 type ViewTab = 'wallets' | 'gift-cards';
 type AdjustKind = 'CREDIT' | 'DEBIT';
@@ -190,6 +190,7 @@ export default function WalletPage() {
   const [guideOpen, setGuideOpen] = useState(false);
   const [issueOpen, setIssueOpen] = useState(false);
   const [giftFilter, setGiftFilter] = useState<GiftFilter>('all');
+  const [deleting, setDeleting] = useState<GiftCard | null>(null);
 
   const [patron, setPatron] = useState<CustomerListItem | null>(null);
   const [adjustKind, setAdjustKind] = useState<AdjustKind>('CREDIT');
@@ -272,6 +273,16 @@ export default function WalletPage() {
       qc.invalidateQueries({ queryKey: ['loyalty', 'gift-cards'] });
     },
     onError: (err: Error) => toast.error(err.message || 'Could not issue gift card'),
+  });
+
+  const removeGiftCard = useMutation({
+    mutationFn: (id: string) => loyaltyDelete(`/loyalty/gift-cards/${id}`, token!),
+    onSuccess: () => {
+      toast.success('Gift card removed');
+      setDeleting(null);
+      qc.invalidateQueries({ queryKey: ['loyalty', 'gift-cards'] });
+    },
+    onError: (err: Error) => toast.error(err.message || 'Could not remove gift card'),
   });
 
   const adjustWallet = useMutation({
@@ -767,6 +778,9 @@ export default function WalletPage() {
                           <th className="px-4 py-2.5 font-medium">Status</th>
                           <th className="px-4 py-2.5 font-medium">Recipient</th>
                           <th className="px-4 py-2.5 font-medium">Expires</th>
+                          <th className="px-4 py-2.5 text-right font-medium">
+                            <span className="sr-only">Actions</span>
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -818,6 +832,19 @@ export default function WalletPage() {
                                     })
                                   : '—'}
                               </td>
+                              <td className="px-4 py-3 text-right">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                  onClick={() => setDeleting(card)}
+                                  disabled={removeGiftCard.isPending}
+                                  aria-label={`Remove ${card.code}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </td>
                             </tr>
                           );
                         })}
@@ -828,6 +855,39 @@ export default function WalletPage() {
               )}
             </>
           )}
+        </div>
+      ) : null}
+
+      {deleting ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-md shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Remove {deleting.code}?</CardTitle>
+              <CardDescription>
+                This permanently deletes the gift card. Remaining balance of{' '}
+                {money(deleting.balanceCents)} will no longer be redeemable.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => removeGiftCard.mutate(deleting.id)}
+                disabled={removeGiftCard.isPending}
+                autoFocus
+              >
+                {removeGiftCard.isPending ? 'Removing…' : 'Remove card'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setDeleting(null)}
+                disabled={removeGiftCard.isPending}
+              >
+                Cancel
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       ) : null}
     </div>

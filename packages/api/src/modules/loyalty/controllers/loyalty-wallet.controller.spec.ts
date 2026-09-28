@@ -11,6 +11,7 @@ describe('LoyaltyWalletController', () => {
     adjustWallet: vi.fn(),
     listGiftCards: vi.fn(),
     createGiftCard: vi.fn(),
+    deleteGiftCard: vi.fn(),
   };
   let controller: LoyaltyWalletController;
 
@@ -53,5 +54,12 @@ describe('LoyaltyWalletController', () => {
       recipientEmail: 'gift@example.com',
       expiresAt: new Date('2026-12-31T00:00:00.000Z'),
     });
+  });
+
+  it('deletes gift card by id', async () => {
+    const id = '00000000-0000-0000-0000-0000000000aa';
+    wallet.deleteGiftCard.mockResolvedValue({ deleted: true });
+    await controller.deleteGiftCard(USER, id);
+    expect(wallet.deleteGiftCard).toHaveBeenCalledWith(ORG_ID, id);
   });
 });
