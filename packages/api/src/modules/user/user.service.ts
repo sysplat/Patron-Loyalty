@@ -16,6 +16,7 @@ import {
   assertActorMayAssignRoleId,
   assertActorMayManageTargetUser,
 } from '../../common/rbac/role-assignment-authorization';
+import { PlanLimitService } from '../billing/plan-limit.service';
 import * as bcrypt from 'bcrypt';
 
 /**
@@ -28,6 +29,7 @@ export class UserService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly redis: RedisService,
+    private readonly planLimits: PlanLimitService,
   ) {}
 
   /** Drop the cached auth user so status/role changes take effect immediately. */
@@ -278,6 +280,16 @@ export class UserService {
     );
     if (existing)
       throw new ConflictException('User with this email already exists in this organization');
+
+    const activeSeatCount = await this.withOrg(orgId, (tx) =>
+      tx.user.count({ where: { orgId, status: 'active' } }),
+    );
+    const seatLimit = await this.planLimits.checkLimit(orgId, 'maxUsers', activeSeatCount);
+    if (seatLimit.limitReached) {
+      throw new ForbiddenException(
+        `Staff seat limit reached. Your plan allows ${seatLimit.limit} active users. Deactivate someone or upgrade to invite more.`,
+      );
+    }
 
     try {
       passwordSchema.parse(data.password);
@@ -756,8 +768,21 @@ export class UserService {
   }
 
   async activate(orgId: string, userId: string, actorUserId: string) {
-    await this.getById(orgId, userId);
+    const existing = await this.getById(orgId, userId);
     await assertActorMayManageTargetUser(this.prisma, orgId, actorUserId, userId);
+
+    if (existing.status !== 'active') {
+      const activeSeatCount = await this.withOrg(orgId, (tx) =>
+        tx.user.count({ where: { orgId, status: 'active' } }),
+      );
+      const seatLimit = await this.planLimits.checkLimit(orgId, 'maxUsers', activeSeatCount);
+      if (seatLimit.limitReached) {
+        throw new ForbiddenException(
+          `Staff seat limit reached. Your plan allows ${seatLimit.limit} active users. Deactivate someone or upgrade to reactivate this account.`,
+        );
+      }
+    }
+
     const updated = await this.withOrg(orgId, (tx) =>
       tx.user.update({ where: { id: userId }, data: { status: 'active' } }),
     );

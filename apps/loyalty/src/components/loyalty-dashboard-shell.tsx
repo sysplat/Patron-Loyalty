@@ -25,6 +25,7 @@ import {
   Ticket,
   Trophy,
   Users,
+  UserPlus,
   Wallet,
   X,
   PanelLeftClose,
@@ -92,6 +93,7 @@ export const LOYALTY_NAV_SECTIONS: LoyaltyNavSection[] = [
     collapsible: true,
     items: [
       { href: '/program', label: 'Program', icon: Settings2 },
+      { href: '/team', label: 'Team', icon: UserPlus, adminOnly: true },
       { href: '/integrations', label: 'Integrations', icon: Plug },
       { href: '/diagnostics', label: 'Diagnostics', icon: Activity, adminOnly: true },
     ],

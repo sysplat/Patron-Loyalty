@@ -83,7 +83,7 @@ export class BillingService {
       async (tx) => {
         return Promise.all([
           tx.branch.count({ where: { orgId } }),
-          tx.user.count({ where: { orgId } }),
+          tx.user.count({ where: { orgId, status: 'active' } }),
           tx.ticket.count({
             where: {
               orgId,

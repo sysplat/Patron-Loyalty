@@ -25,6 +25,7 @@ const mockPrisma = {
     findFirstOrThrow: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+    count: vi.fn(),
   },
   account: { findUnique: vi.fn(), create: vi.fn() },
   session: { updateMany: vi.fn() },
@@ -45,6 +46,16 @@ const mockRedis = {
   del: vi.fn().mockResolvedValue(undefined),
   getJson: vi.fn().mockResolvedValue(null),
   setJson: vi.fn().mockResolvedValue(undefined),
+};
+
+const mockPlanLimits = {
+  checkLimit: vi.fn().mockResolvedValue({
+    allowed: true,
+    limitReached: false,
+    limit: 20,
+    current: 0,
+    feature: 'maxUsers',
+  }),
 };
 
 describe('UserService', () => {
@@ -89,8 +100,21 @@ describe('UserService', () => {
     mockPrisma.roleAssignment.create.mockResolvedValue({});
     mockPrisma.roleAssignment.createMany.mockResolvedValue({ count: 0 });
     mockPrisma.roleAssignment.deleteMany.mockResolvedValue({ count: 0 });
+    mockPrisma.user.count = vi.fn().mockResolvedValue(0);
+    mockPlanLimits.checkLimit.mockResolvedValue({
+      allowed: true,
+      limitReached: false,
+      limit: 20,
+      current: 0,
+      feature: 'maxUsers',
+    });
     mockRoleAssignmentsByUser();
-    service = new UserService(mockPrisma as never, mockAudit as never, mockRedis as never);
+    service = new UserService(
+      mockPrisma as never,
+      mockAudit as never,
+      mockRedis as never,
+      mockPlanLimits as never,
+    );
   });
 
   describe('invite', () => {
@@ -160,6 +184,34 @@ describe('UserService', () => {
           branchIds: ['branch-1'],
         }),
       ).rejects.toThrow(ConflictException);
+    });
+
+    it('rejects invite when active staff seat limit is reached', async () => {
+      mockPrisma.role.findFirst.mockResolvedValue({ id: 'role-staff', name: SYSTEM_ROLES.STAFF });
+      mockPrisma.user.findFirst.mockResolvedValue(null);
+      mockPrisma.user.count.mockResolvedValue(5);
+      mockPlanLimits.checkLimit.mockResolvedValue({
+        allowed: false,
+        limitReached: true,
+        limit: 5,
+        current: 5,
+        feature: 'maxUsers',
+      });
+
+      await expect(
+        service.invite('org-1', 'actor-1', {
+          email: 'new@b.com',
+          firstName: 'N',
+          lastName: 'U',
+          roleId: 'role-staff',
+          password: 'ValidPass1a',
+        }),
+      ).rejects.toThrow(/Staff seat limit reached/);
+
+      expect(mockPlanLimits.checkLimit).toHaveBeenCalledWith('org-1', 'maxUsers', 5);
+      expect(mockPrisma.user.count).toHaveBeenCalledWith({
+        where: { orgId: 'org-1', status: 'active' },
+      });
     });
 
     it('creates branch-scoped role assignments for staff when branchIds provided', async () => {
@@ -519,6 +571,32 @@ describe('UserService', () => {
       await expect(service.activate('org-1', 'owner-user', 'admin-1')).rejects.toThrow(
         ForbiddenException,
       );
+      expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects activate when active staff seat limit is reached', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue({
+        id: 'staff-1',
+        orgId: 'org-1',
+        status: 'inactive',
+        firstName: 'S',
+        lastName: 'T',
+        email: 'staff@b.com',
+        roleAssignments: [],
+      });
+      mockPrisma.user.count.mockResolvedValue(5);
+      mockPlanLimits.checkLimit.mockResolvedValue({
+        allowed: false,
+        limitReached: true,
+        limit: 5,
+        current: 5,
+        feature: 'maxUsers',
+      });
+
+      await expect(service.activate('org-1', 'staff-1', 'actor-1')).rejects.toThrow(
+        /Staff seat limit reached/,
+      );
+      expect(mockPlanLimits.checkLimit).toHaveBeenCalledWith('org-1', 'maxUsers', 5);
       expect(mockPrisma.user.update).not.toHaveBeenCalled();
     });
 
