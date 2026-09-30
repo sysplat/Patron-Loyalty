@@ -31,6 +31,10 @@ export class RequestContextService {
     return this.storage.getStore()?.orgId;
   }
 
+  getUserId(): string | undefined {
+    return this.storage.getStore()?.userId;
+  }
+
   setUserId(userId: string): void {
     const store = this.storage.getStore();
     if (store) {

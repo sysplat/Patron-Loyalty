@@ -1,5 +1,7 @@
 import { Controller, Get, Patch, Body } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { LOYALTY_ACTIVITY_ACTIONS, LOYALTY_ACTIVITY_RESOURCE_TYPES } from '@queueplatform/shared';
+import { AuditService } from '../../common/audit/audit.service';
 import { OrganizationService } from './organization.service';
 import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../../common/decorators/permissions.decorator';
@@ -9,7 +11,10 @@ import { UpdateOrganizationDto } from './dto/organization.dto';
 @ApiBearerAuth()
 @Controller({ path: 'organization', version: '1' })
 export class OrganizationController {
-  constructor(private readonly orgService: OrganizationService) {}
+  constructor(
+    private readonly orgService: OrganizationService,
+    private readonly audit: AuditService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get current organization details' })
@@ -48,6 +53,16 @@ export class OrganizationController {
   @ApiOperation({ summary: 'Update organization details' })
   async update(@CurrentUser() user: AuthenticatedUser, @Body() body: UpdateOrganizationDto) {
     const data = await this.orgService.updateOrganization(user.orgId, user.userId, body);
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.ORG_UPDATED,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.ORGANIZATION,
+      resourceId: user.orgId,
+      metadata: {
+        changedFields: Object.keys(body),
+      },
+    });
     return { success: true, data };
   }
 }

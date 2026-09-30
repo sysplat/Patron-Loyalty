@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { LOYALTY_ACTIVITY_ACTIONS, LOYALTY_ACTIVITY_RESOURCE_TYPES } from '@queueplatform/shared';
 import { LoyaltyAccountsController } from './loyalty-accounts.controller';
 
 const ORG_ID = '00000000-0000-0000-0000-000000000099';
 const CUSTOMER_ID = '00000000-0000-0000-0000-000000000001';
-const USER = { orgId: ORG_ID } as never;
+const USER = { userId: 'staff-1', orgId: ORG_ID } as never;
 
 describe('LoyaltyAccountsController', () => {
   const accounts = {
@@ -11,6 +12,8 @@ describe('LoyaltyAccountsController', () => {
     getAccountWithLedger: vi.fn(),
     exportPatronDsar: vi.fn(),
     adjustPoints: vi.fn(),
+    earnFromPurchase: vi.fn(),
+    previewEarnFromPurchase: vi.fn(),
   };
   const gamification = { getLeaderboard: vi.fn() };
   const customerUpdate = vi.fn();
@@ -19,6 +22,7 @@ describe('LoyaltyAccountsController', () => {
       fn({ customer: { update: customerUpdate } }),
     ),
   };
+  const audit = { logActivity: vi.fn().mockResolvedValue(undefined) };
   let controller: LoyaltyAccountsController;
 
   beforeEach(() => {
@@ -27,6 +31,7 @@ describe('LoyaltyAccountsController', () => {
       accounts as never,
       gamification as never,
       prisma as never,
+      audit as never,
     );
   });
 
@@ -75,12 +80,22 @@ describe('LoyaltyAccountsController', () => {
     });
   });
 
-  it('adjusts points for customer', async () => {
+  it('adjusts points for customer and logs activity', async () => {
     accounts.adjustPoints.mockResolvedValue({ pointsBalance: 150 });
     await controller.adjustPoints(USER, CUSTOMER_ID, {
       points: 50,
       description: 'Manual bonus',
     } as never);
     expect(accounts.adjustPoints).toHaveBeenCalledWith(ORG_ID, CUSTOMER_ID, 50, 'Manual bonus');
+    expect(audit.logActivity).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orgId: ORG_ID,
+        userId: 'staff-1',
+        action: LOYALTY_ACTIVITY_ACTIONS.POINTS_ADJUSTED,
+        resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.LOYALTY_ACCOUNT,
+        resourceId: CUSTOMER_ID,
+        metadata: expect.objectContaining({ customerId: CUSTOMER_ID, points: 50 }),
+      }),
+    );
   });
 });

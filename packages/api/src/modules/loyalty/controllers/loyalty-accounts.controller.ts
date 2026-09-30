@@ -1,5 +1,7 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, ParseUUIDPipe } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { LOYALTY_ACTIVITY_ACTIONS, LOYALTY_ACTIVITY_RESOURCE_TYPES } from '@queueplatform/shared';
+import { AuditService } from '../../../common/audit/audit.service';
 import { CurrentUser, AuthenticatedUser } from '../../../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../common/decorators/permissions.decorator';
 import { PrismaService } from '../../../prisma/prisma.service';
@@ -19,6 +21,7 @@ export class LoyaltyAccountsController {
     private readonly accounts: LoyaltyAccountService,
     private readonly gamification: LoyaltyGamificationService,
     private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
   ) {}
 
   @Get('lookup/patron')
@@ -73,12 +76,30 @@ export class LoyaltyAccountsController {
 
   @Post('accounts/:customerId/points/adjust')
   @RequirePermissions({ resource: 'customer', action: 'update' })
-  adjustPoints(
+  async adjustPoints(
     @CurrentUser() user: AuthenticatedUser,
     @Param('customerId', ParseUUIDPipe) customerId: string,
     @Body() body: LoyaltyPointsAdjustDto,
   ) {
-    return this.accounts.adjustPoints(user.orgId, customerId, body.points, body.description);
+    const result = await this.accounts.adjustPoints(
+      user.orgId,
+      customerId,
+      body.points,
+      body.description,
+    );
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.POINTS_ADJUSTED,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.LOYALTY_ACCOUNT,
+      resourceId: customerId,
+      metadata: {
+        customerId,
+        points: body.points,
+        description: body.description ?? null,
+      },
+    });
+    return result;
   }
 
   @Post('accounts/:customerId/points/earn')
@@ -86,17 +107,31 @@ export class LoyaltyAccountsController {
     summary: 'Staff: award points from a purchase amount using program earn rules',
   })
   @RequirePermissions({ resource: 'customer', action: 'update' })
-  earnFromPurchase(
+  async earnFromPurchase(
     @CurrentUser() user: AuthenticatedUser,
     @Param('customerId', ParseUUIDPipe) customerId: string,
     @Body() body: LoyaltyPointsEarnPurchaseDto,
   ) {
-    return this.accounts.earnFromPurchase(
+    const result = await this.accounts.earnFromPurchase(
       user.orgId,
       customerId,
       body.purchaseAmountCents,
       body.description,
     );
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.POINTS_EARNED_PURCHASE,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.LOYALTY_ACCOUNT,
+      resourceId: customerId,
+      metadata: {
+        customerId,
+        amountCents: body.purchaseAmountCents,
+        points: result.pointsAwarded,
+        description: body.description ?? null,
+      },
+    });
+    return result;
   }
 
   @Get('accounts/:customerId/points/earn-preview')

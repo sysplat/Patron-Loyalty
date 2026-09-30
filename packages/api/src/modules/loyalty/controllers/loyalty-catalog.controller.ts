@@ -11,6 +11,8 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { LOYALTY_ACTIVITY_ACTIONS, LOYALTY_ACTIVITY_RESOURCE_TYPES } from '@queueplatform/shared';
+import { AuditService } from '../../../common/audit/audit.service';
 import { CurrentUser, AuthenticatedUser } from '../../../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../common/decorators/permissions.decorator';
 import { LoyaltyCatalogService } from '../loyalty-catalog.service';
@@ -26,7 +28,10 @@ import {
 @ApiBearerAuth()
 @Controller('loyalty')
 export class LoyaltyCatalogController {
-  constructor(private readonly catalog: LoyaltyCatalogService) {}
+  constructor(
+    private readonly catalog: LoyaltyCatalogService,
+    private readonly audit: AuditService,
+  ) {}
 
   @Get('rewards')
   @RequirePermissions({ resource: 'customer', action: 'read' })
@@ -37,28 +42,60 @@ export class LoyaltyCatalogController {
   @Post('rewards')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions({ resource: 'customer', action: 'update' })
-  createReward(@CurrentUser() user: AuthenticatedUser, @Body() body: CreateLoyaltyRewardDto) {
-    return this.catalog.createReward(user.orgId, {
+  async createReward(@CurrentUser() user: AuthenticatedUser, @Body() body: CreateLoyaltyRewardDto) {
+    const reward = await this.catalog.createReward(user.orgId, {
       ...body,
       validFrom: body.validFrom ? new Date(body.validFrom) : null,
       validUntil: body.validUntil ? new Date(body.validUntil) : null,
     });
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.REWARD_CREATED,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.LOYALTY_REWARD,
+      resourceId: reward.id,
+      metadata: { rewardId: reward.id, name: reward.name },
+    });
+    return reward;
   }
 
   @Patch('rewards/:id')
   @RequirePermissions({ resource: 'customer', action: 'update' })
-  updateReward(
+  async updateReward(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
     @Body() body: UpdateLoyaltyRewardDto,
   ) {
-    return this.catalog.updateReward(user.orgId, id, body);
+    const reward = await this.catalog.updateReward(user.orgId, id, body);
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.REWARD_UPDATED,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.LOYALTY_REWARD,
+      resourceId: id,
+      metadata: { rewardId: id, name: reward.name },
+    });
+    return reward;
   }
 
   @Post('rewards/redeem')
   @RequirePermissions({ resource: 'customer', action: 'update' })
-  redeemReward(@CurrentUser() user: AuthenticatedUser, @Body() body: RedeemLoyaltyRewardDto) {
-    return this.catalog.redeemReward(user.orgId, body.customerId, body.rewardId);
+  async redeemReward(@CurrentUser() user: AuthenticatedUser, @Body() body: RedeemLoyaltyRewardDto) {
+    const redemption = await this.catalog.redeemReward(user.orgId, body.customerId, body.rewardId);
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.REWARD_REDEEMED,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.LOYALTY_REDEMPTION,
+      resourceId: redemption.id,
+      metadata: {
+        customerId: body.customerId,
+        rewardId: body.rewardId,
+        points: redemption.pointsSpent,
+        redemptionId: redemption.id,
+      },
+    });
+    return redemption;
   }
 
   @Get('redemptions')
@@ -70,15 +107,33 @@ export class LoyaltyCatalogController {
   @Post('redemptions/:id/fulfill')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions({ resource: 'customer', action: 'update' })
-  fulfillRedemption(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    return this.catalog.fulfillRedemption(user.orgId, id);
+  async fulfillRedemption(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    const result = await this.catalog.fulfillRedemption(user.orgId, id);
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.REDEMPTION_FULFILLED,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.LOYALTY_REDEMPTION,
+      resourceId: id,
+      metadata: { redemptionId: id },
+    });
+    return result;
   }
 
   @Post('redemptions/:id/cancel')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions({ resource: 'customer', action: 'update' })
-  cancelRedemption(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    return this.catalog.cancelRedemption(user.orgId, id);
+  async cancelRedemption(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    const result = await this.catalog.cancelRedemption(user.orgId, id);
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.REDEMPTION_CANCELLED,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.LOYALTY_REDEMPTION,
+      resourceId: id,
+      metadata: { redemptionId: id },
+    });
+    return result;
   }
 
   @Get('coupons')
@@ -90,13 +145,22 @@ export class LoyaltyCatalogController {
   @Post('coupons')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions({ resource: 'customer', action: 'update' })
-  createCoupon(@CurrentUser() user: AuthenticatedUser, @Body() body: CreateLoyaltyCouponDto) {
-    return this.catalog.createCoupon(user.orgId, {
+  async createCoupon(@CurrentUser() user: AuthenticatedUser, @Body() body: CreateLoyaltyCouponDto) {
+    const coupon = await this.catalog.createCoupon(user.orgId, {
       ...body,
       code: body.code.toUpperCase(),
       validFrom: body.validFrom ? new Date(body.validFrom) : null,
       validUntil: body.validUntil ? new Date(body.validUntil) : null,
     });
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.COUPON_CREATED,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.LOYALTY_COUPON,
+      resourceId: coupon.id,
+      metadata: { couponId: coupon.id, code: coupon.code },
+    });
+    return coupon;
   }
 
   @Post('coupons/validate')
@@ -110,6 +174,14 @@ export class LoyaltyCatalogController {
   @RequirePermissions({ resource: 'customer', action: 'update' })
   async deleteReward(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     await this.catalog.deleteReward(user.orgId, id);
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.REWARD_DELETED,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.LOYALTY_REWARD,
+      resourceId: id,
+      metadata: { rewardId: id },
+    });
   }
 
   @Delete('coupons/:id')
@@ -117,5 +189,13 @@ export class LoyaltyCatalogController {
   @RequirePermissions({ resource: 'customer', action: 'update' })
   async deleteCoupon(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     await this.catalog.deleteCoupon(user.orgId, id);
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.COUPON_DELETED,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.LOYALTY_COUPON,
+      resourceId: id,
+      metadata: { couponId: id },
+    });
   }
 }

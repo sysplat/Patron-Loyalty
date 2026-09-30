@@ -51,17 +51,18 @@ Every authenticated page under `apps/loyalty/src/app/(dashboard)/` **must** foll
 
 ## Key docs
 
-| Doc                                                                              | Purpose                                       |
-| -------------------------------------------------------------------------------- | --------------------------------------------- |
-| [LOYALTY_STAFF_UI.md](docs/guides/LOYALTY_STAFF_UI.md)                           | Staff dashboard UI system (all pages)         |
-| [PATRON_CSV_IMPORT.md](docs/operations/PATRON_CSV_IMPORT.md)                     | Staff CSV/bulk patron import                  |
-| [LOYALTY_STAFF_COUNTER.md](docs/operations/LOYALTY_STAFF_COUNTER.md)             | Staff Counter path + when to connect POS/API  |
-| [TESTING.md](docs/operations/TESTING.md)                                         | Test tiers, CI matrix (disabled), local gates |
-| [PATRON_LOYALTY_10X_ROADMAP.md](docs/architecture/PATRON_LOYALTY_10X_ROADMAP.md) | Phase plan + scorecard                        |
-| [REPO_BOUNDARIES.md](docs/architecture/REPO_BOUNDARIES.md)                       | LMS vs QMS surfaces, deploy profile           |
-| [LOYALTY_AUTH_BFF.md](docs/architecture/LOYALTY_AUTH_BFF.md)                     | Cookie-only staff auth                        |
-| [adr/](docs/architecture/adr/README.md)                                          | Architecture decision records                 |
-| [QPLATFORM_CONNECTOR_OPS.md](docs/operations/QPLATFORM_CONNECTOR_OPS.md)         | Connector ops + Sentry                        |
+| Doc                                                                              | Purpose                                         |
+| -------------------------------------------------------------------------------- | ----------------------------------------------- |
+| [LOYALTY_STAFF_UI.md](docs/guides/LOYALTY_STAFF_UI.md)                           | Staff dashboard UI system (all pages)           |
+| [LOYALTY_STAFF_ACTIVITY.md](docs/operations/LOYALTY_STAFF_ACTIVITY.md)           | Tenant staff Activity trail (vs platform audit) |
+| [PATRON_CSV_IMPORT.md](docs/operations/PATRON_CSV_IMPORT.md)                     | Staff CSV/bulk patron import                    |
+| [LOYALTY_STAFF_COUNTER.md](docs/operations/LOYALTY_STAFF_COUNTER.md)             | Staff Counter path + when to connect POS/API    |
+| [TESTING.md](docs/operations/TESTING.md)                                         | Test tiers, CI matrix (disabled), local gates   |
+| [PATRON_LOYALTY_10X_ROADMAP.md](docs/architecture/PATRON_LOYALTY_10X_ROADMAP.md) | Phase plan + scorecard                          |
+| [REPO_BOUNDARIES.md](docs/architecture/REPO_BOUNDARIES.md)                       | LMS vs QMS surfaces, deploy profile             |
+| [LOYALTY_AUTH_BFF.md](docs/architecture/LOYALTY_AUTH_BFF.md)                     | Cookie-only staff auth                          |
+| [adr/](docs/architecture/adr/README.md)                                          | Architecture decision records                   |
+| [QPLATFORM_CONNECTOR_OPS.md](docs/operations/QPLATFORM_CONNECTOR_OPS.md)         | Connector ops + Sentry                          |
 
 ## Prisma
 

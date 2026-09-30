@@ -3,16 +3,12 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import { PrismaService } from '../../prisma/prisma.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../../common/decorators/permissions.decorator';
-import { AuditService } from '../../common/audit/audit.service';
 
 @ApiTags('organization')
 @ApiBearerAuth()
 @Controller({ path: 'organization/activity-logs', version: '1' })
 export class OrganizationActivityController {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly audit: AuditService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   @Get()
   @ApiOperation({ summary: 'List org activity logs (admin+)' })
@@ -25,7 +21,6 @@ export class OrganizationActivityController {
   @RequirePermissions({ resource: 'settings', action: 'read' })
   async listActivityLogs(
     @CurrentUser('orgId') orgId: string,
-    @CurrentUser('userId') userId: string,
     @Query('page') pageRaw?: string,
     @Query('limit') limitRaw?: string,
     @Query('action') action?: string,
@@ -47,6 +42,7 @@ export class OrganizationActivityController {
       };
     }
 
+    // Do not log list views: Staff Activity UI polls this endpoint and would flood the trail.
     const [items, total] = await this.prisma.withTenant(orgId, (tx) =>
       Promise.all([
         tx.activityLog.findMany({
@@ -68,19 +64,6 @@ export class OrganizationActivityController {
         tx.activityLog.count({ where }),
       ]),
     );
-
-    await this.audit.logActivity({
-      orgId,
-      userId,
-      action: 'settings.audit_logs.viewed',
-      resourceType: 'activity_log',
-      metadata: {
-        page,
-        limit,
-        actionFilter: action ?? null,
-        resourceTypeFilter: resourceType ?? null,
-      },
-    });
 
     return {
       success: true,

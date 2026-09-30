@@ -29,6 +29,7 @@ __exportStar(require("./constants/prohibited-businesses"), exports);
 __exportStar(require("./constants/roles"), exports);
 __exportStar(require("./constants/customer-crm"), exports);
 __exportStar(require("./constants/loyalty"), exports);
+__exportStar(require("./constants/loyalty-activity"), exports);
 __exportStar(require("./constants/loyalty-connector"), exports);
 __exportStar(require("./constants/loyalty-pos"), exports);
 __exportStar(require("./constants/loyalty-marketing"), exports);

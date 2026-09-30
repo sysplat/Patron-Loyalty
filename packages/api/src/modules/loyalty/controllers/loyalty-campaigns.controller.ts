@@ -10,6 +10,8 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { LOYALTY_ACTIVITY_ACTIONS, LOYALTY_ACTIVITY_RESOURCE_TYPES } from '@queueplatform/shared';
+import { AuditService } from '../../../common/audit/audit.service';
 import { CurrentUser, AuthenticatedUser } from '../../../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../../../common/decorators/permissions.decorator';
 import { LoyaltyCampaignService } from '../loyalty-campaign.service';
@@ -19,7 +21,10 @@ import { CreateLoyaltyCampaignDto, UpdateLoyaltyCampaignDto } from '../dto/loyal
 @ApiBearerAuth()
 @Controller('loyalty')
 export class LoyaltyCampaignsController {
-  constructor(private readonly campaigns: LoyaltyCampaignService) {}
+  constructor(
+    private readonly campaigns: LoyaltyCampaignService,
+    private readonly audit: AuditService,
+  ) {}
 
   @Get('campaigns')
   @RequirePermissions({ resource: 'customer', action: 'read' })
@@ -30,27 +35,57 @@ export class LoyaltyCampaignsController {
   @Post('campaigns')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions({ resource: 'customer', action: 'update' })
-  createCampaign(@CurrentUser() user: AuthenticatedUser, @Body() body: CreateLoyaltyCampaignDto) {
-    return this.campaigns.create(user.orgId, {
+  async createCampaign(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: CreateLoyaltyCampaignDto,
+  ) {
+    const campaign = await this.campaigns.create(user.orgId, {
       ...body,
       scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : null,
     });
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.CAMPAIGN_CREATED,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.LOYALTY_CAMPAIGN,
+      resourceId: campaign.id,
+      metadata: { campaignId: campaign.id },
+    });
+    return campaign;
   }
 
   @Patch('campaigns/:id')
   @RequirePermissions({ resource: 'customer', action: 'update' })
-  updateCampaign(
+  async updateCampaign(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
     @Body() body: UpdateLoyaltyCampaignDto,
   ) {
-    return this.campaigns.update(user.orgId, id, body);
+    const campaign = await this.campaigns.update(user.orgId, id, body);
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.CAMPAIGN_UPDATED,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.LOYALTY_CAMPAIGN,
+      resourceId: id,
+      metadata: { campaignId: id },
+    });
+    return campaign;
   }
 
   @Post('campaigns/:id/launch')
   @RequirePermissions({ resource: 'customer', action: 'update' })
-  launchCampaign(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    return this.campaigns.launch(user.orgId, id);
+  async launchCampaign(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    const campaign = await this.campaigns.launch(user.orgId, id);
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.CAMPAIGN_LAUNCHED,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.LOYALTY_CAMPAIGN,
+      resourceId: id,
+      metadata: { campaignId: id },
+    });
+    return campaign;
   }
 
   @Delete('campaigns/:id')
@@ -58,5 +93,13 @@ export class LoyaltyCampaignsController {
   @RequirePermissions({ resource: 'customer', action: 'update' })
   async deleteCampaign(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     await this.campaigns.delete(user.orgId, id);
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.CAMPAIGN_DELETED,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.LOYALTY_CAMPAIGN,
+      resourceId: id,
+      metadata: { campaignId: id },
+    });
   }
 }

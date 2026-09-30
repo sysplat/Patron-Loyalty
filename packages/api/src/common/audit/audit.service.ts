@@ -36,13 +36,14 @@ export class AuditService {
 
   async logActivity(input: ActivityLogInput): Promise<void> {
     const context = this.requestContext.getContext();
+    const userId = input.userId ?? this.requestContext.getUserId() ?? null;
 
     try {
       await this.prisma.withTenant(input.orgId, (tx) =>
         tx.activityLog.create({
           data: {
             orgId: input.orgId,
-            userId: input.userId ?? null,
+            userId,
             action: input.action,
             resourceType: input.resourceType,
             resourceId: input.resourceId ?? null,
@@ -54,7 +55,7 @@ export class AuditService {
       );
       this.exportImmutableAudit('activity', {
         orgId: input.orgId,
-        userId: input.userId ?? null,
+        userId,
         action: input.action,
         resourceType: input.resourceType,
         resourceId: input.resourceId ?? null,
@@ -74,12 +75,13 @@ export class AuditService {
   }
 
   async logAudit(input: AuditLogInput): Promise<void> {
+    const userId = input.userId ?? this.requestContext.getUserId() ?? null;
     try {
       await this.prisma.withTenant(input.orgId, (tx) =>
         tx.auditLog.create({
           data: {
             orgId: input.orgId,
-            userId: input.userId ?? null,
+            userId,
             action: input.action,
             tableName: input.tableName,
             recordId: input.recordId,
@@ -90,7 +92,7 @@ export class AuditService {
       );
       this.exportImmutableAudit('audit', {
         orgId: input.orgId,
-        userId: input.userId ?? null,
+        userId,
         action: input.action,
         tableName: input.tableName,
         recordId: input.recordId,

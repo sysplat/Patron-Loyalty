@@ -13,6 +13,7 @@ export * from './constants/prohibited-businesses';
 export * from './constants/roles';
 export * from './constants/customer-crm';
 export * from './constants/loyalty';
+export * from './constants/loyalty-activity';
 export * from './constants/loyalty-connector';
 export * from './constants/loyalty-pos';
 export * from './constants/loyalty-marketing';

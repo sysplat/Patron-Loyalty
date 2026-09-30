@@ -17,8 +17,11 @@ import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiQuery, ApiTags } from '@ne
 import {
   CUSTOMER_IMPORT_MAX_BYTES,
   CUSTOMER_SEGMENT_PRESET_VALUES,
+  LOYALTY_ACTIVITY_ACTIONS,
+  LOYALTY_ACTIVITY_RESOURCE_TYPES,
   type CustomerSegmentPreset,
 } from '@queueplatform/shared';
+import { AuditService } from '../../common/audit/audit.service';
 import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 import {
   AllowBranchScopedListRead,
@@ -35,6 +38,7 @@ export class CustomerController {
   constructor(
     private readonly customerService: CustomerService,
     private readonly customerImport: CustomerImportService,
+    private readonly audit: AuditService,
   ) {}
 
   @Get('segments/presets')
@@ -123,11 +127,25 @@ export class CustomerController {
     }),
   )
   @RequirePermissions({ resource: 'customer', action: 'create' })
-  importCsv(
+  async importCsv(
     @CurrentUser() user: AuthenticatedUser,
     @UploadedFile() file: { buffer?: Buffer; size?: number; originalname?: string },
   ) {
-    return this.customerImport.importCsv(user.orgId, file ?? {});
+    const upload = file ?? {};
+    const summary = await this.customerImport.importCsv(user.orgId, upload);
+    void this.audit.logActivity({
+      orgId: user.orgId,
+      userId: user.userId,
+      action: LOYALTY_ACTIVITY_ACTIONS.PATRONS_CSV_IMPORTED,
+      resourceType: LOYALTY_ACTIVITY_RESOURCE_TYPES.CUSTOMER,
+      metadata: {
+        created: summary.created,
+        updated: summary.updated,
+        errors: summary.errors,
+        filename: upload.originalname ?? null,
+      },
+    });
+    return summary;
   }
 
   @Post()
