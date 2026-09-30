@@ -11,14 +11,14 @@
 
 ## Folders
 
-| Folder                           | Contents                                                           |
-| -------------------------------- | ------------------------------------------------------------------ |
-| [architecture/](./architecture/) | App boundaries, QPlatform integration, repo scope, hardening plans |
-| [guides/](./guides/)             | API, database, and frontend development guides                     |
-| [deployment/](./deployment/)     | Railway deploy, CI/Docker, realtime ops gates, load testing        |
-| [operations/](./operations/)     | Release audit and production error runbooks                        |
-| [qa/](./qa/)                     | Manual QA matrices (**QMS-oriented** — use QMS repo for queue QA)  |
-| [compliance/](./compliance/)     | Legal mirrors, support ops, incident response, audit evidence      |
+| Folder                           | Contents                                                                                        |
+| -------------------------------- | ----------------------------------------------------------------------------------------------- |
+| [architecture/](./architecture/) | App boundaries, QPlatform integration, repo scope, hardening plans                              |
+| [guides/](./guides/)             | API, database, frontend (QMS), and [LOYALTY_STAFF_UI](./guides/LOYALTY_STAFF_UI.md) (LMS staff) |
+| [deployment/](./deployment/)     | Railway deploy, CI/Docker, realtime ops gates, load testing                                     |
+| [operations/](./operations/)     | Release audit and production error runbooks                                                     |
+| [qa/](./qa/)                     | Manual QA matrices (**QMS-oriented** — use QMS repo for queue QA)                               |
+| [compliance/](./compliance/)     | Legal mirrors, support ops, incident response, audit evidence                                   |
 
 ## Quick links (LMS)
 

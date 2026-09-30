@@ -25,3 +25,4 @@ Read `docs/architecture/patron-loyalty.md` before adding loyalty or CRM features
 4. **Feature gate** — respect `hasLoyaltyProduct(productSku, patronCrmEnabled)` / `PatronCrmFeatureService`; platform toggle in `apps/admin` only.
 5. **Do not embed full LMS in `apps/web`** — new loyalty UI targets `apps/loyalty`; interim Patrons UI may remain under `/dashboard/customers` until migrated.
 6. **Queue → loyalty coupling** — emit domain events from ticket/appointment modules; handle in `loyalty.listener`. No loyalty business logic inside kiosk or serve flows.
+7. **Staff dashboard UI** — every `apps/loyalty/(dashboard)` page must follow `docs/guides/LOYALTY_STAFF_UI.md` and use `@/components/dashboard` primitives (see `.cursor/rules/loyalty-staff-ui.mdc`).

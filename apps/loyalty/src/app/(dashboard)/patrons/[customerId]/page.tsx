@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RESOURCES, ACTIONS } from '@queueplatform/shared';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { api } from '@/lib/api';
 import { loyaltyGet } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
@@ -22,11 +21,11 @@ import {
   Bell,
   Footprints,
   Download,
-  AlertCircle,
   SearchX,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { EmptyState, PageHeader, PageShell } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -151,7 +150,7 @@ function ConsentPill({ granted }: { granted: boolean }) {
 
 function ProfileSkeleton() {
   return (
-    <div className="space-y-5">
+    <PageShell>
       <Skeleton className="h-4 w-28" />
       <Card>
         <CardContent className="flex items-start gap-4 p-5 sm:p-6">
@@ -181,7 +180,7 @@ function ProfileSkeleton() {
           <Skeleton className="h-80 rounded-lg" />
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }
 
@@ -231,15 +230,18 @@ export default function CustomerProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="mx-auto max-w-lg space-y-4 py-16 text-center">
-        <div className="bg-destructive/10 mx-auto flex h-11 w-11 items-center justify-center rounded-full">
-          <AlertCircle className="text-destructive h-5 w-5" />
-        </div>
-        <p className="text-sm font-medium">Customer not found or CRM not available</p>
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/patrons">Back to customers</Link>
-        </Button>
-      </div>
+      <PageShell>
+        <EmptyState
+          icon={SearchX}
+          title="Customer not found"
+          description="This customer may have been removed, or CRM is not available for your plan."
+          action={
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/patrons">Back to customers</Link>
+            </Button>
+          }
+        />
+      </PageShell>
     );
   }
 
@@ -307,29 +309,34 @@ export default function CustomerProfilePage() {
   ];
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button variant="ghost" size="sm" className="-ml-2 h-8 px-2" asChild>
-          <Link href="/patrons">
-            <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Customers
-          </Link>
-        </Button>
-        <div className="flex flex-wrap gap-2">
-          {canEdit ? (
-            <Button type="button" variant="outline" size="sm" onClick={() => void downloadDsar()}>
-              <Download className="mr-1.5 h-3.5 w-3.5" />
-              DSAR export
+    <PageShell>
+      <Button variant="ghost" size="sm" className="-ml-2 h-8 px-2" asChild>
+        <Link href="/patrons">
+          <ArrowLeft className="mr-1.5 h-4 w-4" />
+          Customers
+        </Link>
+      </Button>
+
+      <PageHeader
+        title={profile.name}
+        subtitle={`Member since ${formatShortDate(profile.createdAt)}`}
+        actions={
+          <>
+            {canEdit ? (
+              <Button type="button" variant="outline" size="sm" onClick={() => void downloadDsar()}>
+                <Download className="mr-1.5 h-3.5 w-3.5" />
+                DSAR export
+              </Button>
+            ) : null}
+            <Button type="button" size="sm" asChild>
+              <Link href={counterHref}>
+                <Phone className="mr-1.5 h-3.5 w-3.5" />
+                Open on Counter
+              </Link>
             </Button>
-          ) : null}
-          <Button type="button" size="sm" asChild>
-            <Link href={counterHref}>
-              <Phone className="mr-1.5 h-3.5 w-3.5" />
-              Open on Counter
-            </Link>
-          </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <Card>
         <CardContent className="flex flex-col gap-5 p-5 sm:flex-row sm:items-start sm:p-6">
@@ -340,12 +347,6 @@ export default function CustomerProfilePage() {
             {initials(profile.name)}
           </div>
           <div className="min-w-0 flex-1 space-y-3">
-            <div>
-              <h1 className={`truncate ${DASHBOARD_PAGE_HEADING_CLASS}`}>{profile.name}</h1>
-              <p className="text-muted-foreground mt-1 text-sm">
-                Member since {formatShortDate(profile.createdAt)}
-              </p>
-            </div>
             <div className="flex flex-wrap gap-2">
               {profile.email ? (
                 <Button variant="outline" size="sm" className="h-8 font-normal" asChild>
@@ -688,6 +689,6 @@ export default function CustomerProfilePage() {
           You have read-only access to this customer.
         </p>
       ) : null}
-    </div>
+    </PageShell>
   );
 }

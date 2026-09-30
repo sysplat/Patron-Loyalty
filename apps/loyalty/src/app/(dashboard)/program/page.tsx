@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { loyaltyGet, loyaltyPatch, loyaltyPost } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
+import { PageHeader, PageShell } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import {
   Plus,
@@ -153,42 +154,57 @@ export default function ProgramPage() {
     onError: () => toast.error('Could not create rule'),
   });
 
-  if (isLoading)
+  if (isLoading) {
     return (
-      <div className="flex h-32 items-center justify-center">
-        <p className="text-muted-foreground animate-pulse">Loading engine...</p>
-      </div>
+      <PageShell>
+        <PageHeader
+          title="Rewards Engine"
+          subtitle="Configure how customers earn points. Staff Counter and POS both use these rules."
+        />
+        <div className="space-y-4">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-40 w-full" />
+        </div>
+      </PageShell>
     );
+  }
   if (isError || !program) {
-    return <p className="text-destructive text-sm">Could not load program.</p>;
+    return (
+      <PageShell>
+        <PageHeader
+          title="Rewards Engine"
+          subtitle="Configure how customers earn points. Staff Counter and POS both use these rules."
+        />
+        <p className="text-destructive text-sm">Could not load program.</p>
+      </PageShell>
+    );
   }
 
   return (
-    <div className="space-y-8 pb-12">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Rewards Engine</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Configure how customers earn points. Staff Counter and POS both use these rules.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {program.enabled ? (
-            <Badge className="px-3 py-1">Engine Active</Badge>
-          ) : (
-            <Badge variant="secondary" className="px-3 py-1">
-              Engine Paused
-            </Badge>
-          )}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => updateProgram.mutate({ enabled: !program.enabled })}
-          >
-            {program.enabled ? 'Pause Program' : 'Activate Program'}
-          </Button>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Rewards Engine"
+        subtitle="Configure how customers earn points. Staff Counter and POS both use these rules."
+        actions={
+          <>
+            {program.enabled ? (
+              <Badge className="px-3 py-1">Engine Active</Badge>
+            ) : (
+              <Badge variant="secondary" className="px-3 py-1">
+                Engine Paused
+              </Badge>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => updateProgram.mutate({ enabled: !program.enabled })}
+            >
+              {program.enabled ? 'Pause Program' : 'Activate Program'}
+            </Button>
+          </>
+        }
+      />
 
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader className="pb-2">
@@ -605,6 +621,6 @@ export default function ProgramPage() {
           </Card>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

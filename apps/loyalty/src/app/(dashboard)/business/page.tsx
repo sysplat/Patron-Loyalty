@@ -11,12 +11,12 @@ import {
   RESOURCES,
   organizationLogoFileTooLargeMessage,
 } from '@queueplatform/shared';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { api } from '@/lib/api';
 import { loyaltyGet, loyaltyPatch, unwrapApiData } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
 import { hasPermission, isOrganizationOwner } from '@/lib/rbac-ui';
 import { cn } from '@/lib/utils';
+import { GuideCard, PageHeader, PageShell, PermissionGate } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -376,20 +376,13 @@ export default function BusinessPage() {
 
   if (!canReadOrg) {
     return (
-      <div className="space-y-5 pb-10">
-        <div>
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Business</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Only owners can manage business identity and brand.
-          </p>
-        </div>
-        <Card>
-          <CardContent className="flex items-start gap-3 p-5 text-sm">
-            <AlertTriangle className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
-            <p className="text-muted-foreground">Ask your owner to open Setup → Business.</p>
-          </CardContent>
-        </Card>
-      </div>
+      <PageShell>
+        <PageHeader
+          title="Business"
+          subtitle="Only owners can manage business identity and brand."
+        />
+        <PermissionGate message="Ask your owner to open Setup → Business." />
+      </PageShell>
     );
   }
 
@@ -402,52 +395,45 @@ export default function BusinessPage() {
     logoBusy;
 
   return (
-    <div className="space-y-5 pb-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Business</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Set your brand, timezone, store address, and display currency.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setGuideOpen((v) => !v)}>
-            <BookOpen className="mr-2 h-4 w-4" />
-            Guide
-            {guideOpen ? (
-              <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-            )}
-          </Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => reloadFormsFromServer()}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Business"
+        subtitle="Set your brand, timezone, store address, and display currency."
+        actions={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setGuideOpen((v) => !v)}
+            >
+              <BookOpen className="mr-2 h-4 w-4" />
+              Guide
+              {guideOpen ? (
+                <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => reloadFormsFromServer()}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+          </>
+        }
+      />
 
-      {guideOpen ? (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Business guide</CardTitle>
-            <CardDescription>
-              This is the staff home for brand and identity — the logo in the sidebar comes from
-              here.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="text-muted-foreground grid gap-3 text-sm sm:grid-cols-2">
-              {GUIDE.map((item) => (
-                <li key={item.title} className="space-y-1">
-                  <p className="text-foreground font-medium">{item.title}</p>
-                  <p className="text-xs leading-relaxed">{item.body}</p>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      ) : null}
+      <GuideCard
+        open={guideOpen}
+        title="Business guide"
+        description="This is the staff home for brand and identity — the logo in the sidebar comes from here."
+        items={GUIDE}
+      />
 
       {!isOwner ? (
         <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/20">
@@ -784,6 +770,6 @@ export default function BusinessPage() {
           </Card>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

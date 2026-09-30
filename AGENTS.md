@@ -40,10 +40,20 @@ packages/e2e/            Playwright smoke
 - **QPlatform connection** → optional; queue events via Integration API (`docs/architecture/qplatform-integration.md`).
 - Auth incident monitoring: Admin → Audit Trail → `auth.*` (see QMS SUPPORT_OPERATIONS pattern; LMS uses the same event names).
 
+## Staff UI convention (required)
+
+Every authenticated page under `apps/loyalty/src/app/(dashboard)/` **must** follow [LOYALTY_STAFF_UI.md](docs/guides/LOYALTY_STAFF_UI.md):
+
+- Primitives: `@/components/dashboard` (`PageShell`, `PageHeader`, `GuideCard`, `StatStrip`, `EmptyState`, `ConfirmDialog`, `FilterTabs`, `PermissionGate`).
+- Cursor rule: `.cursor/rules/loyalty-staff-ui.mdc`.
+- Gate: `pnpm check:architecture:loyalty-staff-ui` (wired into `validate:ci`).
+- New staff UI plans and PRs use this system — do not invent page-local shells, empties, or `window.confirm()`.
+
 ## Key docs
 
 | Doc                                                                              | Purpose                                       |
 | -------------------------------------------------------------------------------- | --------------------------------------------- |
+| [LOYALTY_STAFF_UI.md](docs/guides/LOYALTY_STAFF_UI.md)                           | Staff dashboard UI system (all pages)         |
 | [LOYALTY_STAFF_COUNTER.md](docs/operations/LOYALTY_STAFF_COUNTER.md)             | Staff Counter path + when to connect POS/API  |
 | [TESTING.md](docs/operations/TESTING.md)                                         | Test tiers, CI matrix (disabled), local gates |
 | [PATRON_LOYALTY_10X_ROADMAP.md](docs/architecture/PATRON_LOYALTY_10X_ROADMAP.md) | Phase plan + scorecard                        |

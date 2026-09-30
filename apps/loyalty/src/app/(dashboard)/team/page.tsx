@@ -1,9 +1,8 @@
 'use client';
 
-import { useDeferredValue, useEffect, useId, useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ACTIONS, LOYALTY_STARTER, RESOURCES, SYSTEM_ROLES } from '@queueplatform/shared';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { api } from '@/lib/api';
 import { fetchPaginated, unwrapApiData } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
@@ -16,6 +15,15 @@ import {
   hasPermission,
 } from '@/lib/rbac-ui';
 import { cn } from '@/lib/utils';
+import {
+  ConfirmDialog,
+  EmptyState,
+  FilterTabs,
+  GuideCard,
+  PageHeader,
+  PageShell,
+  StatStrip,
+} from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +32,6 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import {
-  AlertTriangle,
   BookOpen,
   ChevronDown,
   ChevronUp,
@@ -150,93 +157,6 @@ function MemberAvatar({ name }: { name: string }) {
       )}
     >
       {name.substring(0, 2).toUpperCase()}
-    </div>
-  );
-}
-
-function ConfirmActionDialog({
-  title,
-  description,
-  confirmLabel,
-  pendingLabel,
-  pending,
-  destructive,
-  summary,
-  onCancel,
-  onConfirm,
-}: {
-  title: string;
-  description: string;
-  confirmLabel: string;
-  pendingLabel: string;
-  pending: boolean;
-  destructive?: boolean;
-  summary?: React.ReactNode;
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  const titleId = useId();
-  const descId = useId();
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !pending) onCancel();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onCancel, pending]);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
-        aria-label="Close dialog"
-        disabled={pending}
-        onClick={() => {
-          if (!pending) onCancel();
-        }}
-      />
-      <Card
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descId}
-        className="relative z-10 w-full max-w-md border shadow-xl"
-      >
-        <CardHeader className="space-y-3 pb-3">
-          {destructive ? (
-            <div className="bg-destructive/10 text-destructive flex h-11 w-11 items-center justify-center rounded-full">
-              <AlertTriangle className="h-5 w-5" aria-hidden />
-            </div>
-          ) : null}
-          <div className="space-y-1.5">
-            <CardTitle id={titleId} className="text-lg">
-              {title}
-            </CardTitle>
-            <CardDescription id={descId} className="text-sm leading-relaxed">
-              {description}
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          {summary}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant={destructive ? 'destructive' : 'default'}
-              onClick={onConfirm}
-              disabled={pending}
-              autoFocus
-            >
-              {pending ? pendingLabel : confirmLabel}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
@@ -484,91 +404,66 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="space-y-5 pb-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Team</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Invite staff and manage roles for your loyalty workspace.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setGuideOpen((v) => !v)}>
-            <BookOpen className="mr-2 h-4 w-4" />
-            Guide
-            {guideOpen ? (
-              <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-            )}
-          </Button>
-          {canInvite ? (
+    <PageShell>
+      <PageHeader
+        title="Team"
+        subtitle="Invite staff and manage roles for your loyalty workspace."
+        actions={
+          <>
             <Button
               type="button"
+              variant="outline"
               size="sm"
-              onClick={() => {
-                if (inviteOpen) setInviteOpen(false);
-                else openInvite();
-              }}
-              disabled={!inviteOpen && atSeatLimit}
+              onClick={() => setGuideOpen((v) => !v)}
             >
-              {inviteOpen ? (
-                'Close'
+              <BookOpen className="mr-2 h-4 w-4" />
+              Guide
+              {guideOpen ? (
+                <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
               ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Invite teammate
-                </>
+                <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
               )}
             </Button>
-          ) : null}
-        </div>
-      </div>
+            {canInvite ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  if (inviteOpen) setInviteOpen(false);
+                  else openInvite();
+                }}
+                disabled={!inviteOpen && atSeatLimit}
+              >
+                {inviteOpen ? (
+                  'Close'
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Invite teammate
+                  </>
+                )}
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
-      {guideOpen ? (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Staff guide</CardTitle>
-            <CardDescription>
-              Owners and admins invite teammates. Seat limits come from your plan. Deactivate to
-              free a seat without deleting history.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="text-muted-foreground grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-              {ROLE_GUIDE.map((item) => (
-                <li key={item.role} className="space-y-1">
-                  <p className="text-foreground font-medium">{item.role}</p>
-                  <p className="text-xs leading-relaxed">{item.meaning}</p>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      ) : null}
+      <GuideCard
+        open={guideOpen}
+        title="Staff guide"
+        description="Owners and admins invite teammates. Seat limits come from your plan. Deactivate to free a seat without deleting history."
+        columns={3}
+        items={ROLE_GUIDE.map((item) => ({ title: item.role, body: item.meaning }))}
+      />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {[
+      <StatStrip
+        stats={[
           { label: 'Active seats', value: String(seatCurrent) },
           { label: 'Seat limit', value: seatLimit > 0 ? String(seatLimit) : '—' },
           { label: 'Inactive', value: String(inactiveCount) },
-          {
-            label: 'You',
-            value: formatRoleLabel(currentUserRole),
-          },
-        ].map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="p-4">
-              <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                {stat.label}
-              </p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">
-                {stat.value}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+          { label: 'You', value: formatRoleLabel(currentUserRole) },
+        ]}
+      />
 
       {atSeatLimit && canInvite ? (
         <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/20">
@@ -732,23 +627,7 @@ export default function TeamPage() {
       ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-1">
-          {STATUS_FILTERS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setStatusFilter(item.id)}
-              className={cn(
-                'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-                statusFilter === item.id
-                  ? 'bg-foreground text-background'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
+        <FilterTabs tabs={STATUS_FILTERS} value={statusFilter} onChange={setStatusFilter} />
         <div className="relative max-w-sm flex-1">
           <Search className="text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4" />
           <Input
@@ -770,18 +649,23 @@ export default function TeamPage() {
         </Card>
       ) : filteredMembers.length === 0 ? (
         <Card>
-          <CardContent className="px-6 py-12 text-center">
-            <p className="text-sm font-medium">No teammates in this view</p>
-            <p className="text-muted-foreground mx-auto mt-1 max-w-md text-sm leading-relaxed">
-              {canInvite
-                ? 'Invite your first teammate to share Counter and customer work.'
-                : 'Ask an owner or admin if you need someone added.'}
-            </p>
-            {canInvite && !atSeatLimit ? (
-              <Button type="button" size="sm" className="mt-5" onClick={openInvite}>
-                Invite teammate
-              </Button>
-            ) : null}
+          <CardContent>
+            <EmptyState
+              icon={Users}
+              title="No teammates in this view"
+              description={
+                canInvite
+                  ? 'Invite your first teammate to share Counter and customer work.'
+                  : 'Ask an owner or admin if you need someone added.'
+              }
+              action={
+                canInvite && !atSeatLimit ? (
+                  <Button type="button" size="sm" onClick={openInvite}>
+                    Invite teammate
+                  </Button>
+                ) : undefined
+              }
+            />
           </CardContent>
         </Card>
       ) : (
@@ -933,7 +817,7 @@ export default function TeamPage() {
       )}
 
       {roleEdit ? (
-        <ConfirmActionDialog
+        <ConfirmDialog
           title="Change role"
           description={`Update access for ${roleEdit.name}. They keep the same login; permissions change immediately.`}
           confirmLabel="Save role"
@@ -1010,7 +894,7 @@ export default function TeamPage() {
       ) : null}
 
       {passwordEdit ? (
-        <ConfirmActionDialog
+        <ConfirmDialog
           title="Reset password"
           description={`Set a new temporary password for ${passwordEdit.name}. Their sessions end and they must sign in again.`}
           confirmLabel="Reset password"
@@ -1047,7 +931,7 @@ export default function TeamPage() {
       ) : null}
 
       {confirmDeactivate ? (
-        <ConfirmActionDialog
+        <ConfirmDialog
           title="Deactivate teammate?"
           description="They lose access immediately. The seat is freed for a new invite. You can reactivate later."
           confirmLabel="Deactivate"
@@ -1068,7 +952,7 @@ export default function TeamPage() {
       ) : null}
 
       {confirmActivate ? (
-        <ConfirmActionDialog
+        <ConfirmDialog
           title="Reactivate teammate?"
           description={
             atSeatLimit
@@ -1096,7 +980,7 @@ export default function TeamPage() {
       ) : null}
 
       {confirmDelete ? (
-        <ConfirmActionDialog
+        <ConfirmDialog
           title="Delete teammate permanently?"
           description="This removes their staff account. Prefer deactivate unless you are sure they should never return."
           confirmLabel="Delete forever"
@@ -1113,6 +997,6 @@ export default function TeamPage() {
           }
         />
       ) : null}
-    </div>
+    </PageShell>
   );
 }

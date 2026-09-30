@@ -4,6 +4,8 @@
 
 This guide covers Next.js frontend standards for **`apps/web`** in the QPlatform (QMS) repository.
 
+**Patron Loyalty staff UI:** For every authenticated page under `apps/loyalty/(dashboard)`, follow **[LOYALTY_STAFF_UI.md](./LOYALTY_STAFF_UI.md)** and use `apps/loyalty/src/components/dashboard/` primitives — not the QMS page templates below.
+
 ---
 
 ## Page Structure

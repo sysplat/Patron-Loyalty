@@ -1,0 +1,24 @@
+---
+description: Patron Loyalty staff dashboard UI system — required for every (dashboard) page and any future staff UI plan.
+globs:
+  - apps/loyalty/**
+---
+
+# Loyalty staff UI system
+
+Source of truth: `docs/guides/LOYALTY_STAFF_UI.md`.  
+Architecture gate: `pnpm check:architecture:loyalty-staff-ui` (part of `validate:ci`).
+
+When **planning or implementing** staff pages under `apps/loyalty/src/app/(dashboard)/`:
+
+1. Wrap the page in `PageShell` from `@/components/dashboard` (`narrow` only for Counter-like ops).
+2. Use `PageHeader` for title + one-line subtitle + `size="sm"` actions.
+3. Use shared primitives: `GuideCard`, `StatStrip`, `FilterTabs`, `EmptyState`, `ConfirmDialog`, `PermissionGate`.
+4. Do not add page-local EmptyState / ConfirmActionDialog copies or one-off confirm overlays.
+5. Do not use `window.confirm()` / `confirm()` — use `ConfirmDialog`.
+6. Do not add extra full-page padding (`space-y-8`, nested `p-*`) that fights `space-y-5 pb-10`.
+7. Section titles inside cards use `CardTitle` with `text-base`, not oversized headings.
+8. Counter and Overview are documented **variants** of this system — same primitives, different density — not free-form layouts.
+9. New plans that add or change staff UI must cite `LOYALTY_STAFF_UI.md` and reuse these primitives — do not invent a parallel layout recipe.
+
+Public marketing/portal and `apps/admin` are out of scope for these primitives unless explicitly adopting the same guide.

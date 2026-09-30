@@ -10,7 +10,6 @@ import {
   RESOURCES,
   ACTIONS,
 } from '@queueplatform/shared';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { fetchPaginated, loyaltyGet } from '@/lib/api-response';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
@@ -18,6 +17,7 @@ import { branchFilterAllLabel, hasPermission } from '@/lib/rbac-ui';
 import { useTabVisible } from '@/lib/use-tab-visible';
 import { validateCreateCustomer } from '@/lib/validation';
 import { cn } from '@/lib/utils';
+import { PageHeader, PageShell } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -218,13 +218,8 @@ export default function CustomersPage() {
 
   if (orgProfile && !patronCrmEnabled) {
     return (
-      <div className="mx-auto max-w-3xl space-y-6">
-        <div>
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Customers</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Directory, visit history, and marketing segments
-          </p>
-        </div>
+      <PageShell>
+        <PageHeader title="Customers" subtitle="Directory, visit history, and marketing segments" />
         <Card>
           <CardContent className="flex flex-col items-center py-12 text-center">
             <div className="bg-muted mb-4 flex h-12 w-12 items-center justify-center rounded-full">
@@ -237,16 +232,16 @@ export default function CustomersPage() {
             </p>
           </CardContent>
         </Card>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Customers</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
+    <PageShell>
+      <PageHeader
+        title="Customers"
+        subtitle={
+          <>
             Find patrons, review visits, and open a profile for loyalty actions.
             {meta ? (
               <span className="text-foreground/80">
@@ -255,20 +250,22 @@ export default function CustomersPage() {
                 {isFetching && !isLoading ? ' · Updating…' : ''}
               </span>
             ) : null}
-          </p>
-        </div>
-        {canCreate ? (
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => setCreateOpen((v) => !v)}
-            className="shrink-0"
-          >
-            <UserPlus className="mr-2 h-4 w-4" aria-hidden />
-            {createOpen ? 'Close' : 'Add customer'}
-          </Button>
-        ) : null}
-      </div>
+          </>
+        }
+        actions={
+          canCreate ? (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setCreateOpen((v) => !v)}
+              className="shrink-0"
+            >
+              <UserPlus className="mr-2 h-4 w-4" aria-hidden />
+              {createOpen ? 'Close' : 'Add customer'}
+            </Button>
+          ) : undefined
+        }
+      />
 
       {createOpen && canCreate ? (
         <Card>
@@ -706,6 +703,6 @@ export default function CustomersPage() {
           You have read-only access to customer profiles.
         </p>
       ) : null}
-    </div>
+    </PageShell>
   );
 }

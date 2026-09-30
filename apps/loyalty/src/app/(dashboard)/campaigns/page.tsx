@@ -9,8 +9,16 @@ import {
 } from '@queueplatform/shared';
 import { loyaltyGet, loyaltyPatch, loyaltyPost, loyaltyDelete } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { cn } from '@/lib/utils';
+import {
+  ConfirmDialog,
+  EmptyState,
+  FilterTabs,
+  GuideCard,
+  PageHeader,
+  PageShell,
+  StatStrip,
+} from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -152,6 +160,8 @@ export default function CampaignsPage() {
   const [body, setBody] = useState('');
   const [segmentPreset, setSegmentPreset] = useState('');
   const [scheduledAt, setScheduledAt] = useState('');
+  const [launchTarget, setLaunchTarget] = useState<Campaign | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Campaign | null>(null);
 
   const { data: campaigns = [], isLoading } = useQuery({
     queryKey: ['loyalty', 'campaigns'],
@@ -257,99 +267,80 @@ export default function CampaignsPage() {
   ];
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Campaigns</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            One-time sends and automatic journeys for loyalty members.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setGuideOpen((v) => !v)}>
-            <BookOpen className="mr-2 h-4 w-4" />
-            Guide
-            {guideOpen ? (
-              <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-            )}
-          </Button>
-          <Button type="button" size="sm" onClick={() => setCreateOpen((v) => !v)}>
-            <Plus className="mr-2 h-4 w-4" />
-            {createOpen ? 'Close' : 'New campaign'}
-          </Button>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Campaigns"
+        subtitle="One-time sends and automatic journeys for loyalty members."
+        actions={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setGuideOpen((v) => !v)}
+            >
+              <BookOpen className="mr-2 h-4 w-4" />
+              Guide
+              {guideOpen ? (
+                <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+              )}
+            </Button>
+            <Button type="button" size="sm" onClick={() => setCreateOpen((v) => !v)}>
+              <Plus className="mr-2 h-4 w-4" />
+              {createOpen ? 'Close' : 'New campaign'}
+            </Button>
+          </>
+        }
+      />
 
-      {guideOpen ? (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Staff guide</CardTitle>
-            <CardDescription>
-              Draft first — nothing sends until you launch or enable automation.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <ol className="text-muted-foreground grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-              <li className="space-y-1">
-                <p className="text-foreground font-medium">1. Audience</p>
-                <p className="text-xs leading-relaxed">
-                  All members, or a segment (VIP, inactive, SMS opt-in).
-                </p>
-              </li>
-              <li className="space-y-1">
-                <p className="text-foreground font-medium">2. Timing</p>
-                <p className="text-xs leading-relaxed">
-                  One-time (you launch) or automation (Welcome, Birthday, Win-back).
-                </p>
-              </li>
-              <li className="space-y-1">
-                <p className="text-foreground font-medium">3. Message</p>
-                <p className="text-xs leading-relaxed">
-                  Keep SMS short. Email can carry the full offer and link.
-                </p>
-              </li>
-              <li className="space-y-1">
-                <p className="text-foreground font-medium">4. Go live</p>
-                <p className="text-xs leading-relaxed">
-                  Manual → Launch now. Automation → Enable automation.
-                </p>
-              </li>
-            </ol>
-            <p className="border-border/70 text-muted-foreground border-t pt-3 text-xs leading-relaxed">
-              SMS only reaches patrons with marketing SMS opt-in. Confirm consent on{' '}
-              <Link
-                href="/patrons"
-                className="text-foreground font-medium underline-offset-2 hover:underline"
-              >
-                Customers
-              </Link>{' '}
-              before a large blast. Birthday automations need a birthday on the profile.
-            </p>
-          </CardContent>
-        </Card>
-      ) : null}
+      <GuideCard
+        open={guideOpen}
+        title="Staff guide"
+        description="Draft first — nothing sends until you launch or enable automation."
+        columns={4}
+        ordered
+        items={[
+          {
+            title: 'Audience',
+            body: 'All members, or a segment (VIP, inactive, SMS opt-in).',
+          },
+          {
+            title: 'Timing',
+            body: 'One-time (you launch) or automation (Welcome, Birthday, Win-back).',
+          },
+          {
+            title: 'Message',
+            body: 'Keep SMS short. Email can carry the full offer and link.',
+          },
+          {
+            title: 'Go live',
+            body: 'Manual → Launch now. Automation → Enable automation.',
+          },
+        ]}
+        footer={
+          <>
+            SMS only reaches patrons with marketing SMS opt-in. Confirm consent on{' '}
+            <Link
+              href="/patrons"
+              className="text-foreground font-medium underline-offset-2 hover:underline"
+            >
+              Customers
+            </Link>{' '}
+            before a large blast. Birthday automations need a birthday on the profile.
+          </>
+        }
+      />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {[
+      <StatStrip
+        stats={[
           { label: 'Drafts', value: stats.drafts },
           { label: 'Active', value: stats.active },
           { label: 'Live automations', value: stats.automations },
           { label: 'Messages sent', value: stats.totalSent },
-        ].map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="p-4">
-              <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                {stat.label}
-              </p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">
-                {stat.value}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+        ]}
+      />
 
       {createOpen ? (
         <Card>
@@ -503,23 +494,7 @@ export default function CampaignsPage() {
       ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-1">
-          {filterTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setListFilter(tab.id)}
-              className={cn(
-                'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-                listFilter === tab.id
-                  ? 'bg-foreground text-background'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <FilterTabs tabs={filterTabs} value={listFilter} onChange={setListFilter} />
         <p className="text-muted-foreground text-xs tabular-nums">
           {filtered.length} of {campaigns.length}
         </p>
@@ -545,24 +520,24 @@ export default function CampaignsPage() {
         </Card>
       ) : filtered.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center py-16 text-center">
-            <div className="bg-muted mb-4 flex h-11 w-11 items-center justify-center rounded-full">
-              <Megaphone className="text-muted-foreground h-5 w-5" />
-            </div>
-            <p className="text-sm font-medium">
-              {campaigns.length === 0 ? 'No campaigns yet' : 'Nothing in this view'}
-            </p>
-            <p className="text-muted-foreground mt-1 max-w-sm text-sm">
-              {campaigns.length === 0
-                ? 'Create a draft, then Launch (one-time) or Enable automation.'
-                : 'Switch filters or create another campaign.'}
-            </p>
-            {campaigns.length === 0 ? (
-              <Button type="button" size="sm" className="mt-5" onClick={() => setCreateOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                New campaign
-              </Button>
-            ) : null}
+          <CardContent>
+            <EmptyState
+              icon={Megaphone}
+              title={campaigns.length === 0 ? 'No campaigns yet' : 'Nothing in this view'}
+              description={
+                campaigns.length === 0
+                  ? 'Create a draft, then Launch (one-time) or Enable automation.'
+                  : 'Switch filters or create another campaign.'
+              }
+              action={
+                campaigns.length === 0 ? (
+                  <Button type="button" size="sm" onClick={() => setCreateOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    New campaign
+                  </Button>
+                ) : undefined
+              }
+            />
           </CardContent>
         </Card>
       ) : (
@@ -629,16 +604,7 @@ export default function CampaignsPage() {
                     {c.status === 'draft' && manual ? (
                       <Button
                         size="sm"
-                        onClick={() => {
-                          if (
-                            !confirm(
-                              `Launch “${c.name}” now? Messages will queue to the selected audience.`,
-                            )
-                          ) {
-                            return;
-                          }
-                          launch.mutate(c.id);
-                        }}
+                        onClick={() => setLaunchTarget(c)}
                         disabled={launch.isPending}
                       >
                         Launch
@@ -654,10 +620,7 @@ export default function CampaignsPage() {
                       size="sm"
                       variant="ghost"
                       className="text-muted-foreground hover:text-destructive"
-                      onClick={() => {
-                        if (!confirm(`Delete “${c.name}”? This cannot be undone.`)) return;
-                        deleteCampaign.mutate(c.id);
-                      }}
+                      onClick={() => setDeleteTarget(c)}
                       disabled={deleteCampaign.isPending}
                       aria-label={`Delete ${c.name}`}
                     >
@@ -670,6 +633,39 @@ export default function CampaignsPage() {
           </ul>
         </Card>
       )}
-    </div>
+
+      {launchTarget ? (
+        <ConfirmDialog
+          title={`Launch “${launchTarget.name}”?`}
+          description="Messages will queue to the selected audience."
+          confirmLabel="Launch now"
+          pendingLabel="Launching…"
+          pending={launch.isPending}
+          onCancel={() => setLaunchTarget(null)}
+          onConfirm={() => {
+            launch.mutate(launchTarget.id, {
+              onSettled: () => setLaunchTarget(null),
+            });
+          }}
+        />
+      ) : null}
+
+      {deleteTarget ? (
+        <ConfirmDialog
+          title={`Delete “${deleteTarget.name}”?`}
+          description="This cannot be undone."
+          confirmLabel="Delete campaign"
+          pendingLabel="Deleting…"
+          pending={deleteCampaign.isPending}
+          destructive
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            deleteCampaign.mutate(deleteTarget.id, {
+              onSettled: () => setDeleteTarget(null),
+            });
+          }}
+        />
+      ) : null}
+    </PageShell>
   );
 }

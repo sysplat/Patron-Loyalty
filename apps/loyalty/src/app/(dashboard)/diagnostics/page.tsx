@@ -3,10 +3,10 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { loyaltyGet } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
 import { isOwnerOrAdmin } from '@/lib/rbac-ui';
+import { PageHeader, PageShell, PermissionGate } from '@/components/dashboard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -145,40 +145,38 @@ export default function DiagnosticsPage() {
 
   if (!allowed) {
     return (
-      <div className="space-y-4 p-6">
-        <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Diagnostics</h1>
-        <p className="text-muted-foreground text-sm">
-          Owner or admin access is required for tenant diagnostics.
-        </p>
-      </div>
+      <PageShell>
+        <PageHeader
+          title="Diagnostics"
+          subtitle="Owner or admin access is required for tenant diagnostics."
+        />
+        <PermissionGate message="Ask an owner or admin to open Setup → Diagnostics if you need this view." />
+      </PageShell>
     );
   }
 
   const summary = summaryQuery.data;
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Diagnostics</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Find where OTP, earn, redeem, campaigns, and connector traffic stopped — without
-            Railway.
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            void summaryQuery.refetch();
-            void eventsQuery.refetch();
-            if (timelineEnabled) void timelineQuery.refetch();
-          }}
-        >
-          Refresh
-        </Button>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Diagnostics"
+        subtitle="Find where OTP, earn, redeem, campaigns, and connector traffic stopped — without Railway."
+        actions={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void summaryQuery.refetch();
+              void eventsQuery.refetch();
+              if (timelineEnabled) void timelineQuery.refetch();
+            }}
+          >
+            Refresh
+          </Button>
+        }
+      />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
@@ -422,6 +420,6 @@ export default function DiagnosticsPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }

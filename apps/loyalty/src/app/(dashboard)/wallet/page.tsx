@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { loyaltyGet, loyaltyPost, loyaltyDelete, fetchPaginated } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { cn } from '@/lib/utils';
+import { ConfirmDialog, FilterTabs, PageHeader, PageShell } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -324,37 +324,40 @@ export default function WalletPage() {
     setAdjustKind('CREDIT');
   }
   return (
-    <div className="space-y-5 pb-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Stored value</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Cash balances on patron accounts and standalone gift cards — not loyalty points.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setGuideOpen((v) => !v)}>
-            <BookOpen className="mr-2 h-4 w-4" />
-            Guide
-            {guideOpen ? (
-              <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-            )}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => {
-              setTab('gift-cards');
-              setIssueOpen((v) => !v);
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            {issueOpen && tab === 'gift-cards' ? 'Close' : 'Issue gift card'}
-          </Button>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Stored value"
+        subtitle="Cash balances on patron accounts and standalone gift cards — not loyalty points."
+        actions={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setGuideOpen((v) => !v)}
+            >
+              <BookOpen className="mr-2 h-4 w-4" />
+              Guide
+              {guideOpen ? (
+                <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+              )}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                setTab('gift-cards');
+                setIssueOpen((v) => !v);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {issueOpen && tab === 'gift-cards' ? 'Close' : 'Issue gift card'}
+            </Button>
+          </>
+        }
+      />
 
       {guideOpen ? (
         <Card>
@@ -740,23 +743,7 @@ export default function WalletPage() {
             </Card>
           ) : (
             <>
-              <div className="flex flex-wrap gap-1">
-                {GIFT_FILTERS.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setGiftFilter(item.id)}
-                    className={cn(
-                      'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-                      giftFilter === item.id
-                        ? 'bg-muted text-foreground'
-                        : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-                    )}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
+              <FilterTabs tabs={GIFT_FILTERS} value={giftFilter} onChange={setGiftFilter} />
               {filteredGiftCards.length === 0 ? (
                 <Card>
                   <CardContent className="px-6 py-10 text-center">
@@ -859,37 +846,17 @@ export default function WalletPage() {
       ) : null}
 
       {deleting ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-md shadow-lg">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Remove {deleting.code}?</CardTitle>
-              <CardDescription>
-                This permanently deletes the gift card. Remaining balance of{' '}
-                {money(deleting.balanceCents)} will no longer be redeemable.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => removeGiftCard.mutate(deleting.id)}
-                disabled={removeGiftCard.isPending}
-                autoFocus
-              >
-                {removeGiftCard.isPending ? 'Removing…' : 'Remove card'}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setDeleting(null)}
-                disabled={removeGiftCard.isPending}
-              >
-                Cancel
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <ConfirmDialog
+          title={`Remove ${deleting.code}?`}
+          description={`This permanently deletes the gift card. Remaining balance of ${money(deleting.balanceCents)} will no longer be redeemable.`}
+          confirmLabel="Remove card"
+          pendingLabel="Removing…"
+          pending={removeGiftCard.isPending}
+          destructive
+          onCancel={() => setDeleting(null)}
+          onConfirm={() => removeGiftCard.mutate(deleting.id)}
+        />
       ) : null}
-    </div>
+    </PageShell>
   );
 }

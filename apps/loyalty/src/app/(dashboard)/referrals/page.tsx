@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { loyaltyGet, loyaltyPatch, loyaltyPost, fetchPaginated } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
+import { PageHeader, PageShell } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -148,19 +148,21 @@ export default function ReferralsPage() {
   });
 
   return (
-    <div className="space-y-8 pb-10">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <div>
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Referral Program</h1>
-          <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
+    <PageShell>
+      <PageHeader
+        title="Referral Program"
+        subtitle={
+          <>
             Advocates share invite links. New members join as pending; both bonuses credit after the
             friend&apos;s first purchase.
-          </p>
-        </div>
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/program">Edit in Program</Link>
-        </Button>
-      </div>
+          </>
+        }
+        actions={
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/program">Edit in Program</Link>
+          </Button>
+        }
+      />
 
       <section>
         <h2 className="mb-4 text-lg font-semibold tracking-tight">How it works</h2>
@@ -517,6 +519,6 @@ export default function ReferralsPage() {
           </CardContent>
         </Card>
       </section>
-    </div>
+    </PageShell>
   );
 }

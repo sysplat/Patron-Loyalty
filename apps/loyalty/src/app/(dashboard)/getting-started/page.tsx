@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { useGettingStartedProgress } from '@/hooks/use-getting-started-progress';
 import {
   clearGettingStartedDismiss,
@@ -11,9 +10,10 @@ import {
   isGettingStartedDismissed,
 } from '@/lib/getting-started';
 import { cn } from '@/lib/utils';
+import { GuideCard, PageHeader, PageShell, StatStrip } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   BookOpen,
@@ -93,64 +93,53 @@ export default function GettingStartedPage() {
   }
 
   return (
-    <div className="space-y-5 pb-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Getting started</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Finish these steps so every sale can earn and redeem — no POS required.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setGuideOpen((v) => !v)}>
-            <BookOpen className="mr-2 h-4 w-4" />
-            Guide
-            {guideOpen ? (
-              <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+    <PageShell>
+      <PageHeader
+        title="Getting started"
+        subtitle="Finish these steps so every sale can earn and redeem — no POS required."
+        actions={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setGuideOpen((v) => !v)}
+            >
+              <BookOpen className="mr-2 h-4 w-4" />
+              Guide
+              {guideOpen ? (
+                <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+              )}
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => void onRefresh()}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+            {dismissed ? (
+              <Button type="button" variant="outline" size="sm" onClick={onRestore}>
+                Show reminders
+              </Button>
             ) : (
-              <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+              <Button type="button" variant="ghost" size="sm" onClick={onDismiss}>
+                Hide reminders
+              </Button>
             )}
-          </Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => void onRefresh()}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-          {dismissed ? (
-            <Button type="button" variant="outline" size="sm" onClick={onRestore}>
-              Show reminders
-            </Button>
-          ) : (
-            <Button type="button" variant="ghost" size="sm" onClick={onDismiss}>
-              Hide reminders
-            </Button>
-          )}
-        </div>
-      </div>
+          </>
+        }
+      />
 
-      {guideOpen ? (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Launch guide</CardTitle>
-            <CardDescription>
-              Standalone merchants go live with Program → Rewards → Counter. Integrations are
-              optional later.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="text-muted-foreground grid gap-3 text-sm sm:grid-cols-2">
-              {GUIDE.map((item) => (
-                <li key={item.title} className="space-y-1">
-                  <p className="text-foreground font-medium">{item.title}</p>
-                  <p className="text-xs leading-relaxed">{item.body}</p>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      ) : null}
+      <GuideCard
+        open={guideOpen}
+        title="Launch guide"
+        description="Standalone merchants go live with Program → Rewards → Counter. Integrations are optional later."
+        items={GUIDE}
+      />
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        {[
+      <StatStrip
+        columns={3}
+        stats={[
           {
             label: 'Required done',
             value: isLoading ? '—' : `${summary.requiredDone}/${summary.requiredTotal}`,
@@ -167,17 +156,8 @@ export default function GettingStartedPage() {
                 ? 'Ready for Counter'
                 : 'Setup in progress',
           },
-        ].map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="p-4">
-              <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                {stat.label}
-              </p>
-              <p className="mt-1 text-xl font-semibold tracking-tight">{stat.value}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+        ]}
+      />
 
       {summary.requiredComplete ? (
         <Card className="border-emerald-500/30 bg-emerald-500/5">
@@ -286,6 +266,6 @@ export default function GettingStartedPage() {
               );
             })}
       </div>
-    </div>
+    </PageShell>
   );
 }

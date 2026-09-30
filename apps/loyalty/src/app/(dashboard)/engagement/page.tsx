@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { loyaltyGet, loyaltyPost } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { cn } from '@/lib/utils';
+import { EmptyState, FilterTabs, PageHeader, PageShell } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { BookOpen, ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { Award, BookOpen, ChevronDown, ChevronUp, Plus, Target, Trophy } from 'lucide-react';
 
 type ViewTab = 'badges' | 'challenges' | 'leaderboard';
 type BadgeCriterion = 'minVisits' | 'minPoints';
@@ -92,34 +92,6 @@ function ListSkeleton() {
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-3/4" />
-      </CardContent>
-    </Card>
-  );
-}
-
-function EmptyState({
-  title,
-  body,
-  actionLabel,
-  onAction,
-}: {
-  title: string;
-  body: string;
-  actionLabel?: string;
-  onAction?: () => void;
-}) {
-  return (
-    <Card>
-      <CardContent className="px-6 py-12 text-center">
-        <p className="text-sm font-medium">{title}</p>
-        <p className="text-muted-foreground mx-auto mt-1 max-w-md text-sm leading-relaxed">
-          {body}
-        </p>
-        {actionLabel && onAction ? (
-          <Button type="button" size="sm" className="mt-5" onClick={onAction}>
-            {actionLabel}
-          </Button>
-        ) : null}
       </CardContent>
     </Card>
   );
@@ -226,45 +198,47 @@ export default function EngagementPage() {
   const targetInfo = TARGET_META[challengeTargetType];
 
   return (
-    <div className="space-y-5 pb-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Achievements</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Badges and challenges that reward loyal patrons — plus who is climbing the points
-            leaderboard.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setGuideOpen((v) => !v)}>
-            <BookOpen className="mr-2 h-4 w-4" />
-            Guide
-            {guideOpen ? (
-              <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-            )}
-          </Button>
-          {tab !== 'leaderboard' ? (
-            <Button type="button" size="sm" onClick={() => setCreateOpen((v) => !v)}>
-              <Plus className="mr-2 h-4 w-4" />
-              {createOpen ? 'Close' : createLabel}
-            </Button>
-          ) : (
+    <PageShell>
+      <PageHeader
+        title="Achievements"
+        subtitle="Badges and challenges that reward loyal patrons — plus who is climbing the points leaderboard."
+        actions={
+          <>
             <Button
               type="button"
+              variant="outline"
               size="sm"
-              onClick={() => {
-                setTab('badges');
-                setCreateOpen(true);
-              }}
+              onClick={() => setGuideOpen((v) => !v)}
             >
-              <Plus className="mr-2 h-4 w-4" />
-              New badge
+              <BookOpen className="mr-2 h-4 w-4" />
+              Guide
+              {guideOpen ? (
+                <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+              )}
             </Button>
-          )}
-        </div>
-      </div>
+            {tab !== 'leaderboard' ? (
+              <Button type="button" size="sm" onClick={() => setCreateOpen((v) => !v)}>
+                <Plus className="mr-2 h-4 w-4" />
+                {createOpen ? 'Close' : createLabel}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  setTab('badges');
+                  setCreateOpen(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                New badge
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {guideOpen ? (
         <Card>
@@ -513,35 +487,22 @@ export default function EngagementPage() {
       ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-1">
-          {TABS.map((item) => {
+        <FilterTabs
+          tabs={TABS.map((item) => {
             const count =
               item.id === 'badges'
                 ? badges.length
                 : item.id === 'challenges'
                   ? challenges.length
                   : leaderboard.length;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  setTab(item.id);
-                  setCreateOpen(false);
-                }}
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-                  tab === item.id
-                    ? 'bg-foreground text-background'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                )}
-              >
-                {item.label}
-                <span className="tabular-nums opacity-80">{count}</span>
-              </button>
-            );
+            return { id: item.id, label: `${item.label} ${count}` };
           })}
-        </div>
+          value={tab}
+          onChange={(id) => {
+            setTab(id);
+            setCreateOpen(false);
+          }}
+        />
         <p className="text-muted-foreground text-xs">
           {tab === 'badges'
             ? 'Lifetime milestones · auto-awarded'
@@ -556,10 +517,14 @@ export default function EngagementPage() {
           <ListSkeleton />
         ) : badges.length === 0 ? (
           <EmptyState
+            icon={Award}
             title="No badges yet"
-            body="Create a badge for a visit or points milestone. Patrons see earned badges in their portal."
-            actionLabel="New badge"
-            onAction={() => setCreateOpen(true)}
+            description="Create a badge for a visit or points milestone. Patrons see earned badges in their portal."
+            action={
+              <Button type="button" size="sm" onClick={() => setCreateOpen(true)}>
+                New badge
+              </Button>
+            }
           />
         ) : (
           <Card className="overflow-hidden">
@@ -603,10 +568,14 @@ export default function EngagementPage() {
           <ListSkeleton />
         ) : challenges.length === 0 ? (
           <EmptyState
+            icon={Target}
             title="No challenges yet"
-            body="Give patrons a clear goal and a points reward when they finish — for example five visits for 50 points."
-            actionLabel="New challenge"
-            onAction={() => setCreateOpen(true)}
+            description="Give patrons a clear goal and a points reward when they finish — for example five visits for 50 points."
+            action={
+              <Button type="button" size="sm" onClick={() => setCreateOpen(true)}>
+                New challenge
+              </Button>
+            }
           />
         ) : (
           <Card className="overflow-hidden">
@@ -661,8 +630,9 @@ export default function EngagementPage() {
           <ListSkeleton />
         ) : leaderboard.length === 0 ? (
           <EmptyState
+            icon={Trophy}
             title="Leaderboard is empty"
-            body="Patrons appear here as they earn lifetime points from Counter, POS, or linked visits."
+            description="Patrons appear here as they earn lifetime points from Counter, POS, or linked visits."
           />
         ) : (
           <Card className="overflow-hidden">
@@ -723,6 +693,6 @@ export default function EngagementPage() {
           </Card>
         )
       ) : null}
-    </div>
+    </PageShell>
   );
 }

@@ -8,7 +8,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { useGettingStartedProgress } from '@/hooks/use-getting-started-progress';
 import { dismissGettingStarted, isGettingStartedDismissed } from '@/lib/getting-started';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
+import { PageHeader, PageShell } from '@/components/dashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   PieChart,
@@ -144,7 +144,7 @@ export default function LoyaltyDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 pb-12">
+      <PageShell>
         <div>
           <Skeleton className="h-9 w-[250px]" />
           <Skeleton className="mt-2 h-4 w-[350px]" />
@@ -198,15 +198,23 @@ export default function LoyaltyDashboardPage() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   if (isError) {
     return (
-      <p className="text-destructive text-sm">
-        Could not load dashboard{(error as Error)?.message ? `: ${(error as Error).message}` : '.'}
-      </p>
+      <PageShell>
+        <PageHeader
+          title="Loyalty Dashboard"
+          subtitle="Could not load dashboard data. Try refreshing the page."
+        />
+        <p className="text-destructive text-sm">
+          {(error as Error)?.message
+            ? (error as Error).message
+            : 'Something went wrong loading KPIs and charts.'}
+        </p>
+      </PageShell>
     );
   }
 
@@ -226,13 +234,11 @@ export default function LoyaltyDashboardPage() {
     })) ?? [];
 
   return (
-    <div className="space-y-6 pb-12">
-      <div>
-        <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Loyalty Dashboard</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Executive, sales, customer, and campaign insights.
-        </p>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Loyalty Dashboard"
+        subtitle="Executive, sales, customer, and campaign insights."
+      />
 
       {!checklistDismissed && isReady && !summary.requiredComplete ? (
         <Card className="border-primary/20 bg-primary/5 relative overflow-hidden">
@@ -537,6 +543,6 @@ export default function LoyaltyDashboardPage() {
           </Card>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

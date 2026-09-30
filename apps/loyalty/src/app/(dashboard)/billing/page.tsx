@@ -5,12 +5,18 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ACTIONS, RESOURCES } from '@queueplatform/shared';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { api } from '@/lib/api';
 import { fetchPaginated, unwrapApiData } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
 import { hasPermission } from '@/lib/rbac-ui';
 import { cn } from '@/lib/utils';
+import {
+  GuideCard,
+  PageHeader,
+  PageShell,
+  PermissionGate,
+  StatStrip,
+} from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -201,7 +207,7 @@ export default function BillingPage() {
   return (
     <Suspense
       fallback={
-        <div className="space-y-5 pb-10">
+        <PageShell>
           <Skeleton className="h-8 w-40" />
           <Skeleton className="h-4 w-72" />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -209,7 +215,7 @@ export default function BillingPage() {
               <Skeleton key={i} className="h-20 w-full rounded-xl" />
             ))}
           </div>
-        </div>
+        </PageShell>
       }
     >
       <BillingPageInner />
@@ -361,23 +367,13 @@ function BillingPageInner() {
 
   if (!canRead) {
     return (
-      <div className="space-y-5 pb-10">
-        <div>
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Billing</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Only the organization owner can manage plan, payment method
-            {SHOW_SMS_CREDITS ? ', and SMS credits' : ', and invoices'}.
-          </p>
-        </div>
-        <Card>
-          <CardContent className="flex items-start gap-3 p-5 text-sm">
-            <AlertTriangle className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
-            <p className="text-muted-foreground">
-              Ask your owner to open Setup → Billing, or invite you as owner if you need access.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <PageShell>
+        <PageHeader
+          title="Billing"
+          subtitle={`Only the organization owner can manage plan, payment method${SHOW_SMS_CREDITS ? ', and SMS credits' : ', and invoices'}.`}
+        />
+        <PermissionGate message="Ask your owner to open Setup → Billing, or invite you as owner if you need access." />
+      </PageShell>
     );
   }
 
@@ -386,76 +382,63 @@ function BillingPageInner() {
   const smsCheckoutEnabled = smsPacksPayload?.checkoutEnabled === true;
 
   return (
-    <div className="space-y-5 pb-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Billing</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Manage your plan, payment method, invoices
-            {SHOW_SMS_CREDITS ? ', and SMS credits' : ''}.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setGuideOpen((v) => !v)}>
-            <BookOpen className="mr-2 h-4 w-4" />
-            Guide
-            {guideOpen ? (
-              <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-            )}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              void refetchSub();
-              void qc.invalidateQueries({ queryKey: ['billing'] });
-            }}
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-          {canUpdate ? (
+    <PageShell>
+      <PageHeader
+        title="Billing"
+        subtitle={`Manage your plan, payment method, invoices${SHOW_SMS_CREDITS ? ', and SMS credits' : ''}.`}
+        actions={
+          <>
             <Button
               type="button"
+              variant="outline"
               size="sm"
-              disabled={portalMutation.isPending}
-              onClick={() => portalMutation.mutate()}
+              onClick={() => setGuideOpen((v) => !v)}
             >
-              {portalMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <BookOpen className="mr-2 h-4 w-4" />
+              Guide
+              {guideOpen ? (
+                <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
               ) : (
-                <ExternalLink className="mr-2 h-4 w-4" />
+                <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
               )}
-              Payment method
             </Button>
-          ) : null}
-        </div>
-      </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void refetchSub();
+                void qc.invalidateQueries({ queryKey: ['billing'] });
+              }}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+            {canUpdate ? (
+              <Button
+                type="button"
+                size="sm"
+                disabled={portalMutation.isPending}
+                onClick={() => portalMutation.mutate()}
+              >
+                {portalMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                )}
+                Payment method
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
-      {guideOpen ? (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Billing guide</CardTitle>
-            <CardDescription>
-              After trial or checkout, this is your ongoing account home — not just an activation
-              gate.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="text-muted-foreground grid gap-3 text-sm sm:grid-cols-2">
-              {GUIDE.map((item) => (
-                <li key={item.title} className="space-y-1">
-                  <p className="text-foreground font-medium">{item.title}</p>
-                  <p className="text-xs leading-relaxed">{item.body}</p>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      ) : null}
+      <GuideCard
+        open={guideOpen}
+        title="Billing guide"
+        description="After trial or checkout, this is your ongoing account home — not just an activation gate."
+        items={GUIDE}
+      />
 
       {subLoading ? (
         <div
@@ -490,13 +473,9 @@ function BillingPageInner() {
         </Card>
       ) : subscription ? (
         <>
-          <div
-            className={cn(
-              'grid gap-3 sm:grid-cols-2',
-              SHOW_SMS_CREDITS ? 'lg:grid-cols-4' : 'lg:grid-cols-3',
-            )}
-          >
-            {[
+          <StatStrip
+            columns={SHOW_SMS_CREDITS ? 4 : 3}
+            stats={[
               {
                 label: 'Plan',
                 value: subscription.plan?.name ?? '—',
@@ -522,19 +501,8 @@ function BillingPageInner() {
                     },
                   ]
                 : []),
-            ].map((stat) => (
-              <Card key={stat.label}>
-                <CardContent className="p-4">
-                  <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                    {stat.label}
-                  </p>
-                  <p className="mt-1 truncate text-2xl font-semibold tabular-nums tracking-tight">
-                    {stat.value}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+            ]}
+          />
 
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
@@ -806,6 +774,6 @@ function BillingPageInner() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }

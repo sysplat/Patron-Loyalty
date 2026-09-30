@@ -120,7 +120,8 @@ Before merging a change, ask:
 - [../README.md](../README.md)
 - [STANDARDS.md](../STANDARDS.md)
 - [API_MODULE_GUIDE.md](../guides/API_MODULE_GUIDE.md)
-- [FRONTEND_GUIDE.md](../guides/FRONTEND_GUIDE.md)
+- [LOYALTY_STAFF_UI.md](../guides/LOYALTY_STAFF_UI.md) — Patron Loyalty staff dashboard UI system
+- [FRONTEND_GUIDE.md](../guides/FRONTEND_GUIDE.md) — QMS `apps/web` patterns (not LMS staff UI)
 - [DATABASE_GUIDE.md](../guides/DATABASE_GUIDE.md)
 - [DEPLOYMENT_GUIDE.md](../deployment/DEPLOYMENT_GUIDE.md)
 - [README.md](../README.md) — documentation index

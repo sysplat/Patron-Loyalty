@@ -1,35 +1,17 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { loyaltyGet, loyaltyPatch, loyaltyPost, loyaltyDelete } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
+import { ConfirmDialog, EmptyState, PageHeader, PageShell } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Trash2, Gift, Coins, Tag, Plus, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Trash2, Gift, Coins, Tag, Plus, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-
-const EmptyState = ({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-}) => (
-  <div className="flex flex-col items-center justify-center py-16 text-center">
-    <div className="bg-primary/5 text-primary mb-5 flex h-16 w-16 items-center justify-center rounded-full">
-      <Icon className="h-8 w-8" />
-    </div>
-    <p className="text-lg font-medium">{title}</p>
-    <p className="text-muted-foreground mt-2 max-w-[300px] text-sm">{description}</p>
-  </div>
-);
 
 interface Reward {
   id: string;
@@ -61,107 +43,6 @@ function rewardTypeLabel(type: string): string {
   return REWARD_TYPE_LABEL[type] ?? type.toLowerCase().replaceAll('_', ' ');
 }
 
-function DeleteRewardDialog({
-  reward,
-  pending,
-  onCancel,
-  onConfirm,
-}: {
-  reward: Reward;
-  pending: boolean;
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  const titleId = useId();
-  const descId = useId();
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !pending) onCancel();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onCancel, pending]);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
-        aria-label="Close dialog"
-        disabled={pending}
-        onClick={() => {
-          if (!pending) onCancel();
-        }}
-      />
-      <Card
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descId}
-        className="relative z-10 w-full max-w-md border shadow-xl"
-      >
-        <CardHeader className="space-y-3 pb-3">
-          <div className="bg-destructive/10 text-destructive flex h-11 w-11 items-center justify-center rounded-full">
-            <AlertTriangle className="h-5 w-5" aria-hidden />
-          </div>
-          <div className="space-y-1.5">
-            <CardTitle id={titleId} className="text-lg">
-              Delete this reward?
-            </CardTitle>
-            <CardDescription id={descId} className="text-sm leading-relaxed">
-              This permanently removes the reward from your catalog. Patrons will no longer be able
-              to redeem it. Past redemptions stay in history.
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="bg-muted/50 flex gap-3 rounded-lg border px-3.5 py-3">
-            <div
-              className={cn(
-                'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
-                reward.type === 'FREE_ITEM'
-                  ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
-                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-              )}
-            >
-              {reward.type === 'FREE_ITEM' ? (
-                <Gift className="h-5 w-5" aria-hidden />
-              ) : (
-                <Tag className="h-5 w-5" aria-hidden />
-              )}
-            </div>
-            <div className="min-w-0">
-              <p className="truncate font-semibold leading-tight">{reward.name}</p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {reward.pointsCost.toLocaleString()} pts · {rewardTypeLabel(reward.type)}
-                {reward.active ? ' · Active' : ' · Inactive'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
-              Keep reward
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={onConfirm}
-              disabled={pending}
-              autoFocus
-              className="gap-2"
-            >
-              <Trash2 className="h-4 w-4" aria-hidden />
-              {pending ? 'Deleting…' : 'Delete reward'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
 export default function RewardsPage() {
   const token = useAuthStore((s) => s.accessToken);
   const qc = useQueryClient();
@@ -172,6 +53,7 @@ export default function RewardsPage() {
   const [pointsCost, setPointsCost] = useState('');
   const [rewardType, setRewardType] = useState('DISCOUNT');
   const [deleting, setDeleting] = useState<Reward | null>(null);
+  const [cancelingRedemption, setCancelingRedemption] = useState<PendingRedemption | null>(null);
 
   const { data: rewards = [], isLoading } = useQuery({
     queryKey: ['loyalty', 'rewards'],
@@ -239,6 +121,7 @@ export default function RewardsPage() {
     mutationFn: (id: string) => loyaltyPost(`/loyalty/redemptions/${id}/cancel`, token!, {}),
     onSuccess: () => {
       toast.success('Redemption cancelled — points restored');
+      setCancelingRedemption(null);
       qc.invalidateQueries({ queryKey: ['loyalty', 'redemptions'] });
       qc.invalidateQueries({ queryKey: ['loyalty', 'rewards'] });
     },
@@ -246,20 +129,18 @@ export default function RewardsPage() {
   });
 
   return (
-    <div className="space-y-8 pb-12">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Rewards Catalog</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Define what your customers can redeem their points for.
-          </p>
-        </div>
-        {!showBuilder && (
-          <Button onClick={() => setShowBuilder(true)} className="gap-2">
-            <Plus className="h-4 w-4" /> Add Reward
-          </Button>
-        )}
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Rewards Catalog"
+        subtitle="Define what your customers can redeem their points for."
+        actions={
+          !showBuilder ? (
+            <Button size="sm" onClick={() => setShowBuilder(true)} className="gap-2">
+              <Plus className="h-4 w-4" /> Add Reward
+            </Button>
+          ) : undefined
+        }
+      />
 
       {pendingRedemptions.length > 0 ? (
         <Card>
@@ -295,10 +176,7 @@ export default function RewardsPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => {
-                        if (!confirm('Cancel this redemption and restore points?')) return;
-                        cancelRedemption.mutate(r.id);
-                      }}
+                      onClick={() => setCancelingRedemption(r)}
                       disabled={fulfillRedemption.isPending || cancelRedemption.isPending}
                     >
                       Cancel
@@ -480,13 +358,65 @@ export default function RewardsPage() {
       )}
 
       {deleting ? (
-        <DeleteRewardDialog
-          reward={deleting}
+        <ConfirmDialog
+          title="Delete this reward?"
+          description="This permanently removes the reward from your catalog. Patrons will no longer be able to redeem it. Past redemptions stay in history."
+          confirmLabel="Delete reward"
+          pendingLabel="Deleting…"
           pending={deleteReward.isPending}
+          destructive
+          summary={
+            <div className="bg-muted/50 flex gap-3 rounded-lg border px-3.5 py-3">
+              <div
+                className={cn(
+                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+                  deleting.type === 'FREE_ITEM'
+                    ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
+                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+                )}
+              >
+                {deleting.type === 'FREE_ITEM' ? (
+                  <Gift className="h-5 w-5" aria-hidden />
+                ) : (
+                  <Tag className="h-5 w-5" aria-hidden />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate font-semibold leading-tight">{deleting.name}</p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {deleting.pointsCost.toLocaleString()} pts · {rewardTypeLabel(deleting.type)}
+                  {deleting.active ? ' · Active' : ' · Inactive'}
+                </p>
+              </div>
+            </div>
+          }
           onCancel={() => setDeleting(null)}
           onConfirm={() => deleteReward.mutate(deleting.id)}
         />
       ) : null}
-    </div>
+
+      {cancelingRedemption ? (
+        <ConfirmDialog
+          title="Cancel this redemption?"
+          description="Points spent on this redemption will be restored to the patron."
+          confirmLabel="Cancel redemption"
+          pendingLabel="Cancelling…"
+          pending={cancelRedemption.isPending}
+          destructive
+          summary={
+            <div className="bg-muted/50 rounded-lg border px-3.5 py-3 text-sm">
+              <p className="font-medium">{cancelingRedemption.reward.name}</p>
+              <p className="text-muted-foreground mt-1 text-xs">
+                {(cancelingRedemption.account.customer?.name ||
+                  cancelingRedemption.account.customer?.phone ||
+                  'Patron') + ` · ${cancelingRedemption.pointsSpent} pts`}
+              </p>
+            </div>
+          }
+          onCancel={() => setCancelingRedemption(null)}
+          onConfirm={() => cancelRedemption.mutate(cancelingRedemption.id)}
+        />
+      ) : null}
+    </PageShell>
   );
 }

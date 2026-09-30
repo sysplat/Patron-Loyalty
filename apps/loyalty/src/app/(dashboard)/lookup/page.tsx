@@ -10,7 +10,7 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
 import { hasPermission } from '@/lib/rbac-ui';
 import { validateCreateCustomer } from '@/lib/validation';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
+import { PageHeader, PageShell } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -142,15 +142,17 @@ function PatronLookupPageContent() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Counter</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Award points in 3 steps: <span className="text-foreground font-medium">phone</span> →{' '}
-          <span className="text-foreground font-medium">sale amount</span> →{' '}
-          <span className="text-foreground font-medium">Award</span>. Redeem without leaving.
-        </p>
-      </div>
+    <PageShell narrow>
+      <PageHeader
+        title="Counter"
+        subtitle={
+          <>
+            Award points in 3 steps: <span className="text-foreground font-medium">phone</span> →{' '}
+            <span className="text-foreground font-medium">sale amount</span> →{' '}
+            <span className="text-foreground font-medium">Award</span>. Redeem without leaving.
+          </>
+        }
+      />
 
       {!setupBannerDismissed && setupReady && !setupLoading && !summary.requiredComplete ? (
         <div className="border-primary/20 bg-primary/5 relative flex items-start gap-3 rounded-lg border p-3 text-sm">
@@ -361,7 +363,7 @@ function PatronLookupPageContent() {
           </CardContent>
         </Card>
       )}
-    </div>
+    </PageShell>
   );
 }
 
@@ -369,9 +371,9 @@ export default function PatronLookupPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto max-w-2xl py-12">
+        <PageShell narrow>
           <p className="text-muted-foreground text-sm">Loading Counter…</p>
-        </div>
+        </PageShell>
       }
     >
       <PatronLookupPageContent />

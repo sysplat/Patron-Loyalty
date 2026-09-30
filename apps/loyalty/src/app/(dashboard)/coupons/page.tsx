@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { loyaltyGet, loyaltyPost, loyaltyDelete } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { cn } from '@/lib/utils';
+import { ConfirmDialog, PageHeader, PageShell } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -238,31 +238,33 @@ export default function CouponsPage() {
   });
 
   return (
-    <div className="space-y-5 pb-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Promo codes</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Checkout discounts patrons redeem by code — separate from points rewards and message
-            campaigns.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setGuideOpen((v) => !v)}>
-            <BookOpen className="mr-2 h-4 w-4" />
-            Guide
-            {guideOpen ? (
-              <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-            )}
-          </Button>
-          <Button type="button" size="sm" onClick={() => setCreateOpen((v) => !v)}>
-            <Plus className="mr-2 h-4 w-4" />
-            {createOpen ? 'Close' : 'New code'}
-          </Button>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Promo codes"
+        subtitle="Checkout discounts patrons redeem by code — separate from points rewards and message campaigns."
+        actions={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setGuideOpen((v) => !v)}
+            >
+              <BookOpen className="mr-2 h-4 w-4" />
+              Guide
+              {guideOpen ? (
+                <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+              )}
+            </Button>
+            <Button type="button" size="sm" onClick={() => setCreateOpen((v) => !v)}>
+              <Plus className="mr-2 h-4 w-4" />
+              {createOpen ? 'Close' : 'New code'}
+            </Button>
+          </>
+        }
+      />
 
       {guideOpen ? (
         <Card>
@@ -645,36 +647,17 @@ export default function CouponsPage() {
       )}
 
       {deleting ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-md shadow-lg">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Delete {deleting.code}?</CardTitle>
-              <CardDescription>
-                This removes the code permanently. Past redemptions stay in history.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => remove.mutate(deleting.id)}
-                disabled={remove.isPending}
-                autoFocus
-              >
-                {remove.isPending ? 'Deleting…' : 'Delete code'}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setDeleting(null)}
-                disabled={remove.isPending}
-              >
-                Cancel
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <ConfirmDialog
+          title={`Delete ${deleting.code}?`}
+          description="This removes the code permanently. Past redemptions stay in history."
+          confirmLabel="Delete code"
+          pendingLabel="Deleting…"
+          pending={remove.isPending}
+          destructive
+          onCancel={() => setDeleting(null)}
+          onConfirm={() => remove.mutate(deleting.id)}
+        />
       ) : null}
-    </div>
+    </PageShell>
   );
 }

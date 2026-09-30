@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { loyaltyGet, loyaltyDownloadCsv } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
+import { EmptyState, PageHeader, PageShell } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -17,24 +17,6 @@ import {
   TrendingUp,
   SearchX,
 } from 'lucide-react';
-
-const EmptyState = ({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: any;
-  title: string;
-  description: string;
-}) => (
-  <div className="flex flex-col items-center justify-center py-6 text-center">
-    <div className="bg-muted mb-3 flex h-10 w-10 items-center justify-center rounded-full">
-      <Icon className="text-muted-foreground h-5 w-5" />
-    </div>
-    <p className="text-sm font-medium">{title}</p>
-    <p className="text-muted-foreground mt-1 max-w-[200px] text-xs">{description}</p>
-  </div>
-);
 
 interface PointsReport {
   byType: Array<{
@@ -203,8 +185,11 @@ export default function ReportsPage() {
   const kpis = dashboard?.kpis;
 
   return (
-    <div className="space-y-6">
-      <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Reports & analytics</h1>
+    <PageShell>
+      <PageHeader
+        title="Reports & analytics"
+        subtitle="KPIs, cohorts, and export-ready views for your loyalty program."
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {kpisLoading ? (
@@ -281,6 +266,7 @@ export default function ReportsPage() {
               icon={Activity}
               title="No ledger activity"
               description="Points have not been earned or spent yet."
+              compact
             />
           )}
         </CardContent>
@@ -315,6 +301,7 @@ export default function ReportsPage() {
               icon={SearchX}
               title="No campaigns sent"
               description="Metrics will appear here after a campaign is launched."
+              compact
             />
           )}
         </CardContent>
@@ -339,6 +326,7 @@ export default function ReportsPage() {
               icon={TrendingUp}
               title="No customer growth"
               description="No patrons have signed up in the last 6 months."
+              compact
             />
           )}
         </CardContent>
@@ -382,6 +370,7 @@ export default function ReportsPage() {
               icon={Users}
               title="No referral data"
               description="Patrons haven't completed any referrals yet."
+              compact
             />
           )}
         </CardContent>
@@ -417,6 +406,7 @@ export default function ReportsPage() {
               icon={Award}
               title="No redemptions"
               description="No rewards have been redeemed by patrons."
+              compact
             />
           )}
         </CardContent>
@@ -450,6 +440,7 @@ export default function ReportsPage() {
               icon={Award}
               title="No VIP members"
               description="No patron has reached VIP status yet."
+              compact
             />
           )}
         </CardContent>
@@ -477,6 +468,7 @@ export default function ReportsPage() {
               icon={AlertCircle}
               title="No churn data"
               description="Not enough customer data to predict churn risk."
+              compact
             />
           )}
         </CardContent>
@@ -501,6 +493,7 @@ export default function ReportsPage() {
               icon={MapPin}
               title="No branch visits"
               description="Visits haven't been recorded at any branches."
+              compact
             />
           )}
         </CardContent>
@@ -530,6 +523,7 @@ export default function ReportsPage() {
               icon={BarChart3}
               title="No ROI data"
               description="Launch campaigns to see return on investment."
+              compact
             />
           )}
         </CardContent>
@@ -566,10 +560,11 @@ export default function ReportsPage() {
               icon={BarChart3}
               title="No sales data"
               description="Sales dashboard will populate as purchases are made."
+              compact
             />
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }

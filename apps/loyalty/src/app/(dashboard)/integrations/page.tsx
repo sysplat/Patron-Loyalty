@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { loyaltyGet, loyaltyPost, loyaltyDelete, unwrapApiData } from '@/lib/api-response';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
+import { PageHeader, PageShell } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -325,15 +325,17 @@ export default function IntegrationsPage() {
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Integrations</h1>
-        <p className="text-muted-foreground mt-1 max-w-2xl text-sm">
-          Connections are optional. Staff Counter already awards points from Program rules.
-          Integration <code className="text-xs">points/earn</code> and Counter Record purchase share
-          the same PURCHASE earn rules.
-        </p>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Integrations"
+        subtitle={
+          <>
+            Connections are optional. Staff Counter already awards points from Program rules.
+            Integration <code className="text-xs">points/earn</code> and Counter Record purchase
+            share the same PURCHASE earn rules.
+          </>
+        }
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="border-primary/20">
@@ -940,6 +942,6 @@ export default function IntegrationsPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }

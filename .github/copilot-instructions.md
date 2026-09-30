@@ -88,7 +88,8 @@ For complete details, see the docs folder:
 
 - `docs/STANDARDS.md` — master standards document
 - `docs/guides/API_MODULE_GUIDE.md` — NestJS module patterns
-- `docs/guides/FRONTEND_GUIDE.md` — Next.js/React patterns
+- `docs/guides/LOYALTY_STAFF_UI.md` — Patron Loyalty staff dashboard UI system (required for `apps/loyalty/(dashboard)`)
+- `docs/guides/FRONTEND_GUIDE.md` — Next.js/React patterns (QMS `apps/web`; LMS staff UI uses LOYALTY_STAFF_UI.md)
 - `docs/guides/DATABASE_GUIDE.md` — Prisma/DB patterns
 - `docs/deployment/DEPLOYMENT_GUIDE.md` — Railway deployment config
 - `docs/README.md` — documentation index

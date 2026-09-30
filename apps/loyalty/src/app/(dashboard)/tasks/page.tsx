@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { loyaltyGet, loyaltyPatch, loyaltyPost, fetchPaginated } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
-import { DASHBOARD_PAGE_HEADING_CLASS } from '@queueplatform/frontend-core';
 import { cn } from '@/lib/utils';
+import { EmptyState, PageHeader, PageShell } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +14,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { BookOpen, ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import {
+  BookOpen,
+  Briefcase,
+  ChevronDown,
+  ChevronUp,
+  ClipboardList,
+  LifeBuoy,
+  Plus,
+} from 'lucide-react';
 
 type WorkTab = 'tasks' | 'tickets' | 'opportunities';
 
@@ -193,32 +201,6 @@ function ListSkeleton() {
   );
 }
 
-function EmptyState({
-  title,
-  body,
-  actionLabel,
-  onAction,
-}: {
-  title: string;
-  body: string;
-  actionLabel: string;
-  onAction: () => void;
-}) {
-  return (
-    <Card>
-      <CardContent className="px-6 py-12 text-center">
-        <p className="text-sm font-medium">{title}</p>
-        <p className="text-muted-foreground mx-auto mt-1 max-w-md text-sm leading-relaxed">
-          {body}
-        </p>
-        <Button type="button" size="sm" className="mt-5" onClick={onAction}>
-          {actionLabel}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
 export default function TasksPage() {
   const token = useAuthStore((s) => s.accessToken);
   const qc = useQueryClient();
@@ -384,30 +366,33 @@ export default function TasksPage() {
     'border-input bg-background text-foreground focus-visible:ring-ring h-10 w-full rounded-md border px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2';
 
   return (
-    <div className="space-y-5 pb-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className={DASHBOARD_PAGE_HEADING_CLASS}>Follow-ups</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Staff work tied to patrons — follow-ups, support, and pipeline.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setGuideOpen((v) => !v)}>
-            <BookOpen className="mr-2 h-4 w-4" />
-            Guide
-            {guideOpen ? (
-              <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-            )}
-          </Button>
-          <Button type="button" size="sm" onClick={() => setCreateOpen((v) => !v)}>
-            <Plus className="mr-2 h-4 w-4" />
-            {createOpen ? 'Close' : activeTab.createLabel}
-          </Button>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Follow-ups"
+        subtitle="Staff work tied to patrons — follow-ups, support, and pipeline."
+        actions={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setGuideOpen((v) => !v)}
+            >
+              <BookOpen className="mr-2 h-4 w-4" />
+              Guide
+              {guideOpen ? (
+                <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+              )}
+            </Button>
+            <Button type="button" size="sm" onClick={() => setCreateOpen((v) => !v)}>
+              <Plus className="mr-2 h-4 w-4" />
+              {createOpen ? 'Close' : activeTab.createLabel}
+            </Button>
+          </>
+        }
+      />
 
       {guideOpen ? (
         <Card>
@@ -717,10 +702,14 @@ export default function TasksPage() {
           <ListSkeleton />
         ) : sortedTasks.length === 0 ? (
           <EmptyState
+            icon={ClipboardList}
             title="No open follow-ups"
-            body="Create a follow-up when a patron needs a call-back, reminder, or check-in. You can also add them from a customer profile."
-            actionLabel="New follow-up"
-            onAction={() => setCreateOpen(true)}
+            description="Create a follow-up when a patron needs a call-back, reminder, or check-in. You can also add them from a customer profile."
+            action={
+              <Button type="button" size="sm" onClick={() => setCreateOpen(true)}>
+                New follow-up
+              </Button>
+            }
           />
         ) : (
           <Card className="overflow-hidden">
@@ -803,10 +792,14 @@ export default function TasksPage() {
           <ListSkeleton />
         ) : tickets.length === 0 ? (
           <EmptyState
+            icon={LifeBuoy}
             title="No support issues"
-            body="Log an issue when a patron reports a problem. Routine reminders belong under Follow-ups."
-            actionLabel="Log issue"
-            onAction={() => setCreateOpen(true)}
+            description="Log an issue when a patron reports a problem. Routine reminders belong under Follow-ups."
+            action={
+              <Button type="button" size="sm" onClick={() => setCreateOpen(true)}>
+                Log issue
+              </Button>
+            }
           />
         ) : (
           <Card className="overflow-hidden">
@@ -878,10 +871,14 @@ export default function TasksPage() {
           <ListSkeleton />
         ) : opportunities.length === 0 ? (
           <EmptyState
+            icon={Briefcase}
             title="No deals in pipeline"
-            body="Track memberships, packages, and upsells here. Keep call-backs under Follow-ups."
-            actionLabel="Add deal"
-            onAction={() => setCreateOpen(true)}
+            description="Track memberships, packages, and upsells here. Keep call-backs under Follow-ups."
+            action={
+              <Button type="button" size="sm" onClick={() => setCreateOpen(true)}>
+                Add deal
+              </Button>
+            }
           />
         ) : (
           <Card className="overflow-hidden">
@@ -954,6 +951,6 @@ export default function TasksPage() {
           </Card>
         )
       ) : null}
-    </div>
+    </PageShell>
   );
 }
