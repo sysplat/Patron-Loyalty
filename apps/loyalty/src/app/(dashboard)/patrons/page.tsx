@@ -6,18 +6,20 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CUSTOMER_SEGMENT_PRESET_LABELS,
   CUSTOMER_SEGMENT_PRESET_VALUES,
+  CUSTOMER_IMPORT_TEMPLATE_HEADERS,
+  type CustomerImportResult,
   type CustomerSegmentPreset,
   RESOURCES,
   ACTIONS,
 } from '@queueplatform/shared';
-import { fetchPaginated, loyaltyGet } from '@/lib/api-response';
+import { fetchPaginated, loyaltyGet, unwrapApiData } from '@/lib/api-response';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
 import { branchFilterAllLabel, hasPermission } from '@/lib/rbac-ui';
 import { useTabVisible } from '@/lib/use-tab-visible';
 import { validateCreateCustomer } from '@/lib/validation';
 import { cn } from '@/lib/utils';
-import { PageHeader, PageShell } from '@/components/dashboard';
+import { ConfirmDialog, GuideCard, PageHeader, PageShell, StatStrip } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +37,11 @@ import {
   Copy,
   SearchX,
   AlertCircle,
+  Upload,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -115,6 +122,11 @@ export default function CustomersPage() {
   const [segmentName, setSegmentName] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({ name: '', email: '', phone: '' });
+  const [importOpen, setImportOpen] = useState(false);
+  const [importGuideOpen, setImportGuideOpen] = useState(true);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importConfirmOpen, setImportConfirmOpen] = useState(false);
+  const [importResult, setImportResult] = useState<CustomerImportResult | null>(null);
   const qc = useQueryClient();
 
   const { data: branches = [] } = useQuery({
@@ -195,6 +207,52 @@ export default function CustomersPage() {
     },
   });
 
+  const importMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      const payload = await api.postForm<unknown>('/customers/import', form, {
+        token: token!,
+        showErrorToast: false,
+      });
+      return unwrapApiData<CustomerImportResult>(payload);
+    },
+    onSuccess: (result) => {
+      setImportResult(result);
+      setImportConfirmOpen(false);
+      setImportFile(null);
+      void qc.invalidateQueries({ queryKey: ['customers'] });
+      void qc.invalidateQueries({ queryKey: ['loyalty', 'dashboard'] });
+      if (result.errors === 0) {
+        toast.success(`Imported ${result.created} new, updated ${result.updated}`);
+      } else {
+        toast.message(
+          `Import finished: ${result.created} created, ${result.updated} updated, ${result.errors} errors`,
+        );
+      }
+    },
+    onError: (err: unknown) => {
+      setImportConfirmOpen(false);
+      const message =
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as { message?: string }).message)
+          : 'Could not import CSV';
+      toast.error(message);
+    },
+  });
+
+  function downloadImportTemplate() {
+    const sample =
+      `${CUSTOMER_IMPORT_TEMPLATE_HEADERS.join(',')}\n` +
+      'Ada Lovelace,ada@example.com,+15551230001,pos-1001,vip;founders,Migrated from POS,1815-12-10,,123 Main St,London,,SW1A1AA,GB,yes,yes,120\n';
+    const blob = new Blob([sample], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'patron-import-template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
   const customers = data?.data ?? [];
   const meta = data?.meta;
   const branchLabel = branchFilterAllLabel(userRole);
@@ -254,19 +312,192 @@ export default function CustomersPage() {
         }
         actions={
           canCreate ? (
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => setCreateOpen((v) => !v)}
-              className="shrink-0"
-            >
-              <UserPlus className="mr-2 h-4 w-4" aria-hidden />
-              {createOpen ? 'Close' : 'Add customer'}
-            </Button>
+            <>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setImportOpen((v) => !v);
+                  setCreateOpen(false);
+                }}
+                className="shrink-0"
+              >
+                <Upload className="mr-2 h-4 w-4" aria-hidden />
+                {importOpen ? 'Close import' : 'Import CSV'}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  setCreateOpen((v) => !v);
+                  setImportOpen(false);
+                }}
+                className="shrink-0"
+              >
+                <UserPlus className="mr-2 h-4 w-4" aria-hidden />
+                {createOpen ? 'Close' : 'Add customer'}
+              </Button>
+            </>
           ) : undefined
         }
       />
 
+      {importOpen && canCreate ? (
+        <>
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <CardTitle className="text-base">Import patrons from CSV</CardTitle>
+                  <CardDescription>
+                    Upserts by external_id, then email, then phone. Opening points credit new
+                    patrons only (ledger). Max 2,000 rows.
+                  </CardDescription>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setImportGuideOpen((v) => !v)}
+                >
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Guide
+                  {importGuideOpen ? (
+                    <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <GuideCard
+                open={importGuideOpen}
+                title="Import guide"
+                description="Migrate from an old loyalty or POS list without retyping patrons."
+                columns={3}
+                items={[
+                  {
+                    title: 'Match keys',
+                    body: 'Rows match existing patrons by external_id → email → phone, then update.',
+                  },
+                  {
+                    title: 'Required columns',
+                    body: 'name plus email and/or phone. Optional tags, consent, opening_points.',
+                  },
+                  {
+                    title: 'Opening points',
+                    body: 'Applied only when creating a new patron, via the points ledger.',
+                  },
+                ]}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={downloadImportTemplate}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download template
+                </Button>
+                <a
+                  href="/patron-import-template.csv"
+                  className="text-muted-foreground text-xs underline-offset-2 hover:underline"
+                  download
+                >
+                  Or open sample file
+                </a>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="patron-csv">CSV file</Label>
+                <Input
+                  id="patron-csv"
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={(e) => {
+                    setImportFile(e.target.files?.[0] ?? null);
+                    setImportResult(null);
+                  }}
+                />
+                {importFile ? (
+                  <p className="text-muted-foreground text-xs">
+                    Selected: {importFile.name} ({Math.ceil(importFile.size / 1024)} KB)
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!importFile || importMutation.isPending}
+                  onClick={() => setImportConfirmOpen(true)}
+                >
+                  {importMutation.isPending ? 'Importing…' : 'Run import'}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setImportOpen(false);
+                    setImportFile(null);
+                    setImportResult(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+              {importResult ? (
+                <div className="space-y-3 border-t pt-4">
+                  <StatStrip
+                    columns={3}
+                    stats={[
+                      { label: 'Created', value: String(importResult.created) },
+                      { label: 'Updated', value: String(importResult.updated) },
+                      { label: 'Errors', value: String(importResult.errors) },
+                    ]}
+                  />
+                  {importResult.rows.some((r) => r.status === 'error') ? (
+                    <div className="max-h-48 overflow-auto rounded-md border text-sm">
+                      <table className="w-full text-left">
+                        <thead className="bg-muted/40 text-muted-foreground sticky top-0 text-xs uppercase">
+                          <tr>
+                            <th className="px-3 py-2 font-medium">Row</th>
+                            <th className="px-3 py-2 font-medium">Error</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {importResult.rows
+                            .filter((r) => r.status === 'error')
+                            .map((r) => (
+                              <tr key={r.row} className="border-t">
+                                <td className="px-3 py-2 tabular-nums">{r.row}</td>
+                                <td className="text-destructive px-3 py-2">{r.error}</td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+          {importConfirmOpen && importFile ? (
+            <ConfirmDialog
+              title="Import this CSV?"
+              description="Matching patrons will be updated. New rows create patrons. Opening points only apply to new patrons."
+              confirmLabel="Import"
+              pendingLabel="Importing…"
+              pending={importMutation.isPending}
+              summary={
+                <p className="bg-muted/50 rounded-lg border px-3.5 py-3 text-sm">
+                  File: <span className="font-medium">{importFile.name}</span>
+                </p>
+              }
+              onCancel={() => setImportConfirmOpen(false)}
+              onConfirm={() => importMutation.mutate(importFile)}
+            />
+          ) : null}
+        </>
+      ) : null}
       {createOpen && canCreate ? (
         <Card>
           <CardHeader className="pb-3">

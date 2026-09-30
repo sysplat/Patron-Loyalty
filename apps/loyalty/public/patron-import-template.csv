@@ -1,0 +1,3 @@
+name,email,phone,external_id,tags,notes,birthday,gender,address_line1,city,region,postal_code,country,marketing_sms_consent,marketing_email_consent,opening_points
+Ada Lovelace,ada@example.com,+15551230001,pos-1001,vip;founders,Migrated from POS,1815-12-10,,123 Main St,London,,SW1A1AA,GB,yes,yes,120
+Grace Hopper,grace@example.com,+15551230002,pos-1002,vip,,1906-12-09,,,,,,,yes,no,80

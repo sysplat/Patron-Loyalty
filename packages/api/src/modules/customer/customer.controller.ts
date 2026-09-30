@@ -9,22 +9,33 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { CUSTOMER_SEGMENT_PRESET_VALUES, type CustomerSegmentPreset } from '@queueplatform/shared';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  CUSTOMER_IMPORT_MAX_BYTES,
+  CUSTOMER_SEGMENT_PRESET_VALUES,
+  type CustomerSegmentPreset,
+} from '@queueplatform/shared';
 import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 import {
   AllowBranchScopedListRead,
   RequirePermissions,
 } from '../../common/decorators/permissions.decorator';
 import { CustomerService } from './customer.service';
+import { CustomerImportService } from './customer-import.service';
 import { CreateCustomerSegmentDto, CreateCustomerDto, UpdateCustomerDto } from './dto/customer.dto';
 
 @ApiTags('Customers')
 @ApiBearerAuth()
 @Controller('customers')
 export class CustomerController {
-  constructor(private readonly customerService: CustomerService) {}
+  constructor(
+    private readonly customerService: CustomerService,
+    private readonly customerImport: CustomerImportService,
+  ) {}
 
   @Get('segments/presets')
   @ApiOperation({ summary: 'List built-in patron CRM segment presets' })
@@ -98,6 +109,25 @@ export class CustomerController {
       page: page ? +page : undefined,
       limit: limit ? +limit : undefined,
     });
+  }
+
+  @Post('import')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Import patrons from a CSV file (upsert by external_id, email, or phone)',
+  })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: CUSTOMER_IMPORT_MAX_BYTES },
+    }),
+  )
+  @RequirePermissions({ resource: 'customer', action: 'create' })
+  importCsv(
+    @CurrentUser() user: AuthenticatedUser,
+    @UploadedFile() file: { buffer?: Buffer; size?: number; originalname?: string },
+  ) {
+    return this.customerImport.importCsv(user.orgId, file ?? {});
   }
 
   @Post()

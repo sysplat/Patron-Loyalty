@@ -515,9 +515,9 @@ export declare const updateLoyaltyProfileSchema: z.ZodObject<{
     country?: string | null | undefined;
     birthday?: string | null | undefined;
     gender?: string | null | undefined;
-    addressLine1?: string | null | undefined;
     city?: string | null | undefined;
     region?: string | null | undefined;
+    addressLine1?: string | null | undefined;
     postalCode?: string | null | undefined;
 }, {
     email?: string | null | undefined;
@@ -526,9 +526,9 @@ export declare const updateLoyaltyProfileSchema: z.ZodObject<{
     country?: string | null | undefined;
     birthday?: string | null | undefined;
     gender?: string | null | undefined;
-    addressLine1?: string | null | undefined;
     city?: string | null | undefined;
     region?: string | null | undefined;
+    addressLine1?: string | null | undefined;
     postalCode?: string | null | undefined;
 }>;
 //# sourceMappingURL=loyalty.validators.d.ts.map

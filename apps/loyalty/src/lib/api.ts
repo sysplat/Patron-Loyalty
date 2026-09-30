@@ -174,12 +174,16 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
   }
 
   const clientRequestId = newClientRequestId();
+  const isFormData = typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData;
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(fetchOptions.headers as Record<string, string>),
     // Always win so Network tab / toast / logs share the same id.
     'X-Request-ID': clientRequestId,
   };
+  if (isFormData) {
+    delete headers['Content-Type'];
+  }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -294,6 +298,9 @@ export const api = {
   get: <T>(path: string, opts?: FetchOptions) => request<T>(path, { ...opts, method: 'GET' }),
   post: <T>(path: string, body?: any, opts?: FetchOptions) =>
     request<T>(path, { ...opts, method: 'POST', body: body ? JSON.stringify(body) : undefined }),
+  /** Multipart POST — omit JSON Content-Type so the browser sets the boundary. */
+  postForm: <T>(path: string, formData: FormData, opts?: FetchOptions) =>
+    request<T>(path, { ...opts, method: 'POST', body: formData }),
   put: <T>(path: string, body?: any, opts?: FetchOptions) =>
     request<T>(path, { ...opts, method: 'PUT', body: body ? JSON.stringify(body) : undefined }),
   patch: <T>(path: string, body?: any, opts?: FetchOptions) =>

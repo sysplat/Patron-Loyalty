@@ -287,8 +287,8 @@ export class CustomerService {
       }
     }
 
-    const marketingSms = data.marketingSmsConsent ? 'OPTED_IN' : 'REVOKED';
-    const marketingEmail = data.marketingEmailConsent ? 'OPTED_IN' : 'REVOKED';
+    const marketingSms = data.marketingSmsConsent ? 'GRANTED' : 'REVOKED';
+    const marketingEmail = data.marketingEmailConsent ? 'GRANTED' : 'REVOKED';
 
     const created = await this.withOrg(orgId, (tx) =>
       tx.customer.create({

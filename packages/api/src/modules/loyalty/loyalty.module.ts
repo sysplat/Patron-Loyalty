@@ -69,7 +69,7 @@ import { LoyaltyMarketingSyncService } from './loyalty-marketing-sync.service';
 
 @Module({
   imports: [
-    CustomerModule,
+    forwardRef(() => CustomerModule),
     NotificationModule,
     WebhookModule,
     RedisModule,
