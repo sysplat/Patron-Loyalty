@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/node';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import {
   applySentryPiiScrub,
   getObservabilityRelease,
@@ -15,6 +14,16 @@ export function isSentryEnabled(): boolean {
   return Boolean(process.env.SENTRY_DSN) && process.env.NODE_ENV !== 'test';
 }
 
+function resolveProfilingIntegrations(): any[] {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { nodeProfilingIntegration } = require('@sentry/profiling-node');
+    return [nodeProfilingIntegration()];
+  } catch {
+    return [];
+  }
+}
+
 export function initSentry(): void {
   if (!isSentryEnabled()) return;
 
@@ -23,7 +32,7 @@ export function initSentry(): void {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     release: getObservabilityRelease(),
-    integrations: [nodeProfilingIntegration()],
+    integrations: resolveProfilingIntegrations(),
     tracesSampleRate: isProd ? 0.1 : 1.0,
     profilesSampleRate: isProd ? 0.1 : 1.0,
     environment: process.env.NODE_ENV || 'development',
