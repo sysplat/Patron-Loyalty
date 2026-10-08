@@ -3,10 +3,32 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
 import { toast } from 'sonner';
 import { PatronLegalModal } from '@/components/legal/patron-legal-modal';
 import { ReferralQr } from '@/components/referral-qr';
+import {
+  PatronBalance,
+  PatronBanner,
+  PatronBrandHeader,
+  PatronButton,
+  PatronCard,
+  PatronCheckbox,
+  PatronChip,
+  PatronContainer,
+  PatronErrorScreen,
+  PatronField,
+  PatronFooterLinks,
+  PatronInlineLink,
+  PatronInput,
+  PatronLoadingScreen,
+  PatronProgress,
+  PatronRow,
+  PatronRowList,
+  PatronSection,
+  PatronShell,
+  PatronStampGrid,
+  resolvePatronBranding,
+} from '@/components/patron';
 import { buildReferralInviteUrl } from '@/lib/patron-urls';
 import {
   hasStoredPatronConsent,
@@ -14,12 +36,14 @@ import {
   storePatronConsent,
 } from '@/lib/patron-legal-consent';
 import { useOnlineStatus } from '@/hooks/use-online-status';
+import type { LoyaltyPublicBranding } from '@queueplatform/shared';
 
 interface PortalData {
   found: boolean;
   legalConsentGranted?: boolean;
   patronName?: string;
   orgName?: string;
+  branding?: LoyaltyPublicBranding;
   pointsCurrencyName?: string;
   pointsBalance?: number;
   lifetimePointsEarned?: number;
@@ -41,6 +65,7 @@ interface PortalData {
     name: string;
     description?: string | null;
     pointsCost: number;
+    type: string;
   }>;
   recentActivity?: Array<{
     id: string;
@@ -49,15 +74,11 @@ interface PortalData {
     description?: string | null;
     createdAt: string;
   }>;
-  stampCard?: {
-    target: number;
-    filled: number;
-    totalVisits: number;
-  };
+  stampCard?: { target: number; filled: number; totalVisits: number };
   wallet?: {
     balanceCents: number;
     currency: string;
-    transactions?: Array<{
+    transactions: Array<{
       id: string;
       type: string;
       amountCents: number;
@@ -66,13 +87,30 @@ interface PortalData {
       createdAt: string;
     }>;
   } | null;
-  gameStatus?: Record<string, { canPlay: boolean; nextEligibleAt: string | null }>;
+  gameStatus?: Record<string, { canPlay: boolean; nextEligibleAt: string | null }> | null;
   nextBestOffer?: { id: string; name: string; pointsCost: number } | null;
   orgSlug?: string;
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 const PORTAL_TOKEN_KEY = (code: string) => `loyalty-portal-token:${code}`;
+const GAME_LABELS: Record<'spin_wheel' | 'scratch_card', string> = {
+  spin_wheel: 'Spin wheel',
+  scratch_card: 'Scratch card',
+};
+
+function humanizeType(value: string): string {
+  const spaced = value.replace(/_/g, ' ').toLowerCase();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+function formatDate(value: string): string {
+  return new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function formatCurrencyCents(cents: number): string {
+  return `${cents < 0 ? '-' : ''}$${Math.abs(cents / 100).toFixed(2)}`;
+}
 
 async function fetchPortal(code: string): Promise<PortalData> {
   const res = await fetch(`${API_BASE}/loyalty/public/portal/${encodeURIComponent(code)}`, {
@@ -287,373 +325,338 @@ export default function PatronPortalPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        <p className="text-sm text-white/70">Loading your loyalty account…</p>
-      </div>
-    );
+    return <PatronLoadingScreen message="Loading your loyalty account…" />;
   }
 
   if (isError || !data?.found) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-slate-950 px-6 text-center text-white">
-        <h1 className="text-lg font-semibold">Account not found</h1>
-        <p className="text-sm text-white/70">This loyalty link is invalid or inactive.</p>
-      </div>
+      <PatronErrorScreen
+        title="Account not found"
+        description="This loyalty link is invalid or inactive."
+      />
     );
   }
 
-  const currency = data.pointsCurrencyName ?? 'Points';
+  const branding = resolvePatronBranding(data);
+  const currency = branding.pointsCurrencyName;
+  const tierColor = data.tier?.color?.trim() || undefined;
+  const inviteUrl = data.referralCode ? buildReferralInviteUrl(data.referralCode) : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      {!online ? (
-        <div
-          role="status"
-          className="border-b border-amber-500/40 bg-amber-950/90 px-4 py-2 text-center text-sm text-amber-100"
-        >
-          You appear to be offline. Redeem and profile changes will retry when connection returns.
-        </div>
-      ) : null}
-      {legalModal && <PatronLegalModal type={legalModal} onClose={() => setLegalModal(null)} />}
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <header className="mb-6 text-center">
-          <p className="text-xs font-medium uppercase tracking-widest text-white/50">
-            {data.orgName}
-          </p>
-          <h1 className="mt-2 text-2xl font-bold">{data.patronName}</h1>
-          <p className="mt-1 text-sm text-white/70">{data.tier?.name ?? 'Member'}</p>
-        </header>
-
-        <section className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-          <label className="flex cursor-pointer items-start gap-2">
-            <input
-              type="checkbox"
-              checked={acceptLegal}
-              onChange={(e) => handleAcceptLegal(e.target.checked)}
-              className="mt-0.5"
-            />
-            <span className="text-white/80">
-              I agree to the{' '}
-              <button
-                type="button"
-                className="text-emerald-300 underline"
-                onClick={() => setLegalModal('terms')}
-              >
-                Loyalty Program Terms
-              </button>{' '}
-              and{' '}
-              <button
-                type="button"
-                className="text-emerald-300 underline"
-                onClick={() => setLegalModal('privacy')}
-              >
-                Privacy Notice
-              </button>
-              .
+    <PatronShell
+      branding={branding}
+      banner={
+        online ? null : (
+          <PatronBanner>
+            You appear to be offline. Redeem and profile changes will retry when connection returns.
+          </PatronBanner>
+        )
+      }
+    >
+      {legalModal && (
+        <PatronLegalModal
+          type={legalModal}
+          onClose={() => setLegalModal(null)}
+          branding={branding}
+        />
+      )}
+      <PatronContainer>
+        <PatronBrandHeader
+          branding={branding}
+          title={data.patronName}
+          subtitle={
+            <span style={tierColor ? { color: tierColor } : undefined}>
+              {data.tier?.name ?? 'Member'}
             </span>
-          </label>
-        </section>
+          }
+        />
 
-        <section className="mb-6 rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 text-sm">
-          <p className="font-medium text-sky-100">
-            {portalUnlocked ? 'Phone verified' : 'Verify phone to redeem & play'}
-          </p>
-          <p className="mt-1 text-sky-100/80">
-            {portalUnlocked
+        <PatronSection tone="warning">
+          <PatronCheckbox checked={acceptLegal} onCheckedChange={handleAcceptLegal}>
+            I agree to the{' '}
+            <PatronInlineLink onClick={() => setLegalModal('terms')}>
+              Loyalty Program Terms
+            </PatronInlineLink>{' '}
+            and{' '}
+            <PatronInlineLink onClick={() => setLegalModal('privacy')}>
+              Privacy Notice
+            </PatronInlineLink>
+            .
+          </PatronCheckbox>
+        </PatronSection>
+
+        <PatronSection
+          tone="info"
+          title={portalUnlocked ? 'Phone verified' : 'Verify phone to redeem & play'}
+          description={
+            portalUnlocked
               ? 'This session stays unlocked in this browser tab for about 30 minutes.'
               : phoneMasked
                 ? `Enter the 6-digit code sent to ${phoneMasked}.`
-                : 'We text a one-time code to the phone on your loyalty account.'}
-          </p>
+                : 'We text a one-time code to the phone on your loyalty account.'
+          }
+        >
           {!portalUnlocked ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold disabled:opacity-50"
-                disabled={requestOtp.isPending}
+            <div className="flex flex-wrap items-center gap-2">
+              <PatronButton
+                size="sm"
+                variant="secondary"
+                loading={requestOtp.isPending}
                 onClick={() => void handleRequestOtp()}
               >
                 {requestOtp.isPending ? 'Sending…' : 'Send code'}
-              </button>
-              <input
+              </PatronButton>
+              <PatronInput
+                className="w-32"
                 inputMode="numeric"
+                autoComplete="one-time-code"
                 maxLength={6}
+                aria-label="One-time code"
                 placeholder="6-digit code"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="w-28 rounded-lg border border-white/20 bg-black/30 px-2 py-2 text-xs"
+                onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
               />
-              <button
-                type="button"
-                className="rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold disabled:opacity-50"
-                disabled={otp.length !== 6 || verifyOtp.isPending}
+              <PatronButton
+                size="sm"
+                disabled={otp.length !== 6}
+                loading={verifyOtp.isPending}
                 onClick={() => verifyOtp.mutate()}
               >
                 {verifyOtp.isPending ? 'Checking…' : 'Verify'}
-              </button>
+              </PatronButton>
             </div>
           ) : null}
-        </section>
+        </PatronSection>
 
-        <section className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur">
-          <p className="text-xs uppercase tracking-wide text-white/60">{currency} balance</p>
-          <p className="mt-1 text-5xl font-bold">{data.pointsBalance ?? 0}</p>
-          <p className="mt-2 text-xs text-white/50">
-            {data.lifetimePointsEarned ?? 0} lifetime · {data.totalVisits ?? 0} visits
-          </p>
-          <p className="mt-4 font-mono text-sm tracking-widest">{data.referralCode}</p>
-          {data.wallet && (
-            <p className="mt-2 text-xs text-white/60">
-              Wallet: ${(data.wallet.balanceCents / 100).toFixed(2)} {data.wallet.currency}
-            </p>
-          )}
-        </section>
-
-        {data.wallet?.transactions && data.wallet.transactions.length > 0 && (
-          <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
-            <h2 className="mb-3 text-sm font-semibold">Wallet activity</h2>
-            <ul className="space-y-2 text-xs text-white/70">
-              {data.wallet.transactions.map((tx) => (
-                <li key={tx.id} className="flex justify-between gap-2">
-                  <span>
-                    {tx.type} {tx.amountCents >= 0 ? '+' : ''}${(tx.amountCents / 100).toFixed(2)}
-                    {tx.description ? ` · ${tx.description}` : ''}
-                  </span>
-                  <span className="shrink-0">{new Date(tx.createdAt).toLocaleDateString()}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        <PatronCard className="p-6">
+          <PatronBalance
+            label={`${currency} balance`}
+            value={data.pointsBalance ?? 0}
+            meta={`${data.lifetimePointsEarned ?? 0} lifetime · ${data.totalVisits ?? 0} visits`}
+            code={data.referralCode}
+            footnote={
+              data.wallet
+                ? `Wallet: ${formatCurrencyCents(data.wallet.balanceCents)} ${data.wallet.currency}`
+                : undefined
+            }
+          />
+        </PatronCard>
 
         {data.nextBestOffer && (
-          <section className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-            <h2 className="mb-1 text-sm font-semibold">Recommended for you</h2>
-            <p className="text-sm">
+          <PatronSection tone="brand" title="Recommended for you">
+            <p className="text-sm text-white/85">
               {data.nextBestOffer.name} — {data.nextBestOffer.pointsCost} pts
             </p>
-          </section>
+          </PatronSection>
         )}
 
-        {data.gameStatus && (
-          <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
-            <h2 className="mb-3 text-sm font-semibold">Games</h2>
-            <div className="flex flex-wrap gap-2">
-              {(['spin_wheel', 'scratch_card'] as const).map((gameType) => {
-                const status = data.gameStatus![gameType];
-                const label = gameType === 'spin_wheel' ? 'Spin wheel' : 'Scratch card';
+        {data.rewards && data.rewards.length > 0 && (
+          <PatronSection
+            title="Rewards catalog"
+            description={`Redeem your ${currency.toLowerCase()} for these rewards.`}
+          >
+            <PatronRowList>
+              {data.rewards.map((reward) => {
+                const canAfford = (data.pointsBalance ?? 0) >= reward.pointsCost;
                 return (
-                  <button
-                    key={gameType}
-                    type="button"
-                    disabled={!status?.canPlay || playGame.isPending || !acceptLegal}
-                    onClick={() => handlePlayGame(gameType)}
-                    className="rounded-md bg-white/15 px-3 py-2 text-sm hover:bg-white/25 disabled:opacity-40"
-                  >
-                    {label}
-                    {!status?.canPlay && status?.nextEligibleAt
-                      ? ` · ${new Date(status.nextEligibleAt).toLocaleDateString()}`
-                      : ''}
-                  </button>
+                  <PatronRow
+                    key={reward.id}
+                    primary={reward.name}
+                    secondary={reward.description ?? undefined}
+                    trailing={
+                      <span className="font-medium" style={{ color: 'var(--patron-primary)' }}>
+                        {reward.pointsCost} pts
+                      </span>
+                    }
+                    trailingMeta={
+                      <PatronButton
+                        size="sm"
+                        disabled={!canAfford || !acceptLegal}
+                        loading={redeem.isPending}
+                        onClick={() => void handleRedeem(reward.id)}
+                      >
+                        Redeem
+                      </PatronButton>
+                    }
+                  />
                 );
               })}
-            </div>
-          </section>
-        )}
-
-        {branchData?.found && branchData.branches.length > 0 && (
-          <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
-            <h2 className="mb-3 text-sm font-semibold">Store locator</h2>
-            <ul className="space-y-2 text-xs text-white/70">
-              {branchData.branches.map((branch) => (
-                <li key={branch.id}>
-                  <p className="font-medium text-white">{branch.name}</p>
-                  {(branch.address || branch.lat) && (
-                    <p>
-                      {branch.address ?? ''}
-                      {branch.lat != null && branch.lng != null
-                        ? ` (${branch.lat.toFixed(4)}, ${branch.lng.toFixed(4)})`
-                        : ''}
-                    </p>
-                  )}
-                  {branch.phone && <p>{branch.phone}</p>}
-                </li>
-              ))}
-            </ul>
-          </section>
+            </PatronRowList>
+          </PatronSection>
         )}
 
         {data.stampCard && (
-          <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
-            <h2 className="mb-3 text-sm font-semibold">Visit stamp card</h2>
-            <p className="mb-3 text-xs text-white/60">
-              Collect {data.stampCard.target} visits for a reward cycle ·{' '}
-              {data.stampCard.totalVisits} total visits
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {Array.from({ length: data.stampCard.target }).map((_, index) => (
-                <span
-                  key={index}
-                  className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm ${
-                    index < data.stampCard!.filled
-                      ? 'border-emerald-400 bg-emerald-500/30'
-                      : 'border-white/20 bg-white/5 text-white/40'
-                  }`}
-                >
-                  {index < data.stampCard!.filled ? '✓' : index + 1}
-                </span>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {data.referralCode && (
-          <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
-            <h2 className="mb-3 text-sm font-semibold">Invite friends</h2>
-            <p className="mb-3 text-xs text-white/60">
-              Share your link or QR code — you both earn bonus points when they join.
-            </p>
-            <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
-              <ReferralQr value={buildReferralInviteUrl(data.referralCode)} size={112} />
-              <div className="min-w-0 flex-1 text-xs">
-                <p className="break-all rounded-md bg-black/20 p-2 font-mono text-white/80">
-                  {buildReferralInviteUrl(data.referralCode)}
-                </p>
-              </div>
-            </div>
-          </section>
-        )}
-
-        <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
-          <h2 className="mb-3 text-sm font-semibold">Your profile</h2>
-          <div className="flex flex-wrap items-end gap-2">
-            <label className="flex flex-col gap-1 text-xs text-white/60">
-              Birthday (for birthday rewards)
-              <input
-                type="date"
-                defaultValue={data.birthday?.slice(0, 10) ?? ''}
-                onChange={(e) => setBirthday(e.target.value)}
-                className="rounded-md border border-white/20 bg-white/10 px-2 py-1.5 text-sm text-white"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={handleSaveProfile}
-              disabled={saveProfile.isPending || !acceptLegal}
-              className="rounded-md bg-white/15 px-3 py-1.5 text-sm hover:bg-white/25 disabled:opacity-50"
-            >
-              Save
-            </button>
-          </div>
-        </section>
-
-        {data.badges && data.badges.length > 0 && (
-          <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
-            <h2 className="mb-3 text-sm font-semibold">Badges</h2>
-            <div className="flex flex-wrap gap-2">
-              {data.badges.map((badge) => (
-                <span
-                  key={badge.id}
-                  className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs"
-                  title={badge.description ?? undefined}
-                >
-                  {badge.name}
-                </span>
-              ))}
-            </div>
-          </section>
+          <PatronSection
+            title="Visit stamp card"
+            description={`Collect ${data.stampCard.target} visits for a reward cycle · ${data.stampCard.totalVisits} total visits`}
+          >
+            <PatronStampGrid filled={data.stampCard.filled} target={data.stampCard.target} />
+          </PatronSection>
         )}
 
         {data.challenges && data.challenges.length > 0 && (
-          <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
-            <h2 className="mb-3 text-sm font-semibold">Challenges</h2>
+          <PatronSection title="Challenges">
             <ul className="space-y-3">
               {data.challenges.map((challenge) => (
-                <li key={challenge.id} className="text-sm">
-                  <div className="flex justify-between gap-2">
-                    <span>{challenge.name}</span>
-                    <span className="text-white/60">
+                <li key={challenge.id} className="space-y-1.5">
+                  <div className="flex items-baseline justify-between gap-2 text-sm">
+                    <span className="text-white/90">{challenge.name}</span>
+                    <span className="shrink-0 text-xs text-white/55">
                       {challenge.completedAt
                         ? 'Complete'
                         : `${challenge.progress}/${challenge.targetValue}`}
                     </span>
                   </div>
-                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-emerald-400"
-                      style={{
-                        width: `${Math.min(100, (challenge.progress / challenge.targetValue) * 100)}%`,
-                      }}
-                    />
-                  </div>
+                  <PatronProgress
+                    value={challenge.progress}
+                    max={challenge.targetValue}
+                    label={challenge.name}
+                  />
                 </li>
               ))}
             </ul>
-          </section>
+          </PatronSection>
         )}
 
-        {data.rewards && data.rewards.length > 0 && (
-          <section className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
-            <h2 className="mb-3 text-sm font-semibold">Rewards catalog</h2>
-            <ul className="space-y-3">
-              {data.rewards.map((reward) => {
-                const canAfford = (data.pointsBalance ?? 0) >= reward.pointsCost;
+        {data.gameStatus && (
+          <PatronSection title="Games" description="Play for bonus points once per eligible day.">
+            <div className="flex flex-wrap gap-2">
+              {(['spin_wheel', 'scratch_card'] as const).map((gameType) => {
+                const status = data.gameStatus?.[gameType];
                 return (
-                  <li key={reward.id} className="flex items-start justify-between gap-3 text-sm">
-                    <div>
-                      <p className="font-medium">{reward.name}</p>
-                      {reward.description && <p className="text-white/60">{reward.description}</p>}
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className="text-emerald-300">{reward.pointsCost} pts</span>
-                      <button
-                        type="button"
-                        disabled={!canAfford || redeem.isPending || !acceptLegal}
-                        onClick={() => handleRedeem(reward.id)}
-                        className="rounded bg-emerald-600 px-2 py-0.5 text-xs disabled:opacity-40"
-                      >
-                        Redeem
-                      </button>
-                    </div>
-                  </li>
+                  <PatronButton
+                    key={gameType}
+                    variant="secondary"
+                    size="sm"
+                    disabled={!status?.canPlay || playGame.isPending || !acceptLegal}
+                    onClick={() => void handlePlayGame(gameType)}
+                  >
+                    {GAME_LABELS[gameType]}
+                    {!status?.canPlay && status?.nextEligibleAt
+                      ? ` · ${formatDate(status.nextEligibleAt)}`
+                      : ''}
+                  </PatronButton>
                 );
               })}
-            </ul>
-          </section>
+            </div>
+          </PatronSection>
+        )}
+
+        {data.badges && data.badges.length > 0 && (
+          <PatronSection title="Badges">
+            <div className="flex flex-wrap gap-2">
+              {data.badges.map((badge) => (
+                <PatronChip key={badge.id} title={badge.description ?? undefined}>
+                  {badge.name}
+                </PatronChip>
+              ))}
+            </div>
+          </PatronSection>
+        )}
+
+        {inviteUrl && (
+          <PatronSection
+            title="Invite friends"
+            description="Share your link or QR code — you both earn bonus points when they join."
+          >
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+              <ReferralQr value={inviteUrl} size={112} />
+              <p className="min-w-0 flex-1 break-all rounded-lg bg-black/25 p-2.5 font-mono text-xs text-white/75">
+                {inviteUrl}
+              </p>
+            </div>
+          </PatronSection>
+        )}
+
+        <PatronSection
+          title="Your profile"
+          description="Add your birthday to unlock birthday rewards."
+        >
+          <div className="flex flex-wrap items-end gap-3">
+            <PatronField label="Birthday" className="min-w-[10rem]">
+              {(field) => (
+                <PatronInput
+                  {...field}
+                  type="date"
+                  defaultValue={data.birthday?.slice(0, 10) ?? ''}
+                  onChange={(event) => setBirthday(event.target.value)}
+                />
+              )}
+            </PatronField>
+            <PatronButton
+              variant="secondary"
+              disabled={!acceptLegal}
+              loading={saveProfile.isPending}
+              onClick={() => void handleSaveProfile()}
+            >
+              Save
+            </PatronButton>
+          </div>
+        </PatronSection>
+
+        {data.wallet?.transactions && data.wallet.transactions.length > 0 && (
+          <PatronSection title="Wallet activity">
+            <PatronRowList>
+              {data.wallet.transactions.map((tx) => (
+                <PatronRow
+                  key={tx.id}
+                  primary={`${humanizeType(tx.type)} ${tx.amountCents >= 0 ? '+' : ''}${formatCurrencyCents(tx.amountCents)}`}
+                  secondary={tx.description ?? undefined}
+                  trailing={formatDate(tx.createdAt)}
+                />
+              ))}
+            </PatronRowList>
+          </PatronSection>
         )}
 
         {data.recentActivity && data.recentActivity.length > 0 && (
-          <section className="rounded-xl border border-white/10 bg-white/5 p-4">
-            <h2 className="mb-3 text-sm font-semibold">Recent activity</h2>
-            <ul className="space-y-2 text-xs text-white/70">
+          <PatronSection title="Recent activity">
+            <PatronRowList>
               {data.recentActivity.map((row) => (
-                <li key={row.id} className="flex justify-between gap-2">
-                  <span>
-                    {row.type} {row.points > 0 ? `+${row.points}` : row.points}
-                    {row.description ? ` · ${row.description}` : ''}
-                  </span>
-                  <span className="shrink-0">{new Date(row.createdAt).toLocaleDateString()}</span>
-                </li>
+                <PatronRow
+                  key={row.id}
+                  primary={`${humanizeType(row.type)} ${row.points > 0 ? `+${row.points}` : row.points}`}
+                  secondary={row.description ?? undefined}
+                  trailing={formatDate(row.createdAt)}
+                />
               ))}
-            </ul>
-          </section>
+            </PatronRowList>
+          </PatronSection>
         )}
 
-        <p className="mt-8 text-center text-xs text-white/40">
-          <Link href={`/card/${code}`} className="underline">
-            Compact card view
-          </Link>
-          {' · '}
-          <Link href="/patron-privacy" className="underline">
-            Privacy
-          </Link>
-          {' · '}
-          <Link href="/patron-terms" className="underline">
-            Terms
-          </Link>
-        </p>
-      </div>
-    </div>
+        {branchData?.found && branchData.branches.length > 0 && (
+          <PatronSection title="Store locator">
+            <PatronRowList>
+              {branchData.branches.map((branch) => (
+                <PatronRow
+                  key={branch.id}
+                  primary={branch.name}
+                  secondary={
+                    [
+                      branch.address ?? null,
+                      branch.lat != null && branch.lng != null
+                        ? `${branch.lat.toFixed(4)}, ${branch.lng.toFixed(4)}`
+                        : null,
+                      branch.phone ?? null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || undefined
+                  }
+                />
+              ))}
+            </PatronRowList>
+          </PatronSection>
+        )}
+
+        <PatronFooterLinks
+          className="mt-3"
+          links={[
+            { href: `/card/${code}`, label: 'Compact card view' },
+            { href: '/patron-privacy', label: 'Privacy' },
+            { href: '/patron-terms', label: 'Terms' },
+          ]}
+        />
+      </PatronContainer>
+    </PatronShell>
   );
 }

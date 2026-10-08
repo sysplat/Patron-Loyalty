@@ -8,6 +8,7 @@ vi.mock('bcrypt', () => ({
 }));
 
 const mockPrisma = {
+  runWithTransientRetry: vi.fn(async (fn: () => Promise<unknown>) => fn()),
   withBypassRls: vi.fn(async (cb) => cb(mockPrisma)),
   withTenant: vi.fn(async (orgId, cb) => cb(mockPrisma)),
   passwordReset: {

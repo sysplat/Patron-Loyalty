@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { loyaltyGet, loyaltyPost, loyaltyDelete, unwrapApiData } from '@/lib/api-response';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
-import { PageHeader, PageShell } from '@/components/dashboard';
+import { LoadingBlock, PageHeader, PageShell } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -399,7 +399,7 @@ export default function IntegrationsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {apiKeyLoading ? (
-            <p className="text-muted-foreground text-sm">Loading…</p>
+            <LoadingBlock />
           ) : (
             <>
               <p className="text-sm">
@@ -492,7 +492,7 @@ export default function IntegrationsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {posLoading ? (
-              <p className="text-muted-foreground text-sm">Loading…</p>
+              <LoadingBlock />
             ) : posConnection('square') ? (
               <div className="space-y-2">
                 <p className="text-sm">
@@ -585,7 +585,7 @@ export default function IntegrationsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {posLoading ? (
-              <p className="text-muted-foreground text-sm">Loading…</p>
+              <LoadingBlock />
             ) : posConnection('clover') ? (
               <div className="space-y-2">
                 <p className="text-sm">
@@ -701,7 +701,7 @@ export default function IntegrationsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {marketingLoading ? (
-              <p className="text-muted-foreground text-sm">Loading…</p>
+              <LoadingBlock />
             ) : marketingConnection('klaviyo') ? (
               <div className="space-y-2">
                 <p className="text-muted-foreground text-xs">
@@ -767,7 +767,7 @@ export default function IntegrationsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {marketingLoading ? (
-              <p className="text-muted-foreground text-sm">Loading…</p>
+              <LoadingBlock />
             ) : marketingConnection('mailchimp') ? (
               <div className="space-y-2">
                 <p className="text-sm">

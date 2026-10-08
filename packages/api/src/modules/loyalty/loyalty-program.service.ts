@@ -73,6 +73,7 @@ export class LoyaltyProgramService {
     orgId: string,
     data: {
       enabled?: boolean;
+      displayName?: string | null;
       pointsCurrencyName?: string;
       defaultEarnPoints?: number;
       referralBonusPoints?: number;

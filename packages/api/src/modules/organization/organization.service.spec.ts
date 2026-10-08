@@ -41,7 +41,12 @@ describe('OrganizationService', () => {
         return Promise.resolve(null);
       },
     );
-    service = new OrganizationService(mockPrisma as never, {} as any, mockConfig as never);
+    service = new OrganizationService(
+      mockPrisma as never,
+      {} as any,
+      mockConfig as never,
+      { requireFeature: vi.fn().mockResolvedValue(undefined) } as never,
+    );
   });
 
   it('allows owner to change organization name', async () => {
@@ -123,5 +128,41 @@ describe('OrganizationService', () => {
       service.updateOrganization('org-1', 'manager-user', { visitJourneysEnabled: true }),
     ).rejects.toThrow(/Only an organization owner or admin may enable or disable visit journeys/);
     expect(mockPrisma.organization.update).not.toHaveBeenCalled();
+  });
+
+  it('requires hasCustomBranding when setting brand colors', async () => {
+    const planLimits = { requireFeature: vi.fn().mockRejectedValue(new Error('upgrade')) };
+    service = new OrganizationService(
+      mockPrisma as never,
+      {} as any,
+      mockConfig as never,
+      planLimits as never,
+    );
+    await expect(
+      service.updateOrganization('org-1', 'owner-user', { brandPrimaryColor: '#112233' }),
+    ).rejects.toThrow(/upgrade/);
+    expect(planLimits.requireFeature).toHaveBeenCalledWith(
+      'org-1',
+      'hasCustomBranding',
+      expect.any(String),
+    );
+    expect(mockPrisma.organization.update).not.toHaveBeenCalled();
+  });
+
+  it('allows clearing brand colors without feature gate', async () => {
+    const planLimits = { requireFeature: vi.fn().mockResolvedValue(undefined) };
+    service = new OrganizationService(
+      mockPrisma as never,
+      {} as any,
+      mockConfig as never,
+      planLimits as never,
+    );
+    mockPrisma.organization.update.mockResolvedValue({ id: 'org-1' });
+    await service.updateOrganization('org-1', 'owner-user', {
+      brandPrimaryColor: '',
+      brandAccentColor: null,
+    });
+    expect(planLimits.requireFeature).not.toHaveBeenCalled();
+    expect(mockPrisma.organization.update).toHaveBeenCalled();
   });
 });

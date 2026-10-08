@@ -1,6 +1,7 @@
 export * from './types/enums';
 export * from './types/api.types';
 export * from './types/public-branding';
+export * from './types/loyalty-public-branding';
 export * from './constants/platform';
 export * from './constants/product';
 export * from './constants/api-deploy-profile';

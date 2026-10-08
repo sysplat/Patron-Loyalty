@@ -25,6 +25,7 @@ import {
 
 interface Program {
   enabled: boolean;
+  displayName?: string | null;
   pointsCurrencyName: string;
   displayCurrencyCode?: string;
   defaultLocale?: string;
@@ -54,6 +55,7 @@ export default function ProgramPage() {
   const qc = useQueryClient();
 
   // Settings
+  const [displayName, setDisplayName] = useState('');
   const [currencyName, setCurrencyName] = useState('');
   const [displayCurrency, setDisplayCurrency] = useState('');
   const [defaultLocale] = useState('');
@@ -517,6 +519,18 @@ export default function ProgramPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
+                <label className="text-sm font-medium">Program name (patron-facing)</label>
+                <Input
+                  placeholder="Falls back to business name when empty"
+                  defaultValue={program.displayName ?? ''}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                />
+                <p className="text-muted-foreground text-[11px] leading-snug">
+                  Shown as the title on portal, digital card, and referral pages.
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <label className="text-sm font-medium">Points Currency Name</label>
                 <div className="relative">
                   <Coins className="text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4" />
@@ -598,6 +612,7 @@ export default function ProgramPage() {
                 className="w-full"
                 onClick={() =>
                   updateProgram.mutate({
+                    displayName: (displayName || program.displayName || '').trim() || null,
                     pointsCurrencyName: currencyName || program.pointsCurrencyName,
                     displayCurrencyCode: displayCurrency || program.displayCurrencyCode || 'USD',
                     defaultLocale: defaultLocale || program.defaultLocale || 'en',

@@ -6,6 +6,7 @@ const loyalty_1 = require("../constants/loyalty");
 const optionalDate = zod_1.z.string().datetime().optional().nullable();
 exports.updateLoyaltyProgramSchema = zod_1.z.object({
     enabled: zod_1.z.boolean().optional(),
+    displayName: zod_1.z.string().min(1).max(100).trim().nullable().optional(),
     pointsCurrencyName: zod_1.z.string().min(1).max(50).optional(),
     displayCurrencyCode: zod_1.z.string().length(3).optional(),
     defaultLocale: zod_1.z.string().min(2).max(10).optional(),

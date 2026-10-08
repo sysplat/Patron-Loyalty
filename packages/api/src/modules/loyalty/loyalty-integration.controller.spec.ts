@@ -14,7 +14,10 @@ describe('LoyaltyIntegrationController (delegation)', () => {
     adjustWallet: vi.fn(),
   };
   const queueEvents = { processRemoteEvent: vi.fn() };
-  const connectorObs = { logIngest: vi.fn() };
+  const connectorObs = {
+    logIngest: vi.fn(),
+    recordIngest: vi.fn().mockResolvedValue(undefined),
+  };
   let controller: LoyaltyIntegrationController;
 
   beforeEach(() => {
@@ -77,7 +80,7 @@ describe('LoyaltyIntegrationController (delegation)', () => {
     const result = await controller.ingestQueueEvent(ORG_ID, body);
 
     expect(queueEvents.processRemoteEvent).toHaveBeenCalledWith(ORG_ID, body);
-    expect(connectorObs.logIngest).toHaveBeenCalledWith(
+    expect(connectorObs.recordIngest).toHaveBeenCalledWith(
       expect.objectContaining({
         orgId: ORG_ID,
         route: 'queue-events',
@@ -105,7 +108,7 @@ describe('LoyaltyIntegrationController (delegation)', () => {
 
     await controller.ingestQueueEvent(ORG_ID, body);
 
-    expect(connectorObs.logIngest).toHaveBeenCalledWith(
+    expect(connectorObs.recordIngest).toHaveBeenCalledWith(
       expect.objectContaining({
         outcome: 'skipped',
         skippedReason: 'crm_disabled',

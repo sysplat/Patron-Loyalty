@@ -1,15 +1,26 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import type { LoyaltyPublicBranding } from '@queueplatform/shared';
 import { ReferralQr } from '@/components/referral-qr';
+import {
+  PatronBalance,
+  PatronBrandHeader,
+  PatronCard,
+  PatronErrorScreen,
+  PatronFooterLinks,
+  PatronLoadingScreen,
+  PatronShell,
+  resolvePatronBranding,
+} from '@/components/patron';
 import { buildPatronPortalUrl } from '@/lib/patron-urls';
 
 interface PublicCard {
   found: boolean;
   patronName?: string;
   orgName?: string;
+  branding?: LoyaltyPublicBranding;
   pointsBalance?: number;
   tier?: { name: string; color?: string | null } | null;
   referralCode?: string;
@@ -36,51 +47,55 @@ export default function PublicCardPage() {
   });
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground text-sm">Loading card…</p>
-      </div>
-    );
+    return <PatronLoadingScreen message="Loading your card…" />;
   }
 
   if (isError || !data?.found) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-2 px-6 text-center">
-        <h1 className="text-lg font-semibold">Card not found</h1>
-        <p className="text-muted-foreground text-sm">
-          This loyalty card is invalid or no longer active.
-        </p>
-      </div>
+      <PatronErrorScreen
+        title="Card not found"
+        description="This loyalty card is invalid or no longer active."
+      />
     );
   }
 
+  const branding = resolvePatronBranding(data);
+  const tierColor = data.tier?.color?.trim() || undefined;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-6">
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/5 p-6 text-white shadow-2xl backdrop-blur">
-        <p className="text-xs font-medium uppercase tracking-widest text-white/60">
-          {data.orgName}
-        </p>
-        <h1 className="mt-2 text-2xl font-bold">{data.patronName}</h1>
-        <p className="mt-1 text-sm text-white/70">{data.tier?.name ?? 'Member'}</p>
-        <div className="mt-6 rounded-xl bg-white/10 p-4 text-center">
-          <p className="text-xs uppercase tracking-wide text-white/60">Points balance</p>
-          <p className="text-4xl font-bold">{data.pointsBalance ?? 0}</p>
+    <PatronShell branding={branding} center>
+      <PatronCard className="w-full max-w-sm shadow-2xl">
+        <PatronBrandHeader
+          branding={branding}
+          title={data.patronName}
+          subtitle={
+            <span style={tierColor ? { color: tierColor } : undefined}>
+              {data.tier?.name ?? 'Member'}
+            </span>
+          }
+        />
+        <div className="mt-6 rounded-xl bg-white/10 p-4">
+          <PatronBalance
+            label={`${branding.pointsCurrencyName} balance`}
+            value={
+              <span style={{ color: 'var(--patron-primary)' }}>{data.pointsBalance ?? 0}</span>
+            }
+            code={data.referralCode}
+          />
         </div>
         <div className="mt-6 flex flex-col items-center gap-2">
           <ReferralQr value={buildPatronPortalUrl(data.referralCode ?? code)} size={96} />
-          <p className="text-center text-xs text-white/50">Scan for full portal</p>
+          <p className="text-center text-xs text-white/50">Scan for the full portal</p>
         </div>
-        <p className="mt-4 text-center font-mono text-sm tracking-widest">{data.referralCode}</p>
-        <p className="mt-6 text-center text-xs text-white/40">
-          <Link href={`/portal/${data.referralCode}`} className="underline">
-            Full portal view
-          </Link>
-          {' · '}
-          <Link href="/patron-privacy" className="underline">
-            Privacy
-          </Link>
-        </p>
-      </div>
-    </div>
+        <PatronFooterLinks
+          className="mt-6"
+          links={[
+            { href: `/portal/${data.referralCode ?? code}`, label: 'Full portal view' },
+            { href: '/patron-privacy', label: 'Privacy' },
+            { href: '/patron-terms', label: 'Terms' },
+          ]}
+        />
+      </PatronCard>
+    </PatronShell>
   );
 }

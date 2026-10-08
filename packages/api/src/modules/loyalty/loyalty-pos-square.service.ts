@@ -58,9 +58,7 @@ export class LoyaltyPosSquareService {
     return `${baseUrl}?client_id=${clientId}&scope=PAYMENTS_READ+CUSTOMERS_READ+ORDERS_READ&session=false&state=${orgId}`;
   }
 
-  async exchangeOAuthCode(
-    code: string,
-  ): Promise<{
+  async exchangeOAuthCode(code: string): Promise<{
     access_token: string;
     refresh_token: string;
     merchant_id: string;

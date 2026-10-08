@@ -12,11 +12,12 @@ describe('LoyaltyProgramController', () => {
     createEarnRule: vi.fn(),
     updateEarnRule: vi.fn(),
   };
+  const audit = { logActivity: vi.fn(), logAudit: vi.fn() };
   let controller: LoyaltyProgramController;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    controller = new LoyaltyProgramController(program as never);
+    controller = new LoyaltyProgramController(program as never, audit as never);
   });
 
   it('gets or bootstraps program for org', async () => {
@@ -30,6 +31,9 @@ describe('LoyaltyProgramController', () => {
     program.updateProgram.mockResolvedValue(body);
     await controller.updateProgram(USER, body as never);
     expect(program.updateProgram).toHaveBeenCalledWith(ORG_ID, body);
+    expect(audit.logActivity).toHaveBeenCalledWith(
+      expect.objectContaining({ orgId: ORG_ID, action: expect.any(String) }),
+    );
   });
 
   it('creates tier', async () => {

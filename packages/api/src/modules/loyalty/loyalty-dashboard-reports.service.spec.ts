@@ -168,18 +168,16 @@ describe('LoyaltyDashboardReportsService', () => {
     prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
       fn({
         loyaltyCampaign: {
-          findMany: vi
-            .fn()
-            .mockResolvedValue([
-              {
-                id: 'c1',
-                name: 'Promo',
-                channel: 'sms',
-                trigger: 'manual',
-                sentCount: 10,
-                status: 'active',
-              },
-            ]),
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: 'c1',
+              name: 'Promo',
+              channel: 'sms',
+              trigger: 'manual',
+              sentCount: 10,
+              status: 'active',
+            },
+          ]),
         },
         loyaltyCampaignSend: {
           groupBy: vi.fn().mockResolvedValue([

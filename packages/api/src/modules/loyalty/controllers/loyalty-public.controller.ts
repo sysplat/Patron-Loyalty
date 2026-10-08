@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { buildLoyaltyPublicBranding } from '@queueplatform/shared';
 import { Public } from '../../../common/decorators/public.decorator';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { PatronCrmFeatureService } from '../../../common/features/patron-crm-feature.service';
@@ -153,7 +154,18 @@ export class LoyaltyPublicController {
         include: {
           tier: true,
           customer: { select: { name: true } },
-          organization: { select: { name: true, slug: true } },
+          organization: {
+            select: {
+              name: true,
+              slug: true,
+              logoUrl: true,
+              brandPrimaryColor: true,
+              brandAccentColor: true,
+              loyaltyProgram: {
+                select: { displayName: true, pointsCurrencyName: true },
+              },
+            },
+          },
         },
       }),
     );
@@ -162,10 +174,20 @@ export class LoyaltyPublicController {
     const enabled = await this.patronCrmFeature.isEnabled(account.orgId);
     if (!enabled) return { found: false };
 
+    const branding = buildLoyaltyPublicBranding({
+      orgName: account.organization.name,
+      logoUrl: account.organization.logoUrl,
+      brandPrimaryColor: account.organization.brandPrimaryColor,
+      brandAccentColor: account.organization.brandAccentColor,
+      programDisplayName: account.organization.loyaltyProgram?.displayName,
+      pointsCurrencyName: account.organization.loyaltyProgram?.pointsCurrencyName,
+    });
+
     return {
       found: true,
       patronName: account.customer.name,
-      orgName: account.organization.name,
+      orgName: branding.orgName,
+      branding,
       pointsBalance: account.pointsBalance,
       tier: account.tier,
       referralCode: account.referralCode,

@@ -305,7 +305,13 @@ function LoyaltySidebar({
         {!collapsed && (
           <div className="min-w-0">
             <Link href="/" className="block min-w-0" onClick={onCloseMobile}>
-              <QPlatformWordmark height={24} />
+              {organization?.name?.trim() ? (
+                <p className="text-foreground truncate text-sm font-semibold leading-tight">
+                  {organization.name.trim()}
+                </p>
+              ) : (
+                <QPlatformWordmark height={24} />
+              )}
             </Link>
             <p className="text-muted-foreground truncate text-[10px] font-semibold uppercase tracking-wider">
               Patron Loyalty

@@ -4,9 +4,11 @@ import { SYSTEM_ROLES } from '@queueplatform/shared';
 
 describe('AuthService forgotPassword', () => {
   const mockPrisma = {
+    runWithTransientRetry: vi.fn(async (fn: () => Promise<unknown>) => fn()),
     withBypassRls: vi.fn(async (cb) => cb(mockPrisma)),
     withTenant: vi.fn(async (orgId, cb) => cb(mockPrisma)),
     user: { findFirst: vi.fn() },
+    account: { findUnique: vi.fn().mockResolvedValue(null) },
     roleAssignment: { findFirst: vi.fn() },
     passwordReset: { updateMany: vi.fn(), create: vi.fn() },
   };

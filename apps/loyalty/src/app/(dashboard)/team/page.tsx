@@ -216,7 +216,7 @@ export default function TeamPage() {
     enabled: !!token,
   });
 
-  const members = usersPage?.data ?? [];
+  const members = useMemo(() => usersPage?.data ?? [], [usersPage?.data]);
 
   const { data: roles = [] } = useQuery({
     queryKey: ['roles'],

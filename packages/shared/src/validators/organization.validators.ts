@@ -20,6 +20,15 @@ export const organizationLogoUrlSchema = z
   ])
   .optional();
 
+/** Optional `#RRGGBB` brand color; empty string clears. */
+export const organizationBrandColorSchema = z
+  .union([
+    z.literal(''),
+    z.null(),
+    z.string().regex(/^#[0-9A-Fa-f]{6}$/, { message: 'Color must be #RRGGBB' }),
+  ])
+  .optional();
+
 export const updateOrganizationSchema = z.object({
   name: z.string().min(1).max(200).trim().optional(),
   website: z.string().url().max(500).optional().or(z.literal('')),
@@ -27,5 +36,7 @@ export const updateOrganizationSchema = z.object({
   timezone: z.string().min(1).optional(),
   country: z.string().max(100).optional(),
   logoUrl: organizationLogoUrlSchema,
+  brandPrimaryColor: organizationBrandColorSchema,
+  brandAccentColor: organizationBrandColorSchema,
   visitJourneysEnabled: z.boolean().optional(),
 });

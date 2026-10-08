@@ -6,6 +6,8 @@ model LoyaltyProgram {
   id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   orgId               String            @unique @map("org_id") @db.Uuid
   enabled             Boolean           @default(true)
+  /// Patron-facing program title; UI falls back to organization name when null.
+  displayName         String?           @map("display_name") @db.VarChar(100)
   pointsCurrencyName  String            @default("Points") @map("points_currency_name") @db.VarChar(50)
   defaultEarnPoints   Int               @default(10) @map("default_earn_points")
   referralBonusPoints Int               @default(50) @map("referral_bonus_points")

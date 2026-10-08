@@ -10,6 +10,7 @@ import {
   CURRENT_LOYALTY_PATRON_PRIVACY_VERSION,
   CURRENT_LOYALTY_PATRON_TERMS_VERSION,
   LOYALTY_STAMP_CARD_TARGET,
+  buildLoyaltyPublicBranding,
 } from '@queueplatform/shared';
 import type { LoyaltyPortalTokenPayload } from './loyalty-portal-auth.service';
 
@@ -63,7 +64,12 @@ export class LoyaltyPortalService {
             select: {
               name: true,
               slug: true,
-              loyaltyProgram: { select: { pointsCurrencyName: true } },
+              logoUrl: true,
+              brandPrimaryColor: true,
+              brandAccentColor: true,
+              loyaltyProgram: {
+                select: { pointsCurrencyName: true, displayName: true },
+              },
             },
           },
           badges: {
@@ -146,14 +152,24 @@ export class LoyaltyPortalService {
     const nextBestOffer =
       rewards.find((r) => r.pointsCost <= account.pointsBalance) ?? rewards[0] ?? null;
 
+    const branding = buildLoyaltyPublicBranding({
+      orgName: account.organization.name,
+      logoUrl: account.organization.logoUrl,
+      brandPrimaryColor: account.organization.brandPrimaryColor,
+      brandAccentColor: account.organization.brandAccentColor,
+      programDisplayName: account.organization.loyaltyProgram?.displayName,
+      pointsCurrencyName: account.organization.loyaltyProgram?.pointsCurrencyName,
+    });
+
     return {
       found: true as const,
       legalConsentGranted,
       patronName: account.customer.name,
       birthday: account.customer.birthday,
-      orgName: account.organization.name,
+      orgName: branding.orgName,
       orgSlug: account.organization.slug,
-      pointsCurrencyName: account.organization.loyaltyProgram?.pointsCurrencyName ?? 'Points',
+      branding,
+      pointsCurrencyName: branding.pointsCurrencyName,
       pointsBalance: account.pointsBalance,
       lifetimePointsEarned: account.lifetimePointsEarned,
       tier: account.tier,

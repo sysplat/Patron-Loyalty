@@ -3,16 +3,24 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
+import type { LoyaltyPublicBranding } from '@queueplatform/shared';
 import { loyaltyPatronTermsContent } from '@/content/legal/loyalty-patron-terms';
 import { loyaltyPatronPrivacyContent } from '@/content/legal/loyalty-patron-privacy';
 import { PatronPoweredBy } from '@/components/brand';
+import {
+  PatronButton,
+  PatronLogo,
+  patronBrandStyle,
+  resolvePatronBranding,
+} from '@/components/patron';
 
 type PatronLegalModalProps = {
   type: 'terms' | 'privacy';
   onClose: () => void;
+  branding?: LoyaltyPublicBranding | null;
 };
 
-export function PatronLegalModal({ type, onClose }: PatronLegalModalProps) {
+export function PatronLegalModal({ type, onClose, branding }: PatronLegalModalProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -34,6 +42,7 @@ export function PatronLegalModal({ type, onClose }: PatronLegalModalProps) {
 
   const content = type === 'terms' ? loyaltyPatronTermsContent : loyaltyPatronPrivacyContent;
   const title = type === 'terms' ? 'Loyalty Program Terms' : 'Loyalty Program Privacy Notice';
+  const themeBranding = branding ?? resolvePatronBranding({});
 
   if (!mounted) return null;
 
@@ -44,6 +53,7 @@ export function PatronLegalModal({ type, onClose }: PatronLegalModalProps) {
       aria-modal="true"
       aria-labelledby="loyalty-patron-legal-modal-title"
       onClick={onClose}
+      style={patronBrandStyle(themeBranding)}
     >
       <div className="flex min-h-full items-start justify-center">
         <div
@@ -51,12 +61,22 @@ export function PatronLegalModal({ type, onClose }: PatronLegalModalProps) {
           onClick={(event) => event.stopPropagation()}
         >
           <div className="relative flex shrink-0 items-start justify-between border-b border-white/10 px-6 pb-4 pt-6 sm:px-8">
-            <h2
-              id="loyalty-patron-legal-modal-title"
-              className="pr-4 text-xl font-bold tracking-tight"
-            >
-              {title}
-            </h2>
+            <div className="min-w-0 pr-4">
+              {branding?.logoUrl ? (
+                <PatronLogo branding={branding} size={40} className="mb-3 rounded-lg" />
+              ) : null}
+              {branding?.programName ? (
+                <p className="mb-1 text-xs uppercase tracking-widest text-white/50">
+                  {branding.programName}
+                </p>
+              ) : null}
+              <h2
+                id="loyalty-patron-legal-modal-title"
+                className="text-xl font-bold tracking-tight"
+              >
+                {title}
+              </h2>
+            </div>
             <button
               type="button"
               onClick={onClose}
@@ -90,13 +110,9 @@ export function PatronLegalModal({ type, onClose }: PatronLegalModalProps) {
 
           <div className="space-y-4 border-t border-white/10 p-6 sm:p-8">
             <PatronPoweredBy className="justify-center border-none pl-0" compact />
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500"
-            >
+            <PatronButton onClick={onClose} className="w-full py-3">
               Close
-            </button>
+            </PatronButton>
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ describe('LoyaltyPublicController', () => {
     redeemReward: vi.fn(),
     getPublicBranches: vi.fn(),
   };
+  const portalAuth = {};
   const patronCrmFeature = { isEnabled: vi.fn() };
   const findFirst = vi.fn();
   const prisma = {
@@ -20,6 +21,7 @@ describe('LoyaltyPublicController', () => {
     controller = new LoyaltyPublicController(
       referrals as never,
       portal as never,
+      portalAuth as never,
       prisma as never,
       patronCrmFeature as never,
     );
@@ -55,7 +57,14 @@ describe('LoyaltyPublicController', () => {
       pointsBalance: 250,
       referralCode: 'ABC123',
       customer: { name: 'Patron' },
-      organization: { name: 'Cafe', slug: 'cafe' },
+      organization: {
+        name: 'Cafe',
+        slug: 'cafe',
+        logoUrl: null,
+        brandPrimaryColor: null,
+        brandAccentColor: null,
+        loyaltyProgram: { displayName: null, pointsCurrencyName: 'Points' },
+      },
       tier: { name: 'Gold' },
     });
     patronCrmFeature.isEnabled.mockResolvedValue(true);
@@ -63,6 +72,11 @@ describe('LoyaltyPublicController', () => {
       found: true,
       patronName: 'Patron',
       orgName: 'Cafe',
+      branding: {
+        orgName: 'Cafe',
+        programName: 'Cafe',
+        pointsCurrencyName: 'Points',
+      },
       pointsBalance: 250,
       referralCode: 'ABC123',
     });

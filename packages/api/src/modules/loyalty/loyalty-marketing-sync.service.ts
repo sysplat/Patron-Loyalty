@@ -175,10 +175,13 @@ export class LoyaltyMarketingSyncService {
 
       if (!email || !action) return;
 
-      const customers = await this.prisma.customer.findMany({
-        where: { email },
-        select: { id: true, orgId: true },
-      });
+      // Provider webhooks carry only an email, so the tenant is unknown until lookup.
+      const customers = await this.prisma.withBypassRls((tx) =>
+        tx.customer.findMany({
+          where: { email },
+          select: { id: true, orgId: true },
+        }),
+      );
 
       for (const customer of customers) {
         await this.prisma.withTenant(customer.orgId, async (tx) => {

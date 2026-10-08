@@ -124,7 +124,9 @@ describe('LoyaltyAccountService earn idempotency', () => {
   const ledgerCreate = vi.fn();
   const accountFindFirst = vi.fn();
   const accountUpdate = vi.fn();
+  const accountUpdateMany = vi.fn();
   const accountFindUniqueOrThrow = vi.fn();
+  const accountFindFirstOrThrow = vi.fn();
 
   let service: LoyaltyAccountService;
   let lifecycle: LoyaltyAccountLifecycleService;
@@ -143,10 +145,17 @@ describe('LoyaltyAccountService earn idempotency', () => {
       tierId: null,
       tier: null,
     });
+    accountUpdateMany.mockResolvedValue({ count: 1 });
     accountFindUniqueOrThrow.mockResolvedValue({
       ...baseAccount,
       pointsBalance: 20,
       customer: { id: 'cust-1', name: 'Patron' },
+    });
+    accountFindFirstOrThrow.mockResolvedValue({
+      ...baseAccount,
+      pointsBalance: 20,
+      tierId: null,
+      tier: null,
     });
 
     prisma.withTenant.mockImplementation((_orgId: string, fn: (tx: unknown) => unknown) =>
@@ -158,7 +167,9 @@ describe('LoyaltyAccountService earn idempotency', () => {
         loyaltyAccount: {
           findFirst: accountFindFirst,
           update: accountUpdate,
+          updateMany: accountUpdateMany,
           findUniqueOrThrow: accountFindUniqueOrThrow,
+          findFirstOrThrow: accountFindFirstOrThrow,
         },
         loyaltyTier: { findFirst: vi.fn().mockResolvedValue(null) },
         ticket: { findFirst: vi.fn().mockResolvedValue(null) },
@@ -186,7 +197,12 @@ describe('LoyaltyAccountService earn idempotency', () => {
 
     expect(result?.idempotent).toBe(false);
     expect(ledgerCreate).toHaveBeenCalledOnce();
-    expect(accountUpdate).toHaveBeenCalled();
+    expect(accountUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'acc-1', orgId: 'org-1' },
+        data: expect.objectContaining({ pointsBalance: { increment: 10 } }),
+      }),
+    );
     expect(loyaltyWebhook.dispatch).toHaveBeenCalled();
   });
 
@@ -205,6 +221,7 @@ describe('LoyaltyAccountService earn idempotency', () => {
       idempotent: true,
     });
     expect(ledgerCreate).not.toHaveBeenCalled();
+    expect(accountUpdateMany).not.toHaveBeenCalled();
     expect(accountUpdate).not.toHaveBeenCalled();
     expect(loyaltyWebhook.dispatch).not.toHaveBeenCalled();
   });

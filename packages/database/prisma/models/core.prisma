@@ -16,6 +16,10 @@ model Organization {
   timezone              String                  @default("UTC") @db.VarChar(50)
   country               String?                 @db.VarChar(2)
   logoUrl               String?                 @map("logo_url")
+  /// Patron portal/card primary brand color (`#RRGGBB`). Requires hasCustomBranding to set.
+  brandPrimaryColor     String?                 @map("brand_primary_color") @db.VarChar(7)
+  /// Patron portal/card accent brand color (`#RRGGBB`). Requires hasCustomBranding to set.
+  brandAccentColor      String?                 @map("brand_accent_color") @db.VarChar(7)
   onboardingStep        String                  @default("email_verification") @map("onboarding_step") @db.VarChar(30)
   createdAt             DateTime                @default(now()) @map("created_at")
   updatedAt             DateTime                @updatedAt @map("updated_at")

@@ -217,7 +217,7 @@ export default function LoginPage() {
         }
       }
     },
-    [twoFactorToken, pendingUser, pendingOrg, router, setAuth, finalizeLogin],
+    [twoFactorToken, pendingUser, pendingOrg, finalizeLogin],
   );
 
   async function handleTotpSubmit(e: React.FormEvent) {

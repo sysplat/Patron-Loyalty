@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { sessionCookieOptions } from '@queueplatform/shared';
 
 describe('loyalty auth-store persistence', () => {
   it('does not persist accessToken in localStorage (partialize user only)', () => {
@@ -46,10 +47,15 @@ describe('loyalty BFF session hardening', () => {
     expect(source).not.toMatch(/data:\s*\{\s*accessToken/);
   });
 
-  it('sets HttpOnly session cookies with SameSite=lax in server-auth-bff', () => {
+  it('sets session cookies through the shared HttpOnly/SameSite=lax options', () => {
     const source = readFileSync(path.join(__dirname, 'server-auth-bff.ts'), 'utf8');
-    expect(source).toContain('httpOnly: true');
-    expect(source).toContain("sameSite: 'lax'");
+    expect(source).toContain('sessionCookieOptions');
+    expect(source).not.toMatch(/httpOnly:\s*false/);
+
+    const options = sessionCookieOptions(60);
+    expect(options.httpOnly).toBe(true);
+    expect(options.sameSite).toBe('lax');
+    expect(options.path).toBe('/');
   });
 
   it('strips tokens from login BFF JSON while setting cookies', () => {

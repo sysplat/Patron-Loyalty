@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { SYSTEM_ROLES, hasLoyaltyProduct, hasQueueProduct } from '@queueplatform/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../../redis/redis.service';
+import { PlanLimitService } from '../billing/plan-limit.service';
 
 /**
  * Manages organization-level data and settings.
@@ -16,6 +17,7 @@ export class OrganizationService {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     private readonly config: ConfigService,
+    private readonly planLimits: PlanLimitService,
   ) {}
 
   private async isOrgOwner(orgId: string, userId: string): Promise<boolean> {
@@ -61,6 +63,8 @@ export class OrganizationService {
     timezone: true,
     country: true,
     logoUrl: true,
+    brandPrimaryColor: true,
+    brandAccentColor: true,
     onboardingStep: true,
     createdAt: true,
     visitJourneysEnabled: true,
@@ -168,15 +172,37 @@ export class OrganizationService {
       timezone?: string;
       country?: string;
       logoUrl?: string;
+      brandPrimaryColor?: string | null;
+      brandAccentColor?: string | null;
       visitJourneysEnabled?: boolean;
     },
   ) {
-    const allowedKeys = ['name', 'website', 'industry', 'timezone', 'country', 'logoUrl'] as const;
-    const payload: Partial<Record<(typeof allowedKeys)[number], string>> = {};
-    for (const key of allowedKeys) {
+    const stringKeys = ['name', 'website', 'industry', 'timezone', 'country', 'logoUrl'] as const;
+    const payload: Record<string, string | null> = {};
+    for (const key of stringKeys) {
       if (data[key] !== undefined) {
         payload[key] = data[key] as string;
       }
+    }
+
+    const normalizeColor = (value: string | null | undefined): string | null | undefined => {
+      if (value === undefined) return undefined;
+      if (value === null || value === '') return null;
+      return value;
+    };
+    const primary = normalizeColor(data.brandPrimaryColor);
+    const accent = normalizeColor(data.brandAccentColor);
+    if (primary !== undefined) payload.brandPrimaryColor = primary;
+    if (accent !== undefined) payload.brandAccentColor = accent;
+
+    const colorChanging =
+      (primary !== undefined && primary !== null) || (accent !== undefined && accent !== null);
+    if (colorChanging) {
+      await this.planLimits.requireFeature(
+        orgId,
+        'hasCustomBranding',
+        'Custom brand colors require a plan with branding enabled.',
+      );
     }
 
     const visitToggle = data.visitJourneysEnabled;

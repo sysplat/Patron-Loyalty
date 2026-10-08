@@ -17,6 +17,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { hasPermission, isOrganizationOwner } from '@/lib/rbac-ui';
 import { cn } from '@/lib/utils';
 import { GuideCard, PageHeader, PageShell, PermissionGate } from '@/components/dashboard';
+import { PatronBrandPreviewStrip, resolvePatronBranding } from '@/components/patron';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -45,6 +46,8 @@ interface OrgProfile {
   timezone: string;
   country?: string | null;
   hasLogo?: boolean;
+  brandPrimaryColor?: string | null;
+  brandAccentColor?: string | null;
 }
 
 interface BranchRow {
@@ -60,12 +63,13 @@ interface BranchRow {
 interface ProgramRow {
   displayCurrencyCode?: string;
   pointsCurrencyName?: string;
+  displayName?: string | null;
 }
 
 const GUIDE: { title: string; body: string }[] = [
   {
     title: 'Brand',
-    body: 'Business name and logo appear in the staff sidebar and on patron-facing surfaces.',
+    body: 'Business name, logo, and brand colors appear in the staff sidebar and on patron portal, card, and referral pages.',
   },
   {
     title: 'Timezone',
@@ -181,10 +185,13 @@ export default function BusinessPage() {
   const [address, setAddress] = useState('');
   const [branchPhone, setBranchPhone] = useState('');
   const [displayCurrency, setDisplayCurrency] = useState('USD');
+  const [primaryColor, setPrimaryColor] = useState('');
+  const [accentColor, setAccentColor] = useState('');
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
   const [logoBusy, setLogoBusy] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [currencyHydrated, setCurrencyHydrated] = useState(false);
+  const [colorsHydrated, setColorsHydrated] = useState(false);
   const syncedBranchIdRef = useRef<string>('');
 
   const timezones = useMemo(() => listTimezones(), []);
@@ -246,6 +253,13 @@ export default function BusinessPage() {
   }, [profile, hydrated]);
 
   useEffect(() => {
+    if (!profile || colorsHydrated) return;
+    setPrimaryColor(profile.brandPrimaryColor ?? '');
+    setAccentColor(profile.brandAccentColor ?? '');
+    setColorsHydrated(true);
+  }, [profile, colorsHydrated]);
+
+  useEffect(() => {
     if (!program || currencyHydrated) return;
     setDisplayCurrency((program.displayCurrencyCode ?? 'USD').toUpperCase());
     setCurrencyHydrated(true);
@@ -271,6 +285,7 @@ export default function BusinessPage() {
   function reloadFormsFromServer() {
     setHydrated(false);
     setCurrencyHydrated(false);
+    setColorsHydrated(false);
     syncedBranchIdRef.current = '';
     void qc.invalidateQueries({ queryKey: ['organization'] });
     void qc.invalidateQueries({ queryKey: ['branches'] });
@@ -317,6 +332,34 @@ export default function BusinessPage() {
       await qc.invalidateQueries({ queryKey: ['organization'] });
     },
     onError: (err: Error) => toast.error(err.message || 'Could not update logo'),
+  });
+
+  const saveBrandColors = useMutation({
+    mutationFn: () => {
+      const normalize = (value: string) => {
+        const trimmed = value.trim();
+        if (!trimmed) return '';
+        if (!/^#[0-9A-Fa-f]{6}$/.test(trimmed)) {
+          throw new Error('Brand colors must be #RRGGBB');
+        }
+        return trimmed;
+      };
+      return api
+        .patch<unknown>(
+          '/organization',
+          {
+            brandPrimaryColor: normalize(primaryColor),
+            brandAccentColor: normalize(accentColor),
+          },
+          { token: token! },
+        )
+        .then((payload) => unwrapApiData(payload));
+    },
+    onSuccess: async () => {
+      toast.success('Brand colors saved');
+      await qc.invalidateQueries({ queryKey: ['organization'] });
+    },
+    onError: (err: Error) => toast.error(err.message || 'Could not save brand colors'),
   });
 
   const saveAddress = useMutation({
@@ -390,9 +433,22 @@ export default function BusinessPage() {
   const busy =
     saveIdentity.isPending ||
     saveLogo.isPending ||
+    saveBrandColors.isPending ||
     saveAddress.isPending ||
     saveCurrency.isPending ||
     logoBusy;
+
+  const previewBranding = resolvePatronBranding({
+    orgName: name.trim() || profile?.name || 'Your business',
+    branding: {
+      orgName: name.trim() || profile?.name || 'Your business',
+      logoUrl,
+      primaryColor: primaryColor.trim() || null,
+      accentColor: accentColor.trim() || null,
+      programName: program?.displayName?.trim() || name.trim() || profile?.name || 'Your program',
+      pointsCurrencyName: program?.pointsCurrencyName ?? 'Points',
+    },
+  });
 
   return (
     <PageShell>
@@ -431,7 +487,7 @@ export default function BusinessPage() {
       <GuideCard
         open={guideOpen}
         title="Business guide"
-        description="This is the staff home for brand and identity — the logo in the sidebar comes from here."
+        description="This is the staff home for brand and identity — logo and colors show on the patron portal and card."
         items={GUIDE}
       />
 
@@ -580,7 +636,8 @@ export default function BusinessPage() {
                 </div>
                 <div className="min-w-0 flex-1 space-y-2">
                   <p className="text-muted-foreground text-xs leading-relaxed">
-                    Shown in the staff sidebar. Square logos look best.
+                    Shown in the staff sidebar and on patron portal, card, and referral pages.
+                    Square logos look best.
                   </p>
                   {isOwner ? (
                     <div className="flex flex-wrap gap-2">
@@ -622,6 +679,74 @@ export default function BusinessPage() {
                   ) : null}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Brand colors</CardTitle>
+              <CardDescription>
+                Primary and accent colors tint patron portal, card, and referral CTAs (`#RRGGBB`).
+                Leave blank for the default emerald / sky accents.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="brand-primary">Primary</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      aria-label="Primary color picker"
+                      value={/^#[0-9A-Fa-f]{6}$/.test(primaryColor) ? primaryColor : '#10b981'}
+                      disabled={!isOwner || busy}
+                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      className="h-9 w-10 cursor-pointer rounded border bg-transparent p-0.5"
+                    />
+                    <Input
+                      id="brand-primary"
+                      placeholder="#10b981"
+                      value={primaryColor}
+                      disabled={!isOwner || busy}
+                      onChange={(e) => setPrimaryColor(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="brand-accent">Accent</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      aria-label="Accent color picker"
+                      value={/^#[0-9A-Fa-f]{6}$/.test(accentColor) ? accentColor : '#38bdf8'}
+                      disabled={!isOwner || busy}
+                      onChange={(e) => setAccentColor(e.target.value)}
+                      className="h-9 w-10 cursor-pointer rounded border bg-transparent p-0.5"
+                    />
+                    <Input
+                      id="brand-accent"
+                      placeholder="#38bdf8"
+                      value={accentColor}
+                      disabled={!isOwner || busy}
+                      onChange={(e) => setAccentColor(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+              <PatronBrandPreviewStrip branding={previewBranding} />
+              {isOwner ? (
+                <Button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => saveBrandColors.mutate()}
+                  className="w-full sm:w-auto"
+                >
+                  {saveBrandColors.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Save brand colors
+                </Button>
+              ) : null}
             </CardContent>
           </Card>
 

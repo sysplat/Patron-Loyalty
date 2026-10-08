@@ -2,10 +2,23 @@
 
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import type { LoyaltyPublicBranding } from '@queueplatform/shared';
 import { ReferralQr } from '@/components/referral-qr';
+import {
+  PatronBrandHeader,
+  PatronButton,
+  PatronCard,
+  PatronErrorScreen,
+  PatronField,
+  PatronFooterLinks,
+  PatronInput,
+  PatronLinkButton,
+  PatronLoadingScreen,
+  PatronShell,
+  resolvePatronBranding,
+} from '@/components/patron';
 import { buildPatronPortalUrl, buildReferralInviteUrl } from '@/lib/patron-urls';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
@@ -13,6 +26,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v
 interface ReferralLanding {
   found: boolean;
   orgName?: string;
+  branding?: LoyaltyPublicBranding;
   referrerFirstName?: string;
   referredBonusPoints?: number;
   referralCode?: string;
@@ -76,110 +90,110 @@ export default function PublicReferJoinPage() {
   });
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground text-sm">Loading invite…</p>
-      </div>
-    );
+    return <PatronLoadingScreen message="Loading invite…" />;
   }
 
   if (isError || !data?.found) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-2 px-6 text-center">
-        <h1 className="text-lg font-semibold">Invite not found</h1>
-        <p className="text-muted-foreground text-sm">This referral link is invalid or expired.</p>
-      </div>
+      <PatronErrorScreen
+        title="Invite not found"
+        description="This referral link is invalid or expired."
+      />
     );
   }
 
+  const branding = resolvePatronBranding(data);
+  const footerLinks = [
+    { href: '/patron-privacy', label: 'Privacy' },
+    { href: '/patron-terms', label: 'Terms' },
+  ];
+
   if (portalCode) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 to-slate-950 p-6">
-        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white">
-          <h1 className="text-xl font-bold">You&apos;re in!</h1>
-          <p className="mt-2 text-sm text-white/70">
-            Your {data.orgName} loyalty account is ready.
-          </p>
-          <Link
-            href={buildPatronPortalUrl(portalCode)}
-            className="mt-6 inline-block rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600"
-          >
+      <PatronShell branding={branding} center>
+        <PatronCard className="w-full max-w-md text-center shadow-2xl">
+          <PatronBrandHeader
+            branding={branding}
+            title="You're in!"
+            subtitle={`Your ${branding.programName} account is ready.`}
+          />
+          <PatronLinkButton href={buildPatronPortalUrl(portalCode)} className="mt-6 w-full">
             Open your portal
-          </Link>
-        </div>
-      </div>
+          </PatronLinkButton>
+          <PatronFooterLinks className="mt-6" links={footerLinks} />
+        </PatronCard>
+      </PatronShell>
     );
   }
 
   const inviteUrl = buildReferralInviteUrl(code);
+  const canSubmit = !!name.trim() && (!!email.trim() || !!phone.trim());
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-6">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-6 text-white shadow-2xl backdrop-blur">
-        <p className="text-xs uppercase tracking-widest text-white/60">{data.orgName}</p>
-        <h1 className="mt-2 text-2xl font-bold">Join {data.referrerFirstName}&apos;s invite</h1>
-        <p className="mt-2 text-sm text-white/70">
-          Sign up now — earn {data.referredBonusPoints ?? 25} welcome bonus points on your first
-          purchase.
-        </p>
+    <PatronShell branding={branding} center>
+      <PatronCard className="w-full max-w-md shadow-2xl">
+        <PatronBrandHeader
+          branding={branding}
+          title={`Join ${data.referrerFirstName ?? 'the'}'s invite`}
+          subtitle={`Sign up now — earn ${data.referredBonusPoints ?? 25} welcome bonus points on your first purchase.`}
+        />
 
-        <div className="mt-4 flex justify-center">
+        <div className="mt-5 flex justify-center">
           <ReferralQr value={inviteUrl} size={120} />
         </div>
 
         <form
-          className="mt-6 space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
+          className="mt-6 space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
             join.mutate();
           }}
         >
-          <label className="block text-xs text-white/60">
-            Full name
-            <input
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white"
-            />
-          </label>
-          <label className="block text-xs text-white/60">
-            Email
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white"
-            />
-          </label>
-          <label className="block text-xs text-white/60">
-            Phone
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="mt-1 w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white"
-            />
-          </label>
-          <p className="text-xs text-white/50">Email or phone is required.</p>
-          <button
+          <PatronField label="Full name">
+            {(field) => (
+              <PatronInput
+                {...field}
+                required
+                autoComplete="name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+            )}
+          </PatronField>
+          <PatronField label="Email">
+            {(field) => (
+              <PatronInput
+                {...field}
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            )}
+          </PatronField>
+          <PatronField label="Phone" hint="Email or phone is required.">
+            {(field) => (
+              <PatronInput
+                {...field}
+                type="tel"
+                autoComplete="tel"
+                value={phone}
+                onChange={(event) => setPhone(event.target.value)}
+              />
+            )}
+          </PatronField>
+          <PatronButton
             type="submit"
-            disabled={join.isPending || !name.trim() || (!email.trim() && !phone.trim())}
-            className="w-full rounded-lg bg-emerald-500 py-2.5 text-sm font-medium hover:bg-emerald-600 disabled:opacity-50"
+            className="w-full"
+            disabled={!canSubmit}
+            loading={join.isPending}
           >
             {join.isPending ? 'Joining…' : 'Join loyalty program'}
-          </button>
+          </PatronButton>
         </form>
 
-        <p className="mt-6 text-center text-xs text-white/40">
-          <Link href="/patron-privacy" className="underline">
-            Privacy
-          </Link>
-          {' · '}
-          <Link href="/patron-terms" className="underline">
-            Terms
-          </Link>
-        </p>
-      </div>
-    </div>
+        <PatronFooterLinks className="mt-6" links={footerLinks} />
+      </PatronCard>
+    </PatronShell>
   );
 }

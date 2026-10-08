@@ -17,6 +17,7 @@ const optionalDate = z.string().datetime().optional().nullable();
 
 export const updateLoyaltyProgramSchema = z.object({
   enabled: z.boolean().optional(),
+  displayName: z.string().min(1).max(100).trim().nullable().optional(),
   pointsCurrencyName: z.string().min(1).max(50).optional(),
   displayCurrencyCode: z.string().length(3).optional(),
   defaultLocale: z.string().min(2).max(10).optional(),

@@ -11,11 +11,12 @@ describe('LoyaltyCampaignsController', () => {
     update: vi.fn(),
     launch: vi.fn(),
   };
+  const audit = { logActivity: vi.fn(), logAudit: vi.fn() };
   let controller: LoyaltyCampaignsController;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    controller = new LoyaltyCampaignsController(campaigns as never);
+    controller = new LoyaltyCampaignsController(campaigns as never, audit as never);
   });
 
   it('lists campaigns for org', async () => {

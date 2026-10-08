@@ -1,6 +1,7 @@
 import { z } from 'zod';
 export declare const updateLoyaltyProgramSchema: z.ZodObject<{
     enabled: z.ZodOptional<z.ZodBoolean>;
+    displayName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     pointsCurrencyName: z.ZodOptional<z.ZodString>;
     displayCurrencyCode: z.ZodOptional<z.ZodString>;
     defaultLocale: z.ZodOptional<z.ZodString>;
@@ -10,6 +11,7 @@ export declare const updateLoyaltyProgramSchema: z.ZodObject<{
     pointsExpiryDays: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
 }, "strip", z.ZodTypeAny, {
     enabled?: boolean | undefined;
+    displayName?: string | null | undefined;
     pointsCurrencyName?: string | undefined;
     displayCurrencyCode?: string | undefined;
     defaultLocale?: string | undefined;
@@ -19,6 +21,7 @@ export declare const updateLoyaltyProgramSchema: z.ZodObject<{
     pointsExpiryDays?: number | null | undefined;
 }, {
     enabled?: boolean | undefined;
+    displayName?: string | null | undefined;
     pointsCurrencyName?: string | undefined;
     displayCurrencyCode?: string | undefined;
     defaultLocale?: string | undefined;

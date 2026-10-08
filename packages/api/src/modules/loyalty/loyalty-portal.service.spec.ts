@@ -19,7 +19,10 @@ const accountRow = {
   organization: {
     name: 'Cafe',
     slug: 'cafe',
-    loyaltyProgram: { pointsCurrencyName: 'Stars' },
+    logoUrl: 'https://cdn.example/logo.png',
+    brandPrimaryColor: '#112233',
+    brandAccentColor: '#445566',
+    loyaltyProgram: { pointsCurrencyName: 'Stars', displayName: 'Stars Club' },
   },
   badges: [],
   challengeProgress: [],
@@ -129,6 +132,15 @@ describe('LoyaltyPortalService', () => {
       patronName: 'Pat',
       pointsBalance: 250,
       legalConsentGranted: true,
+      orgName: 'Cafe',
+      branding: {
+        orgName: 'Cafe',
+        logoUrl: 'https://cdn.example/logo.png',
+        primaryColor: '#112233',
+        accentColor: '#445566',
+        programName: 'Stars Club',
+        pointsCurrencyName: 'Stars',
+      },
     });
   });
 

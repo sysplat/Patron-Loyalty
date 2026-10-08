@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { loyaltyGet, loyaltyDownloadCsv } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
-import { EmptyState, PageHeader, PageShell } from '@/components/dashboard';
+import { EmptyState, LoadingBlock, PageHeader, PageShell } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -313,7 +313,7 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent className="space-y-2">
           {growthLoading ? (
-            <p className="text-muted-foreground text-sm">Loading…</p>
+            <LoadingBlock />
           ) : growthReport?.monthlyNewPatrons.length ? (
             growthReport.monthlyNewPatrons.map((row) => (
               <div key={row.month} className="flex justify-between text-sm">
@@ -347,7 +347,7 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent className="space-y-2">
           {referralLoading ? (
-            <p className="text-muted-foreground text-sm">Loading…</p>
+            <LoadingBlock />
           ) : referralReport && referralReport.completed > 0 ? (
             <>
               <div className="flex justify-between text-sm">
@@ -382,7 +382,7 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent className="space-y-2">
           {redemptionLoading ? (
-            <p className="text-muted-foreground text-sm">Loading…</p>
+            <LoadingBlock />
           ) : redemptionReport?.byStatus.length || redemptionReport?.byReward.length ? (
             <>
               {redemptionReport?.byStatus.map((row) => (
@@ -418,7 +418,7 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent className="space-y-2">
           {vipLoading ? (
-            <p className="text-muted-foreground text-sm">Loading…</p>
+            <LoadingBlock />
           ) : vipReport && vipReport.vipCount > 0 ? (
             <>
               <p className="text-sm">
@@ -480,7 +480,7 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent className="space-y-2">
           {branchLoading ? (
-            <p className="text-muted-foreground text-sm">Loading…</p>
+            <LoadingBlock />
           ) : branchReport?.branches.length ? (
             branchReport.branches.map((row) => (
               <div key={row.branchId} className="flex justify-between text-sm">
@@ -505,7 +505,7 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent className="space-y-2">
           {roiLoading ? (
-            <p className="text-muted-foreground text-sm">Loading…</p>
+            <LoadingBlock />
           ) : roiReport?.campaigns.length ? (
             roiReport.campaigns.slice(0, 10).map((c) => (
               <div
@@ -535,7 +535,7 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent className="space-y-2">
           {salesLoading ? (
-            <p className="text-muted-foreground text-sm">Loading…</p>
+            <LoadingBlock />
           ) : salesDashboard ? (
             <>
               <div className="flex justify-between text-sm">

@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { loyaltyGet } from '@/lib/api-response';
 import { useAuthStore } from '@/lib/auth-store';
 import { isOwnerOrAdmin } from '@/lib/rbac-ui';
-import { PageHeader, PageShell, PermissionGate } from '@/components/dashboard';
+import { LoadingBlock, PageHeader, PageShell, PermissionGate } from '@/components/dashboard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -342,9 +342,7 @@ export default function DiagnosticsPage() {
               </Button>
             ) : null}
           </div>
-          {timelineQuery.isFetching ? (
-            <p className="text-muted-foreground text-sm">Loading…</p>
-          ) : null}
+          {timelineQuery.isFetching ? <LoadingBlock /> : null}
           {timelineQuery.data?.items?.length ? (
             <ol className="space-y-2">
               {timelineQuery.data.items.map((item) => (

@@ -1,0 +1,23 @@
+---
+description: Patron Loyalty patron surface UI system — required for public portal / card / refer pages and any future patron UI plan.
+globs:
+  - apps/loyalty/**
+---
+
+# Loyalty patron UI system
+
+Source of truth: `docs/guides/LOYALTY_PATRON_UI.md`.  
+Architecture gate: `pnpm check:architecture:loyalty-patron-ui` (part of `validate:ci`).
+
+When **planning or implementing** public patron surfaces (`apps/loyalty/src/app/(public)/portal|card|refer`):
+
+1. Wrap the page in `PatronShell` from `@/components/patron` (`center` for compact single-card surfaces).
+2. Resolve branding once with `resolvePatronBranding(data)` after the loading/error guards, and pass it to `PatronShell`.
+3. Use `PatronContainer` + `PatronSection` / `PatronCard` for layout — no ad-hoc `<section className="rounded-xl …">`.
+4. Use `PatronButton` / `PatronLinkButton` for actions and `PatronField` + `PatronInput` for inputs — never raw `<input>` or `<label>`.
+5. Use `PatronLoadingScreen` / `PatronErrorScreen` for query states and `PatronEmpty` inside sections.
+6. Accent colors come from `var(--patron-primary)` / `var(--patron-accent)`; never hardcode emerald/sky/teal/indigo classes.
+7. Keep `focus-visible` rings and `aria-*` wiring that the primitives provide.
+8. Add any new patron route to `PATRON_PAGES` in `scripts/architecture/check-loyalty-patron-ui.mjs`.
+
+Staff dashboard pages follow `docs/guides/LOYALTY_STAFF_UI.md` instead — do not mix the two component sets.

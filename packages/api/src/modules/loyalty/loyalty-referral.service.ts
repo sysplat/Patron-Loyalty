@@ -5,7 +5,11 @@ import {
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
-import { LOYALTY_CHALLENGE_TARGET_TYPES, LOYALTY_POINT_LEDGER_TYPES } from '@queueplatform/shared';
+import {
+  LOYALTY_CHALLENGE_TARGET_TYPES,
+  LOYALTY_POINT_LEDGER_TYPES,
+  buildLoyaltyPublicBranding,
+} from '@queueplatform/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PatronCrmFeatureService } from '../../common/features/patron-crm-feature.service';
 import { LoyaltyAccountLifecycleService } from './loyalty-account-lifecycle.service';
@@ -205,8 +209,16 @@ export class LoyaltyReferralService {
             select: {
               name: true,
               slug: true,
+              logoUrl: true,
+              brandPrimaryColor: true,
+              brandAccentColor: true,
               loyaltyProgram: {
-                select: { referredBonusPoints: true, referralBonusPoints: true },
+                select: {
+                  referredBonusPoints: true,
+                  referralBonusPoints: true,
+                  displayName: true,
+                  pointsCurrencyName: true,
+                },
               },
             },
           },
@@ -220,11 +232,20 @@ export class LoyaltyReferralService {
 
     const program = referrer.organization.loyaltyProgram;
     const firstName = referrer.customer.name.trim().split(/\s+/)[0] ?? referrer.customer.name;
+    const branding = buildLoyaltyPublicBranding({
+      orgName: referrer.organization.name,
+      logoUrl: referrer.organization.logoUrl,
+      brandPrimaryColor: referrer.organization.brandPrimaryColor,
+      brandAccentColor: referrer.organization.brandAccentColor,
+      programDisplayName: program?.displayName,
+      pointsCurrencyName: program?.pointsCurrencyName,
+    });
 
     return {
       found: true as const,
-      orgName: referrer.organization.name,
+      orgName: branding.orgName,
       orgSlug: referrer.organization.slug,
+      branding,
       referrerFirstName: firstName,
       referralCode: referrer.referralCode,
       referredBonusPoints: program?.referredBonusPoints ?? 25,

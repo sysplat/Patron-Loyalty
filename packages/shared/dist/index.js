@@ -17,6 +17,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./types/enums"), exports);
 __exportStar(require("./types/api.types"), exports);
 __exportStar(require("./types/public-branding"), exports);
+__exportStar(require("./types/loyalty-public-branding"), exports);
 __exportStar(require("./constants/platform"), exports);
 __exportStar(require("./constants/product"), exports);
 __exportStar(require("./constants/api-deploy-profile"), exports);

@@ -14,11 +14,12 @@ describe('LoyaltyCatalogController', () => {
     createCoupon: vi.fn(),
     validateCoupon: vi.fn(),
   };
+  const audit = { logActivity: vi.fn(), logAudit: vi.fn() };
   let controller: LoyaltyCatalogController;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    controller = new LoyaltyCatalogController(catalog as never);
+    controller = new LoyaltyCatalogController(catalog as never, audit as never);
   });
 
   it('lists active rewards by default', async () => {

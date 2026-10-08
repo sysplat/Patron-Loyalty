@@ -133,6 +133,8 @@ export interface OrganizationDto {
   timezone: string;
   country: string | null;
   logoUrl: string | null;
+  brandPrimaryColor: string | null;
+  brandAccentColor: string | null;
   onboardingStep: OnboardingStep;
   createdAt: string;
 }
@@ -144,6 +146,8 @@ export interface UpdateOrganizationInput {
   timezone?: string;
   country?: string;
   logoUrl?: string;
+  brandPrimaryColor?: string | null;
+  brandAccentColor?: string | null;
 }
 
 // ─── Branch ──────────────────────────────────────

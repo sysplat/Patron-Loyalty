@@ -40,6 +40,7 @@ Use primitives from `@/components/dashboard`:
 | `StatStrip`      | Compact summary metrics             |
 | `FilterTabs`     | Muted pill filters                  |
 | `EmptyState`     | No data / nothing to show           |
+| `LoadingBlock`   | In-card loading placeholder rows    |
 | `ConfirmDialog`  | Destructive or irreversible actions |
 | `PermissionGate` | Role-denied content                 |
 
@@ -154,6 +155,6 @@ Forbidden on dashboard pages: `window.confirm()`, local `EmptyState` / `ConfirmA
 
 - [LOYALTY_STAFF_COUNTER.md](../operations/LOYALTY_STAFF_COUNTER.md) — Counter product path
 - [REPO_BOUNDARIES.md](../architecture/REPO_BOUNDARIES.md) — LMS vs QMS surfaces
-- [FRONTEND_GUIDE.md](./FRONTEND_GUIDE.md) — QMS `apps/web` patterns (not LMS source of truth)
+- [FRONTEND_GUIDE.md](./FRONTEND_GUIDE.md) — `apps/web` patterns from the sibling `../QMS` repo (not LMS source of truth)
 - Cursor rule: [`.cursor/rules/loyalty-staff-ui.mdc`](../../.cursor/rules/loyalty-staff-ui.mdc)
 - Gate: `scripts/architecture/check-loyalty-staff-ui.mjs`
