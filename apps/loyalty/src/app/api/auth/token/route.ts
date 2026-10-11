@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { WEB_SESSION_COOKIE } from '@queueplatform/shared';
 
+export const runtime = 'edge';
+
 /**
  * Same-origin sync: read HttpOnly session cookie into in-memory client state.
  * Not used for login/session probes — see GET /api/auth/session.
